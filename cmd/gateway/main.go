@@ -37,6 +37,7 @@ func main() {
 		log.Fatal("[Etcd register] ", err)
 	}
 
+	go base.LoadServices()
 	go httpServer(*httpPort)
 
 	forever := make(chan bool)
