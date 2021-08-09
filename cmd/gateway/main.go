@@ -4,7 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"go-ms/pkg"
+	"go-ms/pkg/base"
+	"go-ms/pkg/cluster"
 	"go-ms/utils"
 	"log"
 	"os"
@@ -30,8 +31,8 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
-	pkg.LogInit()
-	err = pkg.EtcdRegister(*etcdAddr, *rpcPort, "gateway")
+	base.LogInit()
+	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, "gateway")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}

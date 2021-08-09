@@ -19,9 +19,9 @@
 -version：go-ms版本<br>
 
 测试：打开三个命令行模拟三个节点测试gateway集群服务注册发现<br>
-`1、go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd-addr 127.0.0.1:2379`<br>
-`2、go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd-addr 127.0.0.1:2379`<br>
-`3、go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd-addr 127.0.0.1:2379`<br>
+`1、go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd_addr 127.0.0.1:2379`<br>
+`2、go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd_addr 127.0.0.1:2379`<br>
+`3、go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379`<br>
 
 等待几秒钟，观察打印如下：<br>
 `Server [gateway] cluster [192.168.125.179:8182] join`<br>
