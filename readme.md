@@ -24,8 +24,8 @@
 `3、go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379`<br>
 
 等待几秒钟，观察打印如下：<br>
-`Server [gateway] cluster [192.168.125.179:8182] join`<br>
-`Server [gateway] cluster [192.168.125.179:8183] join`<br>
+`Cluster [gateway] node [192.168.125.179:8182] join`<br>
+`Cluster [gateway] node [192.168.125.179:8183] join`<br>
 表示gateway节点互相能够发现其他节点服务
 
 <br>
@@ -45,17 +45,21 @@
 `3、 go run cmd/services/user/main.go -rpc_port 9012 -etcd_addr 127.0.0.1:2379`<br>
 
 等待几秒钟，切换gateway、user任意一个节点的命令行打印信息：<br>
-`Server [user] cluster [192.168.125.179:8080] join`<br>
-`Server [user] cluster [192.168.125.179:8081] join`<br>
-`Server [user] cluster [192.168.125.179:8082] join`<br>
+`Cluster [user] cluster [192.168.125.179:8080] join`<br>
+`Cluster [user] cluster [192.168.125.179:8081] join`<br>
+`Cluster [user] cluster [192.168.125.179:8082] join`<br>
 
 另外我们再看一下第一台gateway打印的所有信息：<br>
 `2021/08/09 14:50:36 [Http][gateway service] Listen on port: 8080`<br>
-`2021/08/09 14:50:42 Server [gateway] cluster [192.168.125.179:8181] join`<br>
-`2021/08/09 14:50:49 Server [gateway] cluster [192.168.125.179:8182] join`<br>
-`2021/08/09 14:51:02 Server [user] cluster [192.168.125.179:9010] join`<br>
-`2021/08/09 14:51:11 Server [user] cluster [192.168.125.179:9011] join`<br>
-`2021/08/09 14:51:18 Server [user] cluster [192.168.125.179:9012] join `<br>
+`2021/08/09 14:50:42 Cluster [gateway] node [192.168.125.179:8181] join`<br>
+`2021/08/09 14:50:49 Cluster [gateway] node [192.168.125.179:8182] join`<br>
+`2021/08/09 14:51:02 Cluster [user] node [192.168.125.179:9010] join`<br>
+`2021/08/09 14:51:11 Cluster [user] node [192.168.125.179:9011] join`<br>
+`2021/08/09 14:51:18 Cluster [user] node [192.168.125.179:9012] join `<br>
+
+现在我们随意关闭一个节点，查看其他节点打印信息：<br>
+`2021/08/09 15:40:34 Cluster [user] node [192.168.125.179:9011] leave`<br>
+每个服务节点不仅可以监听新节点的加入(join)，还能监听节点的离开(leave)
 
 **我们可以总结一下：任意服务的任意节点互相能够发现其他任意服务的任意节点**<br>
 **这就是基于etcd实现的服务注册发现模型：**<br>
@@ -77,5 +81,3 @@
 `go-ms_user_192.168.125.179:9012`<br>
 `0`<br>
 可以看出，我们刚刚启动的所以服务节点都在etcd里面以go-ms_前缀存储<br>
-
-

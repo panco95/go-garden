@@ -10,7 +10,7 @@ import (
 
 func GetAllServers() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, "go-ms_", clientV3.WithPrefix())
+	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		base.Logger.Debugf(err.Error())

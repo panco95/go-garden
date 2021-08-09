@@ -15,6 +15,7 @@ var (
 	Etcd        *clientV3.Client
 	Servers     = make(map[string][]string)
 	ServersLock sync.Mutex
+	ProjectName = "go-ms"
 )
 
 func EtcdRegister(etcdAddr string, rpcPort string, serverName string) error {
@@ -52,7 +53,7 @@ func ServerRegister(rpcPort string, serverName string) error {
 	if err != nil {
 		return err
 	}
-	key := "go-ms_" + serverName + "_" + intranetRpcAddr
+	key := ProjectName + "_" + serverName + "_" + intranetRpcAddr
 	_, err = Etcd.Put(context.TODO(), key, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
@@ -87,7 +88,7 @@ func ServerRegister(rpcPort string, serverName string) error {
 }
 
 func serverWatcher() {
-	rch := Etcd.Watch(context.Background(), "go-ms_", clientV3.WithPrefix())
+	rch := Etcd.Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -96,10 +97,10 @@ func serverWatcher() {
 			switch ev.Type {
 			case 0: //put
 				AddServer(serverName, serverAddr)
-				log.Printf("Server [%s] cluster [%s] join \n", serverName, serverAddr)
+				log.Printf("Cluster [%s] node [%s] join \n", serverName, serverAddr)
 			case 1: //delete
 				DelServer(serverName, serverAddr)
-				log.Printf("Server [%s] cluster [%s] leave \n", serverName, serverAddr)
+				log.Printf("Cluster [%s] node [%s] leave \n", serverName, serverAddr)
 			}
 		}
 	}
