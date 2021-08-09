@@ -2,8 +2,8 @@ package cluster
 
 import (
 	"context"
-	"fmt"
 	"go-ms/utils"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -52,7 +52,7 @@ func ServerRegister(rpcPort string, serverName string) error {
 	if err != nil {
 		return err
 	}
-	key := serverName + "_" + intranetRpcAddr
+	key := "go-ms_" + serverName + "_" + intranetRpcAddr
 	_, err = Etcd.Put(context.TODO(), key, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
@@ -72,27 +72,34 @@ func ServerRegister(rpcPort string, serverName string) error {
 	}()
 
 	ServersLock.Lock()
-	Servers[serverName] = GetServers(serverName)
+	servers := GetAllServers()
+	for _, server := range servers {
+		arr := strings.Split(server, "_")
+		serverName := arr[0]
+		serverAddr := arr[1]
+		Servers[serverName] = append(Servers[serverName], serverAddr)
+	}
 	ServersLock.Unlock()
 
-	go serverWatcher(serverName)
+	go serverWatcher()
 
 	return nil
 }
 
-func serverWatcher(serverName string) {
-	rch := Etcd.Watch(context.Background(), serverName+"_", clientV3.WithPrefix())
+func serverWatcher() {
+	rch := Etcd.Watch(context.Background(), "go-ms_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
-			arr := strings.Split(string(ev.Kv.Key), serverName+"_")
-			serverAddr := arr[1]
+			arr := strings.Split(string(ev.Kv.Key), "_")
+			serverName := arr[1]
+			serverAddr := arr[2]
 			switch ev.Type {
 			case 0: //put
 				AddServer(serverName, serverAddr)
-				fmt.Printf("Server [%s] cluster [%s] join \n", serverName, serverAddr)
+				log.Printf("Server [%s] cluster [%s] join \n", serverName, serverAddr)
 			case 1: //delete
 				DelServer(serverName, serverAddr)
-				fmt.Printf("Server [%s] cluster [%s] leave \n", serverName, serverAddr)
+				log.Printf("Server [%s] cluster [%s] leave \n", serverName, serverAddr)
 			}
 		}
 	}

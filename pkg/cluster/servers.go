@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func GetServers(serverName string) []string {
+func GetAllServers() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, serverName+"_", clientV3.WithPrefix())
+	resp, err := Etcd.Get(ctx, "go-ms_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		base.Logger.Debugf(err.Error())
@@ -18,7 +18,24 @@ func GetServers(serverName string) []string {
 	}
 	var servers []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), serverName+"_")
+		arr := strings.Split(string(ev.Key), "go-ms_")
+		server := arr[1]
+		servers = append(servers, server)
+	}
+	return servers
+}
+
+func GetServersByName(serverName string) []string {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	resp, err := Etcd.Get(ctx, "go-ms_"+serverName, clientV3.WithPrefix())
+	cancel()
+	if err != nil {
+		base.Logger.Debugf(err.Error())
+		return []string{}
+	}
+	var servers []string
+	for _, ev := range resp.Kvs {
+		arr := strings.Split(string(ev.Key), "go-ms_"+serverName+"_")
 		serverAddr := arr[1]
 		servers = append(servers, serverAddr)
 	}
