@@ -12,6 +12,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gin-gonic/gin v1.7.3 // indirect
 	github.com/go-playground/validator/v10 v10.8.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
@@ -28,6 +29,7 @@ require (
 	go.etcd.io/etcd/client/v3 v3.5.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
+	google.golang.org/grpc v1.39.1 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

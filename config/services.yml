@@ -1,7 +1,3 @@
 user: #service name
   register: "register" #servcie [user] api route register
   login: "login"       #service [user] api route login
-
-pay: #service name
-  order: "order"      #servcie [order] api route register
-  pay: "refund"       #servcie [order] api route register

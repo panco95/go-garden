@@ -16,7 +16,7 @@
 -http_port：http监听端口<br>
 -rpc_port：rpc监听端口<br>
 -etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
--version：go-ms版本<br>
+-version：打印版本<br>
 
 测试：打开三个命令行模拟三个节点测试gateway集群服务注册发现<br>
 `1、go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd_addr 127.0.0.1:2379`<br>
@@ -27,3 +27,14 @@
 `Server [gateway] cluster [192.168.125.179:8182] join`<br>
 `Server [gateway] cluster [192.168.125.179:8183] join`<br>
 表示节点已经发现其他节点服务启动
+
+<br>
+
+**二、服务示例（Service）**<br>
+
+启动服务节点：<br>
+`go run cmd/services/user/main.go -rpc_port 9010 -etcd_addr 127.0.0.1:2379`<br>
+参数：<br>
+-rpc_port：rpc监听端口<br>
+-etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
+-version：打印版本<br>
