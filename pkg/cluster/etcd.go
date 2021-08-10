@@ -5,17 +5,14 @@ import (
 	"go-ms/utils"
 	"log"
 	"strings"
-	"sync"
 	"time"
 
 	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
+
 var (
 	Etcd        *clientV3.Client
-	Servers     = make(map[string][]string)
-	ServersLock sync.Mutex
-	ProjectName = "go-ms"
 )
 
 func EtcdRegister(etcdAddr, rpcPort, httpPort, serverName string) error {
@@ -80,7 +77,9 @@ func ServerRegister(rpcPort, httpPort, serverName string) error {
 		serverName := arr[0]
 		serverRpcAddr := arr[1]
 		serverHttpAddr := arr[2]
-		Servers[serverName] = append(Servers[serverName], serverRpcAddr+"_"+serverHttpAddr)
+
+		ExistsServer(serverName)
+		Servers[serverName].Nodes = append(Servers[serverName].Nodes, serverRpcAddr+"_"+serverHttpAddr)
 	}
 	ServersLock.Unlock()
 
