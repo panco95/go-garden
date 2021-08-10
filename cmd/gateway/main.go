@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go-ms/pkg/base"
 	"go-ms/pkg/cluster"
-	"go-ms/utils"
 	"log"
 	"os"
 	"runtime"
@@ -29,7 +28,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
-	utils.LogInit()
+	base.LogInit()
 	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "gateway")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)

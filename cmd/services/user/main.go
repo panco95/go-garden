@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-ms/pkg/base"
+	"go-ms/pkg/base/global"
 	"go-ms/pkg/cluster"
-	"go-ms/utils"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +31,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
-	utils.LogInit()
+	base.LogInit()
 	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
@@ -45,15 +45,15 @@ func main() {
 
 func route(r *gin.Engine) {
 	r.Any("login", func(c *gin.Context) {
-		c.JSON(http.StatusOK, base.Any{
-			"data": base.Any{
+		c.JSON(http.StatusOK, global.Any{
+			"data": global.Any{
 				"result": "success",
 			},
 		})
 	})
 	r.Any("register", func(c *gin.Context) {
-		c.JSON(http.StatusOK, base.Any{
-			"data": base.Any{
+		c.JSON(http.StatusOK, global.Any{
+			"data": global.Any{
 				"result": "success",
 			},
 		})

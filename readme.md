@@ -84,5 +84,6 @@ go-ms_user_192.168.125.179:9181_192.168.125.179:9081`<br>
 
 **三、访问API网关**<br>
 
-打开浏览器，输入gateway任一节点http地址，然后加上访问用户服务的路由（路由配置表在config/services.yml），看是否能正常返回json数据：<br>
+打开浏览器，输入gateway任一节点http地址，然后加上访问用户服务的路由：`http://127.0.0.1:8082/api/user/login` <br>
+正常返回json数据：<br>
 `{"code":200,"data":{"result":"success"},"message":"success"}`

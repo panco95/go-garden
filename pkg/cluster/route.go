@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"go-ms/pkg/base"
-	"go-ms/utils"
+	"go-ms/pkg/base/global"
 	"io/ioutil"
 	"net/http"
 )
@@ -17,8 +16,8 @@ func GatewayRoute(r *gin.Engine) {
 		action := c.Param("action")
 		code, data, err := CallService(server, action)
 		if err != nil {
-			utils.Logger.Debugf("[CallService] %s", err.Error())
-			c.JSON(code, base.Any{
+			global.Logger.Debugf("[CallService] %s", err.Error())
+			c.JSON(code, global.Any{
 				"code":    code,
 				"message": "ServerError",
 				"data":    nil,
@@ -28,7 +27,7 @@ func GatewayRoute(r *gin.Engine) {
 		var r map[string]interface{}
 		json.Unmarshal([]byte(data), &r)
 		fmt.Println(r)
-		c.JSON(code, base.Any{
+		c.JSON(code, global.Any{
 			"code":    code,
 			"message": "success",
 			"data":    r["data"],

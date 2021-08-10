@@ -1,12 +1,11 @@
-package utils
+package base
 
 import (
 	"github.com/natefinch/lumberjack"
+	"go-ms/pkg/base/global"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-var Logger *zap.SugaredLogger
 
 func LogInit() {
 	writeSyncer := GetLogWriter()
@@ -14,7 +13,7 @@ func LogInit() {
 	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 
 	logger := zap.New(core, zap.AddCaller())
-	Logger = logger.Sugar()
+	global.Logger = logger.Sugar()
 }
 
 func GetEncoder() zapcore.Encoder {

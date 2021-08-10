@@ -3,7 +3,7 @@ package base
 import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"go-ms/utils"
+	"go-ms/pkg/base/global"
 	"log"
 )
 
@@ -16,7 +16,7 @@ func LoadConfig(filePath, fileType string) {
 	viper.SetConfigFile(filePath)
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		utils.Logger.Debugf("[Config] %s has changed", filePath)
+		global.Logger.Debugf("[Config] %s has changed", filePath)
 	})
 	err := viper.ReadInConfig()
 	if err != nil {

@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"context"
-	"go-ms/utils"
+	"go-ms/pkg/base/global"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"strings"
 	"time"
@@ -13,7 +13,7 @@ func GetAllServers() []string {
 	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		utils.Logger.Debugf(err.Error())
+		global.Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
@@ -30,7 +30,7 @@ func GetServersByName(serverName string) []string {
 	resp, err := Etcd.Get(ctx, "go-ms_"+serverName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		utils.Logger.Debugf(err.Error())
+		global.Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
