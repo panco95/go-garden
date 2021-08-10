@@ -3,15 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"go-ms/pkg/base"
 	"go-ms/pkg/cluster"
+	"go-ms/utils"
 	"log"
+	"net/http"
 	"os"
 	"runtime"
 )
 
 var (
 	rpcPort  = flag.String("rpc_port", "9010", "Rpc listen port")
+	httpPort = flag.String("http_port", "9510", "Http listen port")
 	etcdAddr = flag.String("etcd_addr", "127.0.0.1:2379", "Etcd address, cluster format: 127.0.0.1:2379|127.0.0.1:2389")
 	version  = flag.Bool("version", false, "Show version info")
 )
@@ -27,14 +31,31 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
-	base.LogInit()
-	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, "user")
+	utils.LogInit()
+	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}
 
-	go base.RpcServer(*rpcPort, "user")
+	go base.HttpServer(*httpPort, "user", route)
 
 	forever := make(chan bool)
 	<-forever
+}
+
+func route(r *gin.Engine) {
+	r.Any("login", func(c *gin.Context) {
+		c.JSON(http.StatusOK, base.Any{
+			"data": base.Any{
+				"result": "success",
+			},
+		})
+	})
+	r.Any("register", func(c *gin.Context) {
+		c.JSON(http.StatusOK, base.Any{
+			"data": base.Any{
+				"result": "success",
+			},
+		})
+	})
 }

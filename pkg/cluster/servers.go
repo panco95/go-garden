@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"context"
-	"go-ms/pkg/base"
+	"go-ms/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"strings"
 	"time"
@@ -13,12 +13,12 @@ func GetAllServers() []string {
 	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		base.Logger.Debugf(err.Error())
+		utils.Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), "go-ms_")
+		arr := strings.Split(string(ev.Key), ProjectName+"_")
 		server := arr[1]
 		servers = append(servers, server)
 	}
@@ -30,12 +30,12 @@ func GetServersByName(serverName string) []string {
 	resp, err := Etcd.Get(ctx, "go-ms_"+serverName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		base.Logger.Debugf(err.Error())
+		utils.Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), "go-ms_"+serverName+"_")
+		arr := strings.Split(string(ev.Key), ProjectName+"_"+serverName+"_")
 		serverAddr := arr[1]
 		servers = append(servers, serverAddr)
 	}
@@ -57,4 +57,14 @@ func DelServer(serverName, serverAddr string) {
 		}
 	}
 	ServersLock.Unlock()
+}
+
+func AnalyzeRpcAddr(serverName string, index int) string {
+	arr := strings.Split(Servers[serverName][index], "_")
+	return arr[0]
+}
+
+func AnalyzeHttpAddr(serverName string, index int) string {
+	arr := strings.Split(Servers[serverName][index], "_")
+	return arr[1]
 }

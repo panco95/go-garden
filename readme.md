@@ -23,42 +23,44 @@
 `2、go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd_addr 127.0.0.1:2379`<br>
 `3、go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379`<br>
 
-等待几秒钟，观察打印如下：<br>
-`Cluster [gateway] node [192.168.125.179:8182] join`<br>
-`Cluster [gateway] node [192.168.125.179:8183] join`<br>
-表示gateway节点互相能够发现其他节点服务
+观察我们第一个gateway节点打印如下：<br>
+`2021/08/10 11:08:01 [gateway] Http Listen on port: 8080`<br>
+`2021/08/10 11:08:14 [gateway] node [192.168.125.179:8181_192.168.125.179:8081] join`<br>
+`2021/08/10 11:08:23 [gateway] node [192.168.125.179:8182_192.168.125.179:8082] join`
+
+表示gateway节点互相能够发现其他节点服务启动
 
 <br>
 
 **二、Service**<br>
 
 启动服务节点：<br>
-`go run cmd/services/user/main.go -rpc_port 9010 -etcd_addr 127.0.0.1:2379`<br>
+`go run cmd/services/user/main.go`<br>
 参数：<br>
 -rpc_port：rpc监听端口<br>
 -etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
 -version：打印版本<br>
 
 模拟三个user服务节点进行集群架设：<br>
-`1、 go run cmd/services/user/main.go -rpc_port 9010 -etcd_addr 127.0.0.1:2379`<br>
-`2、 go run cmd/services/user/main.go -rpc_port 9011 -etcd_addr 127.0.0.1:2379`<br>
-`3、 go run cmd/services/user/main.go -rpc_port 9012 -etcd_addr 127.0.0.1:2379`<br>
+`1、 go run cmd/services/user/main.go -http_port 9080 -rpc_port 9180 -etcd_addr 127.0.0.1:2379`<br>
+`2、 go run cmd/services/user/main.go -http_port 9081 -rpc_port 9181 -etcd_addr 127.0.0.1:2379`<br>
+`3、 go run cmd/services/user/main.go -http_port 9082 -rpc_port 9182 -etcd_addr 127.0.0.1:2379`<br>
 
-等待几秒钟，切换gateway、user任意一个节点的命令行打印信息：<br>
-`Cluster [user] cluster [192.168.125.179:8080] join`<br>
-`Cluster [user] cluster [192.168.125.179:8081] join`<br>
-`Cluster [user] cluster [192.168.125.179:8082] join`<br>
+观察我们第一个node节点打印如下：<br>
+`2021/08/10 11:10:46 [user] Http Listen on port: 9080`<br>
+`2021/08/10 11:10:54 [user] node [192.168.125.179:9181_192.168.125.179:9081] join`<br>
+`2021/08/10 11:11:02 [user] node [192.168.125.179:9182_192.168.125.179:9082] join`<br>
 
-另外我们再看一下第一台gateway打印的所有信息：<br>
-`2021/08/09 14:50:36 [Http][gateway service] Listen on port: 8080`<br>
-`2021/08/09 14:50:42 Cluster [gateway] node [192.168.125.179:8181] join`<br>
-`2021/08/09 14:50:49 Cluster [gateway] node [192.168.125.179:8182] join`<br>
-`2021/08/09 14:51:02 Cluster [user] node [192.168.125.179:9010] join`<br>
-`2021/08/09 14:51:11 Cluster [user] node [192.168.125.179:9011] join`<br>
-`2021/08/09 14:51:18 Cluster [user] node [192.168.125.179:9012] join `<br>
+另外我们再看一下第一个gateway打印的所有信息：<br>
+`2021/08/10 11:08:01 [gateway] Http Listen on port: 8080`<br>
+`2021/08/10 11:08:14 [gateway] node [192.168.125.179:8181_192.168.125.179:8081] join`<br>
+`2021/08/10 11:08:23 [gateway] node [192.168.125.179:8182_192.168.125.179:8082] join`<br>
+`2021/08/10 11:10:46 [user] node [192.168.125.179:9180_192.168.125.179:9080] join`<br>
+`2021/08/10 11:10:54 [user] node [192.168.125.179:9181_192.168.125.179:9081] join`<br>
+`2021/08/10 11:11:02 [user] node [192.168.125.179:9182_192.168.125.179:9082] join`<br>
 
-现在我们随意关闭一个节点，查看其他节点打印信息：<br>
-`2021/08/09 15:40:34 Cluster [user] node [192.168.125.179:9011] leave`<br>
+现在我们随意关闭一个节点，查看其他所有节点打印信息：<br>
+`2021/08/10 11:13:23 [user] node [192.168.125.179:9180_192.168.125.179:9080] leave`<br>
 每个服务节点不仅可以监听新节点的加入(join)，还能监听节点的离开(leave)
 
 **我们可以总结一下：任意服务的任意节点互相能够发现其他任意服务的任意节点**<br>
@@ -68,16 +70,19 @@
 （小提示：Docker启动的etcd需要进入etcd容器查看）<br>
 `docker container exec -ti [容器id] bash`<br>
 打印如下：<br>
-`go-ms_gateway_192.168.125.179:8180`<br>
+`go-ms_gateway_192.168.125.179:8180_192.168.125.179:8080`<br>
 `0`<br>
-`go-ms_gateway_192.168.125.179:8181`<br>
+go-ms_gateway_192.168.125.179:8181_192.168.125.179:8081`<br>
 `0`<br>
-`go-ms_gateway_192.168.125.179:8182`<br>
+go-ms_gateway_192.168.125.179:8182_192.168.125.179:8082`<br>
 `0`<br>
-`go-ms_user_192.168.125.179:9010`<br>
+go-ms_user_192.168.125.179:9181_192.168.125.179:9081`<br>
 `0`<br>
-`go-ms_user_192.168.125.179:9011`<br>
+`go-ms_user_192.168.125.179:9182_192.168.125.179:9082`<br>
 `0`<br>
-`go-ms_user_192.168.125.179:9012`<br>
-`0`<br>
-可以看出，我们刚刚启动的所以服务节点都在etcd里面以go-ms_前缀存储<br>
+可以看出，我们刚刚启动的所以服务节点都在etcd里面以go-ms_前缀存储，后面跟着服务名称，然后是两个服务地址，前面的是RPC监听地址，后面的是HTTP监听地址<br><br>
+
+**三、访问API网关**<br>
+
+打开浏览器，输入gateway任一节点http地址，然后加上访问用户服务的路由（路由配置表在config/services.yml），看是否能正常返回json数据：<br>
+`{"code":200,"data":{"result":"success"},"message":"success"}`

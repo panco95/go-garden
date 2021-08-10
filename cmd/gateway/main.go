@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-ms/pkg/base"
 	"go-ms/pkg/cluster"
+	"go-ms/utils"
 	"log"
 	"os"
 	"runtime"
@@ -28,14 +29,14 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
-	base.LogInit()
-	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, "gateway")
+	utils.LogInit()
+	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "gateway")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}
 
 	go base.LoadServices()
-	go base.HttpServer(*httpPort, "gateway")
+	go base.HttpServer(*httpPort, "gateway", cluster.GatewayRoute)
 
 	forever := make(chan bool)
 	<-forever
