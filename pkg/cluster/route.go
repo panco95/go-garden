@@ -8,13 +8,16 @@ import (
 	"go-ms/pkg/base/global"
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 func GatewayRoute(r *gin.Engine) {
-	r.Any("api/:server/:action", func(c *gin.Context) {
+	r.POST("api/:server/:action", func(c *gin.Context) {
 		server := c.Param("server")
 		action := c.Param("action")
-		code, data, err := CallServer(server, action)
+		jsonBody := global.Any{}
+		c.BindJSON(&jsonBody)
+		code, data, err := CallServer(server, action, jsonBody)
 		if err != nil {
 			c.JSON(code, global.Any{
 				"code":    code,
@@ -38,7 +41,7 @@ func GatewayRoute(r *gin.Engine) {
 	})
 }
 
-func CallServer(serverName, action string) (int, string, error) {
+func CallServer(serverName, action string, jsonBody global.Any) (int, string, error) {
 	route := viper.GetString(serverName + "." + action)
 	if len(route) == 0 {
 		return http.StatusNotFound, "", nil
@@ -47,12 +50,19 @@ func CallServer(serverName, action string) (int, string, error) {
 	if err != nil {
 		return http.StatusInternalServerError, "", err
 	}
-	res, err := http.Get("http://" + serverAddr + route)
+
+	url := "http://" + serverAddr + route
+	contentType := "application/json"
+	body, err := json.Marshal(jsonBody)
 	if err != nil {
 		return http.StatusInternalServerError, "", err
 	}
-	body, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	res, err := http.Post(url, contentType, strings.NewReader(string(body)))
+	if err != nil {
+		return http.StatusInternalServerError, "", err
+	}
+	defer res.Body.Close()
+	body, err = ioutil.ReadAll(res.Body)
 	return http.StatusOK, string(body), nil
 }
 

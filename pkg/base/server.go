@@ -17,7 +17,7 @@ func HttpServer(port, serverName string, route func(r *gin.Engine)) {
 	if err != nil {
 		log.Fatal("[Create runtime folder] ", err)
 	}
-	file, err := os.Create(path + "/runtime/gin.log")
+	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, serverName))
 	if err != nil {
 		log.Fatal("[Create gin log file] ", err)
 	}

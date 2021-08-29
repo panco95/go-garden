@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"runtime"
 )
 
 var (
@@ -28,8 +27,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	var err error
 	base.LogInit()
 	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
@@ -44,18 +41,18 @@ func main() {
 }
 
 func route(r *gin.Engine) {
-	r.Any("login", func(c *gin.Context) {
+	r.POST("login", func(c *gin.Context) {
+		jsonBody := global.Any{}
+		c.Bind(&jsonBody)
 		c.JSON(http.StatusOK, global.Any{
-			"data": global.Any{
-				"result": "success",
-			},
+			"data": jsonBody,
 		})
 	})
-	r.Any("register", func(c *gin.Context) {
+	r.POST("register", func(c *gin.Context) {
+		jsonBody := global.Any{}
+		c.BindJSON(&jsonBody)
 		c.JSON(http.StatusOK, global.Any{
-			"data": global.Any{
-				"result": "success",
-			},
+			"data": jsonBody,
 		})
 	})
 }

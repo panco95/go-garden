@@ -7,7 +7,6 @@ import (
 	"go-ms/pkg/cluster"
 	"log"
 	"os"
-	"runtime"
 )
 
 var (
@@ -24,8 +23,6 @@ func main() {
 		fmt.Print("developing")
 		os.Exit(0)
 	}
-
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var err error
 	base.LogInit()

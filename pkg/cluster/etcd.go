@@ -39,7 +39,7 @@ func EtcdRegister(etcdAddr, rpcPort, httpPort, serverName string) error {
 }
 
 func ServerRegister(rpcPort, httpPort, serverName string) error {
-	intranetIp := utils.GetIntranetIp()
+	intranetIp := utils.GetOutboundIP()
 	intranetRpcAddr := intranetIp + ":" + rpcPort
 	intranetHttpAddr := intranetIp + ":" + httpPort
 	//新建租约
