@@ -41,18 +41,28 @@ func main() {
 }
 
 func route(r *gin.Engine) {
-	r.POST("login", func(c *gin.Context) {
-		jsonBody := global.Any{}
-		c.Bind(&jsonBody)
+	r.Any("login", func(c *gin.Context) {
 		c.JSON(http.StatusOK, global.Any{
-			"data": jsonBody,
+			"code": 0,
+			"msg":  "success",
+			"data": global.Any{
+				"method":   base.GetMethod(c),
+				"urlParam": base.GetUrlParam(c),
+				"headers":  base.GetHeaders(c),
+				"body":     base.GetBody(c),
+			},
 		})
 	})
-	r.POST("register", func(c *gin.Context) {
-		jsonBody := global.Any{}
-		c.BindJSON(&jsonBody)
+	r.Any("register", func(c *gin.Context) {
 		c.JSON(http.StatusOK, global.Any{
-			"data": jsonBody,
+			"code": 0,
+			"msg":  "success",
+			"data": global.Any{
+				"method":   base.GetMethod(c),
+				"urlParam": base.GetUrlParam(c),
+				"headers":  base.GetHeaders(c),
+				"body":     base.GetBody(c),
+			},
 		})
 	})
 }

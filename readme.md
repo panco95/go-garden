@@ -2,10 +2,12 @@
 <br>
 <br>
 **说明：**<br>
-本项目刚启动，目标是实现微服务的基本模板。<br><br>
-**已实现特性：**<br>
+本项目是实现微服务的基本模板，给读者一个参考，自己搭建一个微服务架构，项目正在积极开发更新中...很期待得到你的star...<br><br>
+**已实现功能：**<br>
 1、服务注册发现<br>
-2、由网关控制到下游服务集群的负载均衡<br>
+2、网关路由分发<br>
+3、负载均衡<br>
+4、其他功能开发中...<br>
 
 **准备工作：**<br>
 1、安装etcd，Docker快捷安装：<br>
@@ -23,14 +25,18 @@
 -version：打印版本<br>
 
 模拟三个Gateway网关节点进行集群架设：<br>
-`1、go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd_addr 127.0.0.1:2379`<br>
-`2、go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd_addr 127.0.0.1:2379`<br>
-`3、go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379`<br>
+```
+go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd_addr 127.0.0.1:2379
+go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd_addr 127.0.0.1:2379
+go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379
+```
 
 观察我们第一个gateway节点打印如下：<br>
-`2021/08/10 11:08:01 [gateway] Http Listen on port: 8080`<br>
-`2021/08/10 11:08:14 [gateway] node [192.168.125.179:8181_192.168.125.179:8081] join`<br>
-`2021/08/10 11:08:23 [gateway] node [192.168.125.179:8182_192.168.125.179:8082] join`
+```
+2021/08/10 11:08:01 [gateway] Http Listen on port: 8080
+2021/08/10 11:08:14 [gateway] node [192.168.125.179:8181_192.168.125.179:8081] join
+2021/08/10 11:08:23 [gateway] node [192.168.125.179:8182_192.168.125.179:8082] join
+```
 
 表示gateway节点互相能够发现其他节点服务启动
 
@@ -46,14 +52,19 @@
 -version：打印版本<br>
 
 模拟三个user服务节点进行集群架设：<br>
-`1、 go run cmd/services/user/main.go -http_port 9080 -rpc_port 9180 -etcd_addr 127.0.0.1:2379`<br>
-`2、 go run cmd/services/user/main.go -http_port 9081 -rpc_port 9181 -etcd_addr 127.0.0.1:2379`<br>
-`3、 go run cmd/services/user/main.go -http_port 9082 -rpc_port 9182 -etcd_addr 127.0.0.1:2379`<br>
+```
+go run cmd/services/user/main.go -http_port 9080 -rpc_port 9180 -etcd_addr 127.0.0.1:2379
+go run cmd/services/user/main.go -http_port 9081 -rpc_port 9181 -etcd_addr 127.0.0.1:2379
+go run cmd/services/user/main.go -http_port 9082 -rpc_port 9182 -etcd_addr 127.0.0.1:2379
+```
 
 观察我们第一个node节点打印如下：<br>
-`2021/08/10 11:10:46 [user] Http Listen on port: 9080`<br>
-`2021/08/10 11:10:54 [user] node [192.168.125.179:9181_192.168.125.179:9081] join`<br>
-`2021/08/10 11:11:02 [user] node [192.168.125.179:9182_192.168.125.179:9082] join`<br>
+```
+2021/08/10 11:10:46 [user] Http Listen on port: 9080
+2021/08/10 11:10:54 [user] node [192.168.125.179:9181_192.168.125.179:9081] join
+2021/08/10 11:11:02 [user] node [192.168.125.179:9182_192.168.125.179:9082] join
+```
+<br>
 
 另外我们再看一下第一个gateway打印的所有信息：<br>
 ```
@@ -76,6 +87,7 @@
 （小提示：Docker启动的etcd需要进入etcd容器查看）<br>
 `docker container exec -ti [容器id] bash`<br>
 打印如下：<br>
+
 ```
 go-ms_gateway_192.168.125.179:8180_192.168.125.179:8080
 0
@@ -88,68 +100,70 @@ go-ms_user_192.168.125.179:9181_192.168.125.179:9081
 go-ms_user_192.168.125.179:9182_192.168.125.179:9082
 0
 ```
+
 <br>
 可以看出，我们刚刚启动的所以服务节点都在etcd里面以go-ms_前缀存储，后面跟着服务名称，然后是两个服务地址，前面的是RPC监听地址，后面的是HTTP监听地址<br><br>
 
 **三、访问API网关**<br>
 
-提示：为了规范接口，api接口全部统一为POST请求，参数格式为 application/json。<br>
-
 1、集群服务状态查看：<br>
-打开浏览器，输入gateway任一节点http地址，加上/cluster路由：
+打开浏览器，输入gateway任一节点http地址，后面加上/cluster：
 `http://127.0.0.1:8082/cluster` <br>
 
 ```
 {
-  "servers": {
-    "gateway": {
-      "PollNext": 0,
-      "Nodes": [
-        "192.168.125.179:8180_192.168.125.179:8080",
-        "192.168.125.179:8181_192.168.125.179:8081",
-        "192.168.125.179:8182_192.168.125.179:8082"
-      ],
-      "RequestFinish": 0
+    "servers": {
+        "gateway": {
+            "PollNext": 0,
+            "Nodes": [
+                "192.168.125.179:8180_192.168.125.179:8080",
+                "192.168.125.179:8181_192.168.125.179:8081",
+                "192.168.125.179:8182_192.168.125.179:8082"
+            ],
+            "RequestFinish": 0
+        },
+        "user": {
+            "PollNext": 0,
+            "Nodes": [
+                "192.168.125.179:9180_192.168.125.179:9080",
+                "192.168.125.179:9181_192.168.125.179:9081",
+                "192.168.125.179:9182_192.168.125.179:9082"
+            ],
+            "RequestFinish": 0
+        }
     },
-    "user": {
-      "PollNext": 1,
-      "Nodes": [
-        "192.168.125.179:9180_192.168.125.179:9080",
-        "192.168.125.179:9181_192.168.125.179:9081",
-        "192.168.125.179:9182_192.168.125.179:9082"
-      ],
-      "RequestFinish": 0
-    }
-  }
+    "status": true
 }
 ```
 
 可以看到当前整个微服务的所有服务所有节点的信息，PollNext是负载均衡轮询策略索引，Nodes就是当前在线服务集群列表，RequestFinish是当前服务集群一共处理的请求数。<br>
 
-2、打开postman，选择POST请求方式，URL输入gateway任一节点http地址，然后加上访问用户服务的路由如：``
-http://127.0.0.1:8082/api/user/login
-``，参数使用
-``application/json``
-，加上json格式数据如：
-```
-{
-"field_a": "hello",
-"field_b": "okay",
-"field_c": "thanks"
-}
-```
-<br>
-正常返回json数据：<br>
+2、打开postman，选择GET/POST请求方式，URL输入gateway任一节点http地址，然后加上访问用户服务的路由(config/services.yml)如：
+``http://192.168.125.179:8081/api/user/login?a=1&b=3
+``，可增加任意header和url_param，body支持application/json、form-data、application/x-www-form-urlencoded，最后gateway都会封装为application/json请求下游服务，请求返回json数据：<br>
 
 ```
 {
-    "code": 200,
+    "code": 0,
     "data": {
-        "field_a": "hello",
-        "field_b": "okay",
-        "field_c": "thanks"
+        "body": {
+            "password": "test",
+            "username": "test"
+        },
+        "headers": {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Content-Length": "37",
+            "Content-Type": "application/json",
+            "Postman-Token": "85d0aef3-4f06-4887-9ec8-0531c09d209c",
+            "User-Agent": "PostmanRuntime/7.28.4"
+        },
+        "method": "POST",
+        "urlParam": "?a=1&b=3"
     },
-    "message": "success"
+    "msg": "success",
+    "status": true
 }
 ```
 
@@ -157,27 +171,28 @@ http://127.0.0.1:8082/api/user/login
 
 ```
 {
-  "servers": {
-    "gateway": {
-      "PollNext": 0,
-      "Nodes": [
-        "192.168.125.179:8180_192.168.125.179:8080",
-        "192.168.125.179:8181_192.168.125.179:8081",
-        "192.168.125.179:8182_192.168.125.179:8082"
-      ],
-      "RequestFinish": 0
+    "servers": {
+        "gateway": {
+            "PollNext": 0,
+            "Nodes": [
+                "192.168.125.179:8180_192.168.125.179:8080",
+                "192.168.125.179:8181_192.168.125.179:8081",
+                "192.168.125.179:8182_192.168.125.179:8082"
+            ],
+            "RequestFinish": 0
+        },
+        "user": {
+            "PollNext": 1,
+            "Nodes": [
+                "192.168.125.179:9180_192.168.125.179:9080",
+                "192.168.125.179:9181_192.168.125.179:9081",
+                "192.168.125.179:9182_192.168.125.179:9082"
+            ],
+            "RequestFinish": 1
+        }
     },
-    "user": {
-      "PollNext": 1,
-      "Nodes": [
-        "192.168.125.179:9180_192.168.125.179:9080",
-        "192.168.125.179:9181_192.168.125.179:9081",
-        "192.168.125.179:9182_192.168.125.179:9082"
-      ],
-      "RequestFinish": 1
-    }
-  }
+    "status": true
 }
 ```
 
-这是可以看到user集群的的PollNext已经变成1，表示下一个请求将由第二个Node来处理请求。<br>
+可以看到user集群的的PollNext已经变成1，表示下一个请求将由第二个Node来处理请求。多请求几次看看！切换user服务的控制台显示日志打印信息，会看到三个user服务一次轮流收到请求.<br>
