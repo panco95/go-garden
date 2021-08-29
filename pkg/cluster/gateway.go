@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"go-ms/pkg/base"
 	"go-ms/pkg/base/global"
+	"go-ms/pkg/base/request"
 	"io/ioutil"
 	"net/http"
 )
@@ -21,36 +22,37 @@ func GatewayRoute(r *gin.Engine) {
 		server := c.Param("server")
 		action := c.Param("action")
 		// 报文
-		method := base.GetMethod(c)
-		headers := base.GetHeaders(c)
-		urlParam := base.GetUrlParam(c)
-		body := base.GetBody(c)
+		method := request.GetMethod(c)
+		headers := request.GetHeaders(c)
+		urlParam := request.GetUrlParam(c)
+		body := request.GetBody(c)
 
 		// 请求下游服务
-		data, err := CallServer(server, action, method, urlParam, body, headers)
+		data, err := CallService(server, action, method, urlParam, body, headers)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, base.MakeFailResponse())
+			c.JSON(http.StatusInternalServerError, request.MakeFailResponse())
 			return
 		}
 		var result global.Any
 		err = json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, base.MakeFailResponse())
+			fmt.Println(err)
+			c.JSON(http.StatusInternalServerError, request.MakeFailResponse())
 			return
 		}
-		c.JSON(http.StatusOK, base.MakeSuccessResponse(result))
+		c.JSON(http.StatusOK, request.MakeSuccessResponse(result))
 	})
 
 	// 集群信息查询接口
 	r.Any("cluster", func(c *gin.Context) {
-		c.JSON(http.StatusOK, base.MakeSuccessResponse(global.Any{
+		c.JSON(http.StatusOK, request.MakeSuccessResponse(global.Any{
 			"servers": Servers,
 		}))
 	})
 }
 
 // 调用下游服务
-func CallServer(serverName, action, method, requestUrl string, body, headers global.Any) (string, error) {
+func CallService(serverName, action, method, urlParam string, body, headers global.Any) (string, error) {
 	route := viper.GetString(serverName + "." + action)
 	if len(route) == 0 {
 		return "", nil
@@ -60,7 +62,7 @@ func CallServer(serverName, action, method, requestUrl string, body, headers glo
 		return "", err
 	}
 
-	url := "http://" + serverAddr + route + requestUrl
+	url := "http://" + serverAddr + route + urlParam
 	result, err := httpReq(url, method, body, headers)
 	if err != nil {
 		return "", err
@@ -111,6 +113,7 @@ func httpReq(url, method string, body, headers global.Any) (string, error) {
 		request.Header.Add(k, v.(string))
 	}
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Add("Call-Service-Key", viper.GetString("callServiceKey")) //服务调用验证信息
 
 	res, err := client.Do(request)
 	if err != nil {

@@ -6,7 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"go-ms/pkg/base"
 	"go-ms/pkg/base/global"
+	"go-ms/pkg/base/request"
 	"go-ms/pkg/cluster"
+	"go-ms/pkg/middleware"
 	"log"
 	"net/http"
 	"os"
@@ -34,6 +36,7 @@ func main() {
 		log.Fatal("[Etcd register] ", err)
 	}
 
+	go base.LoadServices()
 	go base.HttpServer(*httpPort, "user", route)
 
 	forever := make(chan bool)
@@ -41,27 +44,28 @@ func main() {
 }
 
 func route(r *gin.Engine) {
-	r.Any("login", func(c *gin.Context) {
+	c := r.Use(middleware.CheckCallServiceKey)
+	c.Any("login", func(c *gin.Context) {
 		c.JSON(http.StatusOK, global.Any{
 			"code": 0,
 			"msg":  "success",
 			"data": global.Any{
-				"method":   base.GetMethod(c),
-				"urlParam": base.GetUrlParam(c),
-				"headers":  base.GetHeaders(c),
-				"body":     base.GetBody(c),
+				"method":   request.GetMethod(c),
+				"urlParam": request.GetUrlParam(c),
+				"headers":  request.GetHeaders(c),
+				"body":     request.GetBody(c),
 			},
 		})
 	})
-	r.Any("register", func(c *gin.Context) {
+	c.Any("register", func(c *gin.Context) {
 		c.JSON(http.StatusOK, global.Any{
 			"code": 0,
 			"msg":  "success",
 			"data": global.Any{
-				"method":   base.GetMethod(c),
-				"urlParam": base.GetUrlParam(c),
-				"headers":  base.GetHeaders(c),
-				"body":     base.GetBody(c),
+				"method":   request.GetMethod(c),
+				"urlParam": request.GetUrlParam(c),
+				"headers":  request.GetHeaders(c),
+				"body":     request.GetBody(c),
 			},
 		})
 	})
