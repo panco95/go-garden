@@ -11,6 +11,8 @@ import (
 	"go-ms/pkg/base/request"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 // 网关路由解析
@@ -53,6 +55,8 @@ func GatewayRoute(r *gin.Engine) {
 }
 
 // 调用下游服务
+// 服务重试：3次
+// 失败依次等待0.1s、0.2s
 func CallService(service, action, method, urlParam string, body, headers global.Any) (string, error) {
 	route := viper.GetString(service + "." + action)
 	if len(route) == 0 {
@@ -63,11 +67,21 @@ func CallService(service, action, method, urlParam string, body, headers global.
 		return "", err
 	}
 
-	url := "http://" + serviceAddr + route + urlParam
-	result, err := httpReq(url, method, body, headers)
-	if err != nil {
-		return "", err
+	var result string
+	for retry := 1; retry <= 3; retry++ {
+		url := "http://" + serviceAddr + route + urlParam
+		result, err = httpReq(url, method, body, headers)
+		if err != nil {
+			if retry >= 3 {
+				return "", err
+			} else {
+				time.Sleep(time.Millisecond * time.Duration(retry*100))
+				continue
+			}
+		}
+		break
 	}
+
 	return result, nil
 }
 
@@ -99,7 +113,9 @@ func chooseServiceNode(service string) (string, error) {
 // 请求下游服务
 // 一致封装为application/json格式报文进行请求
 func httpReq(url, method string, body, headers global.Any) (string, error) {
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
 	bodyString, err := json.Marshal(&body)
 	reader := bytes.NewReader(bodyString)
 	if err != nil {
@@ -121,6 +137,9 @@ func httpReq(url, method string, body, headers global.Any) (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return "", errors.New("http status " + strconv.Itoa(res.StatusCode))
+	}
 	body2, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return "", err

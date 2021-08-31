@@ -26,8 +26,7 @@ func main() {
 
 	base.Init()
 
-	var err error
-	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "gateway")
+	err := cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "gateway")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}

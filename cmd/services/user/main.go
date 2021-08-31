@@ -31,8 +31,7 @@ func main() {
 
 	base.Init()
 
-	var err error
-	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
+	err := cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}
