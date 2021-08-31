@@ -37,7 +37,7 @@ func GatewayRoute(r *gin.Engine) {
 		var result global.Any
 		err = json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			global.Logger.Error(base.ErrorLog(service + "/" + action + " return not json format: " + data))
+			global.Logger.Error(base.ErrorLog(service + "/" + action + " return invalid format: " + data))
 			c.JSON(http.StatusInternalServerError, request.MakeFailResponse())
 			return
 		}
