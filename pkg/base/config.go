@@ -7,11 +7,7 @@ import (
 	"log"
 )
 
-func LoadServices() {
-	LoadConfig("config/services.yml", "yml")
-}
-
-func LoadConfig(filePath, fileType string) {
+func ConfigInit(filePath, fileType string) {
 	viper.SetConfigType(fileType)
 	viper.SetConfigFile(filePath)
 	viper.WatchConfig()

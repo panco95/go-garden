@@ -95,7 +95,7 @@ func AnalyzeRpcAddr(serverName string, index int) (string, error) {
 
 func AnalyzeHttpAddr(serverName string, index int) (string, error) {
 	if index > len(Servers[serverName].Nodes)-1 {
-		return "", errors.New("Server not found")
+		return "", errors.New( "service node not found")
 	}
 	arr := strings.Split(Servers[serverName].Nodes[index], "_")
 	return arr[1], nil

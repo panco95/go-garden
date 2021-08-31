@@ -29,14 +29,14 @@ func main() {
 		os.Exit(0)
 	}
 
+	base.Init()
+
 	var err error
-	base.LogInit()
 	err = cluster.EtcdRegister(*etcdAddr, *rpcPort, *httpPort, "user")
 	if err != nil {
 		log.Fatal("[Etcd register] ", err)
 	}
 
-	go base.LoadServices()
 	go base.HttpServer(*httpPort, "user", route)
 
 	forever := make(chan bool)
