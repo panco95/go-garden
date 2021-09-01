@@ -1,8 +1,7 @@
-package cluster
+package base
 
 import (
 	"context"
-	"go-ms/utils"
 	"log"
 	"strings"
 	"time"
@@ -10,9 +9,8 @@ import (
 	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
-
 var (
-	Etcd        *clientV3.Client
+	Etcd *clientV3.Client
 )
 
 func EtcdRegister(etcdAddr, rpcPort, httpPort, serverName string) error {
@@ -39,9 +37,6 @@ func EtcdRegister(etcdAddr, rpcPort, httpPort, serverName string) error {
 }
 
 func ServerRegister(rpcPort, httpPort, serverName string) error {
-	intranetIp := utils.GetOutboundIP()
-	intranetRpcAddr := intranetIp + ":" + rpcPort
-	intranetHttpAddr := intranetIp + ":" + httpPort
 	//新建租约
 	resp, err := Etcd.Grant(context.TODO(), 2)
 	if err != nil {
@@ -51,8 +46,7 @@ func ServerRegister(rpcPort, httpPort, serverName string) error {
 	if err != nil {
 		return err
 	}
-	key := ProjectName + "_" + serverName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
-	_, err = Etcd.Put(context.TODO(), key, "0", clientV3.WithLease(resp.ID))
+	_, err = Etcd.Put(context.TODO(), ServerId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}

@@ -1,33 +1,41 @@
-package cluster
+package base
 
 import (
 	"context"
 	"errors"
-	"go-ms/pkg/base/global"
+	"go-ms/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"strings"
 	"sync"
 	"time"
 )
 
-type Server struct {
+type server struct {
 	PollNext      int
 	Nodes         []string
 	RequestFinish int
 }
 
 var (
-	Servers     = make(map[string]*Server)
+	Servers     = make(map[string]*server)
 	ServersLock sync.Mutex
 	ProjectName = "go-ms"
+	ServerId    string
 )
+
+func InitServerId(projectName, rpcPort, httpPort, serverName string) {
+	intranetIp := utils.GetOutboundIP()
+	intranetRpcAddr := intranetIp + ":" + rpcPort
+	intranetHttpAddr := intranetIp + ":" + httpPort
+	ServerId = projectName + "_" + serverName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
+}
 
 func GetAllServers() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		global.Logger.Debugf(err.Error())
+		Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
@@ -44,7 +52,7 @@ func GetServersByName(serverName string) []string {
 	resp, err := Etcd.Get(ctx, "go-ms_"+serverName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		global.Logger.Debugf(err.Error())
+		Logger.Debugf(err.Error())
 		return []string{}
 	}
 	var servers []string
@@ -77,7 +85,7 @@ func DelServer(serverName, serverAddr string) {
 
 func ExistsServer(serverName string) {
 	if _, ok := Servers[serverName]; !ok {
-		Servers[serverName] = &Server{
+		Servers[serverName] = &server{
 			PollNext:      0,
 			Nodes:         []string{},
 			RequestFinish: 0,
@@ -95,7 +103,7 @@ func AnalyzeRpcAddr(serverName string, index int) (string, error) {
 
 func AnalyzeHttpAddr(serverName string, index int) (string, error) {
 	if index > len(Servers[serverName].Nodes)-1 {
-		return "", errors.New( "service node not found")
+		return "", errors.New("service node not found")
 	}
 	arr := strings.Split(Servers[serverName].Nodes[index], "_")
 	return arr[1], nil

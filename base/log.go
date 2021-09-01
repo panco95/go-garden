@@ -3,18 +3,19 @@ package base
 import (
 	"encoding/json"
 	"github.com/natefinch/lumberjack"
-	"go-ms/pkg/base/global"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func LogInit() {
+var Logger *zap.SugaredLogger
+
+func InitLog() {
 	writeSyncer := GetLogWriter()
 	encoder := GetEncoder()
 	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 
 	logger := zap.New(core, zap.AddCaller())
-	global.Logger = logger.Sugar()
+	Logger = logger.Sugar()
 }
 
 func GetEncoder() zapcore.Encoder {
@@ -36,7 +37,7 @@ func GetLogWriter() zapcore.WriteSyncer {
 }
 
 func ErrorLog(err string) string {
-	m := global.Any{
+	m := Any{
 		"error": err,
 	}
 	e, _ := json.Marshal(m)

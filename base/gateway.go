@@ -1,4 +1,4 @@
-package cluster
+package base
 
 import (
 	"bytes"
@@ -6,9 +6,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"go-ms/pkg/base"
-	"go-ms/pkg/base/global"
-	"go-ms/pkg/base/request"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -24,31 +21,31 @@ func GatewayRoute(r *gin.Engine) {
 		service := c.Param("service")
 		action := c.Param("action")
 		// 报文
-		method := request.GetMethod(c)
-		headers := request.GetHeaders(c)
-		urlParam := request.GetUrlParam(c)
-		body := request.GetBody(c)
+		method := GetMethod(c)
+		headers := GetHeaders(c)
+		urlParam := GetUrlParam(c)
+		body := GetBody(c)
 
 		// 请求下游服务
 		data, err := CallService(service, action, method, urlParam, body, headers)
 		if err != nil {
-			global.Logger.Error(base.ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
-			c.JSON(http.StatusInternalServerError, request.MakeFailResponse())
+			Logger.Error(ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
+			c.JSON(http.StatusInternalServerError, MakeFailResponse())
 			return
 		}
-		var result global.Any
+		var result Any
 		err = json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			global.Logger.Error(base.ErrorLog(service + "/" + action + " return invalid format: " + data))
-			c.JSON(http.StatusInternalServerError, request.MakeFailResponse())
+			Logger.Error(ErrorLog(service + "/" + action + " return invalid format: " + data))
+			c.JSON(http.StatusInternalServerError, MakeFailResponse())
 			return
 		}
-		c.JSON(http.StatusOK, request.MakeSuccessResponse(result))
+		c.JSON(http.StatusOK, MakeSuccessResponse(result))
 	})
 
 	// 集群信息查询接口
 	r.Any("cluster", func(c *gin.Context) {
-		c.JSON(http.StatusOK, request.MakeSuccessResponse(global.Any{
+		c.JSON(http.StatusOK, MakeSuccessResponse(Any{
 			"servers": Servers,
 		}))
 	})
@@ -57,7 +54,7 @@ func GatewayRoute(r *gin.Engine) {
 // 调用下游服务
 // 服务重试：3次
 // 失败依次等待0.1s、0.2s
-func CallService(service, action, method, urlParam string, body, headers global.Any) (string, error) {
+func CallService(service, action, method, urlParam string, body, headers Any) (string, error) {
 	route := viper.GetString(service + "." + action)
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
@@ -112,7 +109,7 @@ func chooseServiceNode(service string) (string, error) {
 
 // 请求下游服务
 // 一致封装为application/json格式报文进行请求
-func httpReq(url, method string, body, headers global.Any) (string, error) {
+func httpReq(url, method string, body, headers Any) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
