@@ -21,9 +21,11 @@ var (
 	ServersLock sync.Mutex
 	ProjectName = "go-ms"
 	ServerId    string
+	ServerName  string
 )
 
 func InitServerId(projectName, rpcPort, httpPort, serverName string) {
+	ServerName = serverName
 	intranetIp := utils.GetOutboundIP()
 	intranetRpcAddr := intranetIp + ":" + rpcPort
 	intranetHttpAddr := intranetIp + ":" + httpPort

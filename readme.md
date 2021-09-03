@@ -1,36 +1,63 @@
-**GO-MS：GO微服务基本模板**
+**GO-MS：GO微服务框架**
 <br>
 <br>
 **说明：**<br>
-本项目是实现微服务的基本模板，给读者一个参考，自己搭建一个微服务架构，项目正在积极开发更新中...很期待得到你的star...<br><br>
+本项目是自己实现的微服务基本框架，项目正在积极开发更新中，很期待得到你的star。<br><br>
 **已实现功能：**<br>
 1、服务注册发现<br>
 2、网关路由分发<br>
 3、负载均衡<br>
 4、服务调用安全验证<br>
 5、服务重试<br>
-6、其他功能开发中...<br>
+6、分布式链路追踪日志(elasticsearch)<br>
+7、其他功能开发中<br>
 
 **准备工作：**<br>
-1、安装etcd，Docker快捷安装：<br>
-`docker run --rm -it -d -p 2379:2379 --env ALLOW_NONE_AUTHENTICATION=yes --env ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379 bitnami/etcd`
+1、安装etcd，Docker启动：<br>
+```
+docker run --rm -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
+```
+<br>
+2、安装es环境，Docker快捷启动：<br>
+
+```
+docker network create es
+docker run --rm -it -d --name elasticsearch --net es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "cluster.name=go-ms" elasticsearch:7.14.1
+docker run --rm -it -d --name kibana --net es -p 5601:5601 -e "discovery.type=single-node" kibana:7.14.1
+```
+
+**文档**<br>
+
+**一、配置文件**<br><br>
+路径：/config.yml<br>
+callServiceKey: 服务调用安全验证key<br>
+etcdAddr: etcd服务地址<br>
+esAddr: elasticsearch服务地址<br>
+services：服务配置<br>
+配置示例：
+```
+services:
+    user:
+        register: "/register"
+        login: "/login"
+    order:
+        order: "order/submit"
+```
 <br>
 
-**文档**<br><br>
-**一、Gateway**<br>
 
-启动：`go run cmd/gateway/main.go`<br>
+**二、Gateway API网关**<br>
+
+启动：`go run example/gateway/main.go`<br>
 参数：<br>
 -http_port：http监听端口<br>
 -rpc_port：rpc监听端口<br>
--etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
--version：打印版本<br>
 
 模拟三个Gateway网关节点进行集群架设：<br>
 ```
-go run cmd/gateway/main.go -http_port 8080 -rpc_port 8180 -etcd_addr 127.0.0.1:2379
-go run cmd/gateway/main.go -http_port 8081 -rpc_port 8181 -etcd_addr 127.0.0.1:2379
-go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2379
+go run example/gateway/main.go -http_port 8080 -rpc_port 8180
+go run example/gateway/main.go -http_port 8081 -rpc_port 8181
+go run example/gateway/main.go -http_port 8082 -rpc_port 8182
 ```
 
 观察我们第一个gateway节点打印如下：<br>
@@ -44,20 +71,19 @@ go run cmd/gateway/main.go -http_port 8082 -rpc_port 8182 -etcd_addr 127.0.0.1:2
 
 <br>
 
-**二、Service**<br>
+**三、Service服务**<br>
 
 启动服务节点：<br>
-`go run cmd/services/user/main.go`<br>
+`go run example/services/user/main.go`<br>
 参数：<br>
 -rpc_port：rpc监听端口<br>
 -etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
--version：打印版本<br>
 
 模拟三个user服务节点进行集群架设：<br>
 ```
-go run cmd/services/user/main.go -http_port 9080 -rpc_port 9180 -etcd_addr 127.0.0.1:2379
-go run cmd/services/user/main.go -http_port 9081 -rpc_port 9181 -etcd_addr 127.0.0.1:2379
-go run cmd/services/user/main.go -http_port 9082 -rpc_port 9182 -etcd_addr 127.0.0.1:2379
+go run example/services/user/main.go -http_port 9080 -rpc_port 9180
+go run example/services/user/main.go -http_port 9081 -rpc_port 9181
+go run example/services/user/main.go -http_port 9082 -rpc_port 9182
 ```
 
 观察我们第一个node节点打印如下：<br>

@@ -13,7 +13,7 @@ var (
 	Etcd *clientV3.Client
 )
 
-func EtcdRegister(etcdAddr, rpcPort, httpPort, serverName string) error {
+func InitEtcd(etcdAddr, rpcPort, httpPort, serverName string) error {
 	addrArr := strings.Split(etcdAddr, "|")
 	var err error
 	Etcd, err = clientV3.New(clientV3.Config{

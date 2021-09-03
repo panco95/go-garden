@@ -1,15 +1,32 @@
 package base
 
 import (
+	"github.com/spf13/viper"
 	"log"
 )
 
-func Init(etcdAddr, rpcPort, httpPort, serverName string) {
+func Init(rpcPort, httpPort, serverName string) {
 	InitLog()
-	InitConfig("config/services.yml", "yml")
+
+	InitConfig("config.yml", "yml")
+
 	InitServerId(ProjectName, rpcPort, httpPort, serverName)
-	err := EtcdRegister(etcdAddr, rpcPort, httpPort, serverName)
+
+	etcdAddr := viper.GetString("etcdAddr")
+	if etcdAddr == "" {
+		log.Fatal("[config.yml] etcdAddr is nil")
+	}
+	err := InitEtcd(etcdAddr, rpcPort, httpPort, serverName)
 	if err != nil {
-		log.Fatal("[etcd register] " + err.Error())
+		log.Fatal("[etcd] " + err.Error())
+	}
+
+	esAddr := viper.GetString("esAddr")
+	if esAddr == "" {
+		log.Fatal("[config.yml] esAddr is nil")
+	}
+	err = InitEs(esAddr)
+	if err != nil {
+		log.Fatal("[elasticsearch] " + err.Error())
 	}
 }

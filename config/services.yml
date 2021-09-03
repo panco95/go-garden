@@ -1,4 +1,0 @@
-callServiceKey: "go-ms by panco"
-user: #service name
-  register: "/register" #servcie [user] api route register
-  login: "/login"       #service [user] api route login

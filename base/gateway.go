@@ -1,18 +1,19 @@
 package base
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
-// 网关路由解析
+// GatewayRoute 网关路由解析
 // 第一个参数：下游服务名称
 // 第二个参数：下游服务接口路由
 func GatewayRoute(r *gin.Engine) {
@@ -20,14 +21,15 @@ func GatewayRoute(r *gin.Engine) {
 		// 服务名称和服务路由
 		service := c.Param("service")
 		action := c.Param("action")
-		// 报文
-		method := GetMethod(c)
-		headers := GetHeaders(c)
-		urlParam := GetUrlParam(c)
-		body := GetBody(c)
+		// 从中间件获取相关请求报文
+		reqContext, _ := c.Get("reqContext")
+		method := reqContext.(ReqContext).Method
+		headers := reqContext.(ReqContext).Headers
+		urlParam := reqContext.(ReqContext).UrlParam
+		body := reqContext.(ReqContext).Body
 
 		// 请求下游服务
-		data, err := CallService(service, action, method, urlParam, body, headers)
+		data, err := CallService(c, service, action, method, urlParam, body, headers)
 		if err != nil {
 			Logger.Error(ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
 			c.JSON(http.StatusInternalServerError, MakeFailResponse())
@@ -51,11 +53,11 @@ func GatewayRoute(r *gin.Engine) {
 	})
 }
 
-// 调用下游服务
+// CallService 调用下游服务
 // 服务重试：3次
 // 失败依次等待0.1s、0.2s
-func CallService(service, action, method, urlParam string, body, headers Any) (string, error) {
-	route := viper.GetString(service + "." + action)
+func CallService(c *gin.Context, service, action, method, urlParam string, body, headers Any) (string, error) {
+	route := viper.GetString("services." + service + "." + action)
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
@@ -67,7 +69,7 @@ func CallService(service, action, method, urlParam string, body, headers Any) (s
 	var result string
 	for retry := 1; retry <= 3; retry++ {
 		url := "http://" + serviceAddr + route + urlParam
-		result, err = httpReq(url, method, body, headers)
+		result, err = httpReq(c, url, method, body, headers)
 		if err != nil {
 			if retry >= 3 {
 				return "", err
@@ -109,31 +111,40 @@ func chooseServiceNode(service string) (string, error) {
 
 // 请求下游服务
 // 一致封装为application/json格式报文进行请求
-func httpReq(url, method string, body, headers Any) (string, error) {
+func httpReq(c *gin.Context, url, method string, body, headers Any) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
-	bodyString, err := json.Marshal(&body)
-	reader := bytes.NewReader(bodyString)
-	if err != nil {
-		return "", err
+
+	// 封装请求body
+	var s string
+	for k, v := range body {
+		s += fmt.Sprintf("%v=%v&", k, v)
 	}
-	request, err := http.NewRequest(method, url, reader)
+	s = strings.Trim(s, "&")
+	request, err := http.NewRequest(method, url, strings.NewReader(s))
 	if err != nil {
 		return "", err
 	}
 
+	// 新建request请求
 	for k, v := range headers {
 		request.Header.Add(k, v.(string))
 	}
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Add("Call-Service-Key", viper.GetString("callServiceKey")) //服务调用验证信息
+	// 增加body格式头
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// 增加调用下游服务安全验证key
+	request.Header.Set("Call-Service-Key", viper.GetString("callServiceKey"))
+	// 增加请求ID，为了存储多服务调用链路日志
+	rc, _ := c.Get("reqContext")
+	request.Header.Set("X-Request-Id", rc.(ReqContext).RequestId)
 
 	res, err := client.Do(request)
 	if err != nil {
 		return "", err
 	}
 	defer res.Body.Close()
+	// 请求失败
 	if res.StatusCode != http.StatusOK {
 		return "", errors.New("http status " + strconv.Itoa(res.StatusCode))
 	}
