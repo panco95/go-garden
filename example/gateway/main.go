@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"go-ms/base"
+	"goms"
 )
 
 var (
@@ -12,6 +12,6 @@ var (
 
 func main() {
 	flag.Parse()
-	base.Init(*rpcPort, *httpPort, "gateway")
-	base.GinServer(*httpPort, "gateway", base.GatewayRoute)
+	goms.Init(*rpcPort, *httpPort, "gateway")
+	goms.GinServer(*httpPort, "gateway", goms.GatewayRoute)
 }

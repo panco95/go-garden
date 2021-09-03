@@ -1,4 +1,4 @@
-package base
+package goms
 
 import (
 	"github.com/fsnotify/fsnotify"

@@ -1,4 +1,4 @@
-module go-ms
+module goms
 
 go 1.16
 

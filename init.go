@@ -1,22 +1,22 @@
-package base
+package goms
 
 import (
 	"github.com/spf13/viper"
 	"log"
 )
 
-func Init(rpcPort, httpPort, serverName string) {
+func Init(rpcPort, httpPort, serviceName string) {
 	InitLog()
 
-	InitConfig("config.yml", "yml")
+	InitConfig("config/config.yml", "yml")
 
-	InitServerId(ProjectName, rpcPort, httpPort, serverName)
+	InitServiceId(ProjectName, rpcPort, httpPort, serviceName)
 
 	etcdAddr := viper.GetString("etcdAddr")
 	if etcdAddr == "" {
 		log.Fatal("[config.yml] etcdAddr is nil")
 	}
-	err := InitEtcd(etcdAddr, rpcPort, httpPort, serverName)
+	err := InitEtcd(etcdAddr)
 	if err != nil {
 		log.Fatal("[etcd] " + err.Error())
 	}

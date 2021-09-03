@@ -1,4 +1,4 @@
-package base
+package goms
 
 import (
 	"encoding/json"
@@ -48,7 +48,7 @@ func GatewayRoute(r *gin.Engine) {
 	// 集群信息查询接口
 	r.Any("cluster", func(c *gin.Context) {
 		c.JSON(http.StatusOK, MakeSuccessResponse(Any{
-			"servers": Servers,
+			"services": Services,
 		}))
 	})
 }
@@ -86,25 +86,25 @@ func CallService(c *gin.Context, service, action, method, urlParam string, body,
 
 // 根据服务名称选择下游服务node
 // 负载均衡轮询+1
-func chooseServiceNode(service string) (string, error) {
-	if _, ok := Servers[service]; !ok {
+func chooseServiceNode(name string) (string, error) {
+	if _, ok := Services[name]; !ok {
 		return "", errors.New("service key not found")
 	}
-	serviceHttpAddr, err := AnalyzeHttpAddr(service, Servers[service].PollNext)
+	serviceHttpAddr, err := AnalyzeHttpAddr(name, Services[name].PollNext)
 	if err != nil {
 		return "", err
 	}
 	go func() {
-		serverNum := len(Servers[service].Nodes)
-		index := Servers[service].PollNext
-		ServersLock.Lock()
-		if index >= serverNum-1 {
-			Servers[service].PollNext = 0
+		serviceNum := len(Services[name].Nodes)
+		index := Services[name].PollNext
+		ServicesLock.Lock()
+		if index >= serviceNum-1 {
+			Services[name].PollNext = 0
 		} else {
-			Servers[service].PollNext = index + 1
+			Services[name].PollNext = index + 1
 		}
-		Servers[service].RequestFinish++
-		ServersLock.Unlock()
+		Services[name].RequestFinish++
+		ServicesLock.Unlock()
 	}()
 	return serviceHttpAddr, nil
 }

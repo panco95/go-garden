@@ -1,10 +1,10 @@
-package base
+package goms
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"go-ms/utils"
+	"goms/utils"
 	"log"
 	"net/http"
 	"os"
@@ -29,7 +29,7 @@ type ReqContext struct {
 }
 
 // GinServer 开启Gin服务
-func GinServer(port, serverName string, route func(r *gin.Engine)) {
+func GinServer(port, serviceName string, route func(r *gin.Engine)) {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
@@ -37,7 +37,7 @@ func GinServer(port, serverName string, route func(r *gin.Engine)) {
 	if err != nil {
 		log.Fatal("[Create runtime folder] ", err)
 	}
-	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, serverName))
+	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, serviceName))
 	if err != nil {
 		log.Fatal("[Create gin log file] ", err)
 	}
@@ -58,7 +58,7 @@ func GinServer(port, serverName string, route func(r *gin.Engine)) {
 	server.Use(Trace())
 	route(server)
 
-	log.Printf("[%s] Http Listen on port: %s", serverName, port)
+	log.Printf("[%s] Http Listen on port: %s", serviceName, port)
 	log.Fatal(server.Run(":" + port))
 }
 
@@ -81,8 +81,8 @@ func Trace() gin.HandlerFunc {
 			RequestId:   requestId,
 			Event:       startEvent,
 			Time:        utils.ToDatetime(start),
-			ServiceName: ServerName,
-			ServiceId:   ServerId,
+			ServiceName: ServiceName,
+			ServiceId:   ServiceId,
 			ClientIp:    c.ClientIP(),
 			Method:      GetMethod(c),
 			UrlParam:    GetUrlParam(c),

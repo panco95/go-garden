@@ -1,4 +1,4 @@
-package base
+package goms
 
 import "encoding/json"
 
@@ -8,5 +8,4 @@ func RemoteTrace(rc *ReqContext) {
 	if err != nil {
 		Logger.Errorf("[elasticsearch] %s", err)
 	}
-
 }

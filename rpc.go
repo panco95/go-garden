@@ -1,6 +1,6 @@
-package base
+package goms
 
-func RpcServer(port, serverName string) {
+func RpcServer(port, serviceName string) {
 	//listenAddress := "127.0.0.1:" + port
 	//listen, err := net.Listen("tcp", listenAddress)
 	//if err != nil {
@@ -11,6 +11,6 @@ func RpcServer(port, serverName string) {
 	//var Service = client.UserService{}
 	//pb.RegisterUserServer(s, Service)
 	//
-	//log.Printf("[RPC][%s service] Listen on port: %s", serverName, port)
+	//log.Printf("[RPC][%s service] Listen on port: %s", serviceName, port)
 	//log.Fatal(s.Serve(listen))
 }

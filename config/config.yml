@@ -1,10 +1,10 @@
 #service call key
-callServiceKey: "go-ms by panco"
+callServiceKey: "goms by panco"
 
 #etcd address, cluster format: 127.0.0.1:2379|127.0.0.2:2379
-etcdAddr: "192.168.125.168:2379"
+etcdAddr: "127.0.0.1:2379"
 #elasticsearch address
-esAddr: "192.168.125.168:9200"
+esAddr: "127.0.0.1:9200"
 
 #services
 services:

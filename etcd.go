@@ -1,4 +1,4 @@
-package base
+package goms
 
 import (
 	"context"
@@ -13,7 +13,7 @@ var (
 	Etcd *clientV3.Client
 )
 
-func InitEtcd(etcdAddr, rpcPort, httpPort, serverName string) error {
+func InitEtcd(etcdAddr string) error {
 	addrArr := strings.Split(etcdAddr, "|")
 	var err error
 	Etcd, err = clientV3.New(clientV3.Config{
@@ -33,10 +33,10 @@ func InitEtcd(etcdAddr, rpcPort, httpPort, serverName string) error {
 		}
 	}
 
-	return ServerRegister(rpcPort, httpPort, serverName)
+	return ServiceRegister()
 }
 
-func ServerRegister(rpcPort, httpPort, serverName string) error {
+func ServiceRegister() error {
 	//新建租约
 	resp, err := Etcd.Grant(context.TODO(), 2)
 	if err != nil {
@@ -46,7 +46,7 @@ func ServerRegister(rpcPort, httpPort, serverName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = Etcd.Put(context.TODO(), ServerId, "0", clientV3.WithLease(resp.ID))
+	_, err = Etcd.Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
@@ -64,40 +64,40 @@ func ServerRegister(rpcPort, httpPort, serverName string) error {
 		}
 	}()
 
-	ServersLock.Lock()
-	servers := GetAllServers()
-	for _, server := range servers {
-		arr := strings.Split(server, "_")
-		serverName := arr[0]
-		serverRpcAddr := arr[1]
-		serverHttpAddr := arr[2]
+	ServicesLock.Lock()
+	services := GetAllServices()
+	for _, service := range services {
+		arr := strings.Split(service, "_")
+		serviceName := arr[0]
+		serviceRpcAddr := arr[1]
+		serviceHttpAddr := arr[2]
 
-		ExistsServer(serverName)
-		Servers[serverName].Nodes = append(Servers[serverName].Nodes, serverRpcAddr+"_"+serverHttpAddr)
+		ExistsService(serviceName)
+		Services[serviceName].Nodes = append(Services[serviceName].Nodes, serviceRpcAddr+"_"+serviceHttpAddr)
 	}
-	ServersLock.Unlock()
+	ServicesLock.Unlock()
 
-	go ServerWatcher()
+	go ServiceWatcher()
 
 	return nil
 }
 
-func ServerWatcher() {
+func ServiceWatcher() {
 	rch := Etcd.Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
-			serverName := arr[1]
+			serviceName := arr[1]
 			rpcAddr := arr[2]
 			httpAddr := arr[3]
-			serverAddr := rpcAddr + "_" + httpAddr
+			serviceAddr := rpcAddr + "_" + httpAddr
 			switch ev.Type {
 			case 0: //put
-				AddServer(serverName, serverAddr)
-				log.Printf("[%s] node [%s] join \n", serverName, serverAddr)
+				AddService(serviceName, serviceAddr)
+				log.Printf("[%s] node [%s] join \n", serviceName, serviceAddr)
 			case 1: //delete
-				DelServer(serverName, serverAddr)
-				log.Printf("[%s] node [%s] leave \n", serverName, serverAddr)
+				DelService(serviceName, serviceAddr)
+				log.Printf("[%s] node [%s] leave \n", serviceName, serviceAddr)
 			}
 		}
 	}

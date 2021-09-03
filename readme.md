@@ -1,4 +1,4 @@
-**GO-MS：GO微服务框架**
+**goms：GO微服务框架**
 <br>
 <br>
 **说明：**<br>
@@ -22,26 +22,30 @@ docker run --rm -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=ye
 
 ```
 docker network create es
-docker run --rm -it -d --name elasticsearch --net es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "cluster.name=go-ms" elasticsearch:7.14.1
+docker run --rm -it -d --name elasticsearch --net es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "cluster.name=goms" elasticsearch:7.14.1
 docker run --rm -it -d --name kibana --net es -p 5601:5601 -e "discovery.type=single-node" kibana:7.14.1
 ```
 
 **文档**<br>
 
 **一、配置文件**<br><br>
-路径：/config.yml<br>
+路径：config/config.yml<br>
 callServiceKey: 服务调用安全验证key<br>
 etcdAddr: etcd服务地址<br>
 esAddr: elasticsearch服务地址<br>
 services：服务配置<br>
 配置示例：
 ```
+callServiceKey: "goms by panco"
+etcdAddr: "192.168.125.168:2379"
+esAddr: "192.168.125.168:9200"
+
 services:
     user:
         register: "/register"
         login: "/login"
     order:
-        order: "order/submit"
+        order: "/order/submit"
 ```
 <br>
 
@@ -111,26 +115,26 @@ go run example/services/user/main.go -http_port 9082 -rpc_port 9182
 **我们可以总结一下：任意服务的任意节点互相能够发现其他任意服务的任意节点**<br>
 **这就是基于etcd实现的服务注册发现模型：**<br>
 我们可以去看看etcd存储的数据：<br>
-`etcdctl get --prefix go-ms`<br>
+`etcdctl get --prefix goms`<br>
 （小提示：Docker启动的etcd需要进入etcd容器查看）<br>
 `docker container exec -ti [容器id] bash`<br>
 打印如下：<br>
 
 ```
-go-ms_gateway_192.168.125.179:8180_192.168.125.179:8080
+goms_gateway_192.168.125.179:8180_192.168.125.179:8080
 0
-go-ms_gateway_192.168.125.179:8181_192.168.125.179:8081
+goms_gateway_192.168.125.179:8181_192.168.125.179:8081
 0
-go-ms_gateway_192.168.125.179:8182_192.168.125.179:8082
+goms_gateway_192.168.125.179:8182_192.168.125.179:8082
 0
-go-ms_user_192.168.125.179:9181_192.168.125.179:9081
+goms_user_192.168.125.179:9181_192.168.125.179:9081
 0
-go-ms_user_192.168.125.179:9182_192.168.125.179:9082
+goms_user_192.168.125.179:9182_192.168.125.179:9082
 0
 ```
 
 <br>
-可以看出，我们刚刚启动的所以服务节点都在etcd里面以go-ms_前缀存储，后面跟着服务名称，然后是两个服务地址，前面的是RPC监听地址，后面的是HTTP监听地址<br><br>
+可以看出，我们刚刚启动的所以服务节点都在etcd里面以goms_前缀存储，后面跟着服务名称，然后是两个服务地址，前面的是RPC监听地址，后面的是HTTP监听地址<br><br>
 
 **三、访问API网关**<br>
 
@@ -140,7 +144,7 @@ go-ms_user_192.168.125.179:9182_192.168.125.179:9082
 
 ```
 {
-    "servers": {
+    "services": {
         "gateway": {
             "PollNext": 0,
             "Nodes": [
@@ -199,7 +203,7 @@ go-ms_user_192.168.125.179:9182_192.168.125.179:9082
 
 ```
 {
-    "servers": {
+    "services": {
         "gateway": {
             "PollNext": 0,
             "Nodes": [

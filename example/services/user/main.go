@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/gin-gonic/gin"
-	"go-ms/base"
+	"goms"
 	"net/http"
 )
 
@@ -14,33 +14,33 @@ var (
 
 func main() {
 	flag.Parse()
-	base.Init(*rpcPort, *httpPort, "user")
-	base.GinServer(*httpPort, "user", route)
+	goms.Init(*rpcPort, *httpPort, "user")
+	goms.GinServer(*httpPort, "user", route)
 }
 
 func route(r *gin.Engine) {
-	r.Use(base.CheckCallServiceKey())
+	r.Use(goms.CheckCallServiceKey())
 	r.Any("login", func(c *gin.Context) {
-		c.JSON(http.StatusOK, base.Any{
+		c.JSON(http.StatusOK, goms.Any{
 			"code": 0,
 			"msg":  "success",
-			"data": base.Any{
-				"method":   base.GetMethod(c),
-				"urlParam": base.GetUrlParam(c),
-				"headers":  base.GetHeaders(c),
-				"body":     base.GetBody(c),
+			"data": goms.Any{
+				"method":   goms.GetMethod(c),
+				"urlParam": goms.GetUrlParam(c),
+				"headers":  goms.GetHeaders(c),
+				"body":     goms.GetBody(c),
 			},
 		})
 	})
 	r.Any("register", func(c *gin.Context) {
-		c.JSON(http.StatusOK, base.Any{
+		c.JSON(http.StatusOK, goms.Any{
 			"code": 0,
 			"msg":  "success",
-			"data": base.Any{
-				"method":   base.GetMethod(c),
-				"urlParam": base.GetUrlParam(c),
-				"headers":  base.GetHeaders(c),
-				"body":     base.GetBody(c),
+			"data": goms.Any{
+				"method":   goms.GetMethod(c),
+				"urlParam": goms.GetUrlParam(c),
+				"headers":  goms.GetHeaders(c),
+				"body":     goms.GetBody(c),
 			},
 		})
 	})
