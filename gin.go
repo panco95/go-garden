@@ -1,6 +1,7 @@
 package goms
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -11,22 +12,6 @@ import (
 	"strings"
 	"time"
 )
-
-// ReqContext 请求上下文封装
-type ReqContext struct {
-	Time        string `json:"requestTime"`
-	RequestId   string `json:"requestId"`
-	Event       string `json:"event"`
-	Method      string `json:"method"`
-	Url         string `json:"url"`
-	UrlParam    string `json:"urlParam"`
-	ServiceName string `json:"serviceName"`
-	ServiceId   string `json:"serviceId"`
-	ClientIp    string `json:"clientIp"`
-	Headers     Any    `json:"headers"`
-	Body        Any    `json:"body"`
-	Record      Any    `json:"record"`
-}
 
 // GinServer 开启Gin服务
 func GinServer(port, serviceName string, route func(r *gin.Engine)) {
@@ -77,23 +62,27 @@ func Trace() gin.HandlerFunc {
 			endEvent = "request.end"
 		}
 
-		reqContext := ReqContext{
-			RequestId:   requestId,
-			Event:       startEvent,
-			Time:        utils.ToDatetime(start),
+		reqTrace := ReqTrace{
+			ProjectName: ProjectName,
 			ServiceName: ServiceName,
 			ServiceId:   ServiceId,
-			ClientIp:    c.ClientIP(),
-			Method:      GetMethod(c),
-			UrlParam:    GetUrlParam(c),
-			Headers:     GetHeaders(c),
-			Body:        GetBody(c),
-			Url:         GetUrl(c),
+			RequestId:   requestId,
+			Req: Req{
+				ClientIp: GetClientIp(c),
+				Method:   GetMethod(c),
+				UrlParam: GetUrlParam(c),
+				Headers:  GetHeaders(c),
+				Body:     GetBody(c),
+				Url:      GetUrl(c),
+			},
+			Event: startEvent,
+			Time:  utils.ToDatetime(start),
 		}
+
 		// 记录远程调试日志
-		RemoteTrace(&reqContext)
+		RemoteTrace(&reqTrace)
 		// 封装到gin请求上下文
-		c.Set("reqContext", reqContext)
+		c.Set("reqTrace", &reqTrace)
 
 		// 执行请求接口
 		c.Next()
@@ -102,13 +91,13 @@ func Trace() gin.HandlerFunc {
 		// 接口执行完毕后执行
 		// 记录远程调试日志，代表当前请求完毕
 		end := time.Now()
-		timeConsume := utils.TimeGap(start, end)
-		reqContext.Event = endEvent
-		reqContext.Time = utils.ToDatetime(end)
-		reqContext.Record = Any{
-			"timeConsume": timeConsume,
+		timing := utils.Timing(start, end)
+		reqTrace.Event = endEvent
+		reqTrace.Time = utils.ToDatetime(end)
+		reqTrace.Trace = Any{
+			"timing": timing,
 		}
-		RemoteTrace(&reqContext)
+		RemoteTrace(&reqTrace)
 	}
 }
 
@@ -117,14 +106,28 @@ func CheckCallServiceKey() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		requestKey := c.GetHeader("Call-Service-Key")
 		if strings.Compare(requestKey, viper.GetString("callServiceKey")) != 0 {
-			c.JSON(http.StatusForbidden, MakeFailResponse())
+			c.JSON(http.StatusForbidden, FailRes())
 			c.Abort()
 		}
 	}
 }
 
+// GetReqTrace 获取reqTrace上下文
+func GetReqTrace(c *gin.Context) (*ReqTrace, error) {
+	t, success := c.Get("reqTrace")
+	if !success {
+		return nil, errors.New("reqTrace is nil")
+	}
+	rt := t.(*ReqTrace)
+	return rt, nil
+}
+
 func GetMethod(c *gin.Context) string {
 	return strings.ToUpper(c.Request.Method)
+}
+
+func GetClientIp(c *gin.Context) string {
+	return c.ClientIP()
 }
 
 func GetBody(c *gin.Context) Any {
@@ -166,7 +169,7 @@ func GetHeaders(c *gin.Context) Any {
 	return headers
 }
 
-func MakeSuccessResponse(data Any) Any {
+func SuccessRes(data Any) Any {
 	response := Any{
 		"status": true,
 	}
@@ -176,7 +179,7 @@ func MakeSuccessResponse(data Any) Any {
 	return response
 }
 
-func MakeFailResponse() Any {
+func FailRes() Any {
 	response := Any{
 		"status": false,
 	}

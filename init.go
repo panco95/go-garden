@@ -5,18 +5,17 @@ import (
 	"log"
 )
 
-func Init(rpcPort, httpPort, serviceName string) {
+func Init(rpcPort, httpPort, serviceName, projectName string) {
 	InitLog()
-
 	InitConfig("config/config.yml", "yml")
-
+	InitProjectName(projectName)
 	InitServiceId(ProjectName, rpcPort, httpPort, serviceName)
 
 	etcdAddr := viper.GetString("etcdAddr")
 	if etcdAddr == "" {
 		log.Fatal("[config.yml] etcdAddr is nil")
 	}
-	err := InitEtcd(etcdAddr)
+	err := EtcdConnect(etcdAddr)
 	if err != nil {
 		log.Fatal("[etcd] " + err.Error())
 	}
@@ -25,7 +24,7 @@ func Init(rpcPort, httpPort, serviceName string) {
 	if esAddr == "" {
 		log.Fatal("[config.yml] esAddr is nil")
 	}
-	err = InitEs(esAddr)
+	err = EsConnect(esAddr)
 	if err != nil {
 		log.Fatal("[elasticsearch] " + err.Error())
 	}

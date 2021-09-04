@@ -14,6 +14,6 @@ func ToDatetime(t time.Time) string {
 	return s
 }
 
-func TimeGap(t1 time.Time, t2 time.Time) string {
+func Timing(t1 time.Time, t2 time.Time) string {
 	return t2.Sub(t1).String()
 }

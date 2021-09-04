@@ -13,7 +13,7 @@ var (
 	Etcd *clientV3.Client
 )
 
-func InitEtcd(etcdAddr string) error {
+func EtcdConnect(etcdAddr string) error {
 	addrArr := strings.Split(etcdAddr, "|")
 	var err error
 	Etcd, err = clientV3.New(clientV3.Config{

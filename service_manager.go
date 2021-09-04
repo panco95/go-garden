@@ -17,12 +17,16 @@ type service struct {
 }
 
 var (
-	ProjectName  = "goms"
+	ProjectName  = ""
 	Services     = make(map[string]*service)
 	ServicesLock sync.Mutex
 	ServiceId    string
 	ServiceName  string
 )
+
+func InitProjectName(name string) {
+	ProjectName = name
+}
 
 func InitServiceId(projectName, rpcPort, httpPort, serviceName string) {
 	ServiceName = serviceName
