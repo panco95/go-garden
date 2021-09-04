@@ -1,10 +1,15 @@
 #service call key
 callServiceKey: "goms by panco"
 
-#etcd address, cluster format: 127.0.0.1:2379|127.0.0.2:2379
-etcdAddr: "192.168.125.181:2379"
+#etcd address, support cluster
+etcdAddr:
+  - "192.168.125.181:2379"
+
 #elasticsearch address
-esAddr: "192.168.125.181:9200"
+esAddr: "http://192.168.125.181:9200"
+
+#rabbitmq address
+amqpaddr: "amqp://guest:guest@192.168.125.181:5672"
 
 #services
 services:

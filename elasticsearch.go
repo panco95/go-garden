@@ -11,7 +11,7 @@ var EsClient *elastic.Client
 func EsConnect(address string) error {
 	var err error
 	EsClient, err = elastic.NewClient(
-		elastic.SetURL("http://"+address),
+		elastic.SetURL(address),
 		elastic.SetSniff(false),
 	)
 	if err != nil {

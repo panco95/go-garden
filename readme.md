@@ -2,28 +2,34 @@
 <br>
 <br>
 **说明：**<br>
-本项目是自己实现的微服务基本框架，项目正在积极开发更新中，很期待得到你的star。<br><br>
+本项目是由个人开发的微服务基础框架，项目正在积极开发中，很期待得到你的star。<br>
+
 **已实现功能：**<br>
 1、服务注册发现<br>
 2、网关路由分发<br>
 3、负载均衡<br>
 4、服务调用安全验证<br>
 5、服务重试<br>
-6、分布式链路追踪日志(elasticsearch)<br>
-7、其他功能开发中<br>
+6、分布式链路追踪日志<br>
 
 **准备工作：**<br>
-1、安装etcd，Docker启动：<br>
+1、Etcd，Docker启动：<br>
 ```
 docker run --rm -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
 ```
 <br>
-2、安装es环境，Docker快捷启动：<br>
+2、Elasticsearch，Docker启动：<br>
 
 ```
 docker network create es
 docker run --rm -it -d --name elasticsearch --net es -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "cluster.name=goms" elasticsearch:7.14.1
 docker run --rm -it -d --name kibana --net es -p 5601:5601 -e "discovery.type=single-node" kibana:7.14.1
+```
+<br>
+3、Rabbitmq，Docker启动：<br>
+
+```
+docker run --rm -it -d --name rabbitmq --hostname rabbitmq  -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
 
 **文档**<br>
@@ -31,22 +37,26 @@ docker run --rm -it -d --name kibana --net es -p 5601:5601 -e "discovery.type=si
 **一、配置文件**<br><br>
 路径：config/config.yml<br>
 callServiceKey: 服务调用安全验证key<br>
-etcdAddr: etcd服务地址<br>
+etcdAddr: etcd服务地址，集群可多行填写<br>
 esAddr: elasticsearch服务地址<br>
+amqpAddr：amqp消息队列服务地址，本项目使用的是rabbitmq<br>
 services：服务配置<br>
 配置示例：
+
 ```
 callServiceKey: "goms by panco"
-etcdAddr: "192.168.125.168:2379"
-esAddr: "192.168.125.168:9200"
-
+etcdAddr:
+  - "192.168.125.181:2379"
+esAddr: "http://192.168.125.181:9200"
+amqpaddr: "amqp://guest:guest@192.168.125.181:5672"
 services:
-    user:
-        register: "/register"
-        login: "/login"
-    order:
-        order: "/order/submit"
+  user:
+    register: "/register"
+    login: "/login"
+  order:
+    submit: "/order/submit"
 ```
+
 <br>
 
 
@@ -136,7 +146,13 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 <br>
 可以看出，我们刚刚启动的所以服务节点都在etcd里面以goms_前缀存储，后面跟着服务名称，然后是两个服务地址，前面的是RPC监听地址，后面的是HTTP监听地址<br><br>
 
-**三、访问API网关**<br>
+**四、开启trace链路跟踪日志消费服务，可以多开增加消费并发速度：**<br>
+```
+go run .\example\traceConsumer\main.go
+```
+<br>
+
+**五、访问API网关**<br>
 
 1、集群服务状态查看：<br>
 打开浏览器，输入gateway任一节点http地址，后面加上/cluster：
@@ -227,4 +243,343 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 }
 ```
 
-可以看到user集群的的PollNext已经变成1，表示下一个请求将由第二个Node来处理请求。多请求几次看看！切换user服务的控制台显示日志打印信息，会看到三个user服务依次轮流收到请求<br>
+可以看到user集群的的PollNext已经变成1，表示下一个请求将由第二个Node来处理请求。多请求几次看看！切换user服务的控制台显示日志打印信息，会看到三个user服务依次轮流收到请求<br><br>
+
+**六、查看trace链路跟踪日志：**<br>
+1、切换到trace消费者命令行窗口，查看消费成功打印：
+```
+2021/09/04 17:43:07 [amqp] trace consumer is runner
+2021/09/04 17:43:07 amqp trace consumer success
+2021/09/04 17:43:07 amqp trace consumer success
+2021/09/04 17:43:07 amqp trace consumer success
+2021/09/04 17:43:07 amqp trace consumer success
+```
+2、浏览器登录kibana `http:127.0.0.1:5601`<br>
+3、点击dev tools<br>
+4、查询日志数据：<br>
+
+```
+GET /trace_logs/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "from":0,
+  "size":1000
+}
+```
+
+链路跟踪日志，一个客户端请求会有多条日志，按照 requestId进行归类是否同一请求产生的日志：
+```
+{
+  "took" : 1,
+  "timed_out" : false,
+  "_shards" : {
+    "total" : 1,
+    "successful" : 1,
+    "skipped" : 0,
+    "failed" : 0
+  },
+  "hits" : {
+    "total" : {
+      "value" : 8,
+      "relation" : "eq"
+    },
+    "max_score" : 1.0,
+    "hits" : [
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "USQJsHsBU4boCFpVSHWL",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "2cf46aa2-519d-4517-8465-6efae813936d",
+          "request" : {
+            "method" : "POST",
+            "url" : "/api/user/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "127.0.0.1",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "go-ms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "265",
+              "Content-Type" : "multipart/form-data; boundary=--------------------------568994750929172835812890",
+              "Postman-Token" : "6ef9df7e-4f2e-445c-bec7-636fc6fe7941",
+              "User-Agent" : "PostmanRuntime/7.28.4"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "request.start",
+          "time" : "2021-09-04 17:00:03",
+          "serviceName" : "gateway",
+          "serviceId" : "goms_gateway_192.168.8.98:8180_192.168.8.98:8080",
+          "projectName" : "goms",
+          "trace" : null
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "UiQJsHsBU4boCFpVSHXJ",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "2cf46aa2-519d-4517-8465-6efae813936d",
+          "request" : {
+            "method" : "POST",
+            "url" : "/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "192.168.8.98",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "goms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "14",
+              "Content-Type" : "application/x-www-form-urlencoded",
+              "Postman-Token" : "6ef9df7e-4f2e-445c-bec7-636fc6fe7941",
+              "User-Agent" : "PostmanRuntime/7.28.4",
+              "X-Request-Id" : "2cf46aa2-519d-4517-8465-6efae813936d"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "service.start",
+          "time" : "2021-09-04 17:00:03",
+          "serviceName" : "user",
+          "serviceId" : "goms_user_192.168.8.98:9180_192.168.8.98:9080",
+          "projectName" : "goms",
+          "trace" : null
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "UyQJsHsBU4boCFpVSHX9",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "2cf46aa2-519d-4517-8465-6efae813936d",
+          "request" : {
+            "method" : "POST",
+            "url" : "/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "192.168.8.98",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "goms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "14",
+              "Content-Type" : "application/x-www-form-urlencoded",
+              "Postman-Token" : "6ef9df7e-4f2e-445c-bec7-636fc6fe7941",
+              "User-Agent" : "PostmanRuntime/7.28.4",
+              "X-Request-Id" : "2cf46aa2-519d-4517-8465-6efae813936d"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "service.end",
+          "time" : "2021-09-04 17:00:03",
+          "serviceName" : "user",
+          "serviceId" : "goms_user_192.168.8.98:9180_192.168.8.98:9080",
+          "projectName" : "goms",
+          "trace" : {
+            "timing" : "17.9651ms"
+          }
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "VCQJsHsBU4boCFpVSXUq",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "2cf46aa2-519d-4517-8465-6efae813936d",
+          "request" : {
+            "method" : "POST",
+            "url" : "/api/user/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "127.0.0.1",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "go-ms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "265",
+              "Content-Type" : "multipart/form-data; boundary=--------------------------568994750929172835812890",
+              "Postman-Token" : "6ef9df7e-4f2e-445c-bec7-636fc6fe7941",
+              "User-Agent" : "PostmanRuntime/7.28.4"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "request.end",
+          "time" : "2021-09-04 17:00:03",
+          "serviceName" : "gateway",
+          "serviceId" : "goms_gateway_192.168.8.98:8180_192.168.8.98:8080",
+          "projectName" : "goms",
+          "trace" : {
+            "timing" : "48.2256ms"
+          }
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "VSQNsHsBU4boCFpVw3XF",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e",
+          "request" : {
+            "method" : "POST",
+            "url" : "/api/user/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "127.0.0.1",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "go-ms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "265",
+              "Content-Type" : "multipart/form-data; boundary=--------------------------860243771345130791268878",
+              "Postman-Token" : "965cf7a2-1637-4b03-83ab-df123614ebea",
+              "User-Agent" : "PostmanRuntime/7.28.4"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "request.start",
+          "time" : "2021-09-04 17:04:57",
+          "serviceName" : "gateway",
+          "serviceId" : "goms_gateway_192.168.8.98:8180_192.168.8.98:8080",
+          "projectName" : "goms",
+          "trace" : null
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "ViQNsHsBU4boCFpVw3Xb",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e",
+          "request" : {
+            "method" : "POST",
+            "url" : "/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "192.168.8.98",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "goms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "14",
+              "Content-Type" : "application/x-www-form-urlencoded",
+              "Postman-Token" : "965cf7a2-1637-4b03-83ab-df123614ebea",
+              "User-Agent" : "PostmanRuntime/7.28.4",
+              "X-Request-Id" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "service.start",
+          "time" : "2021-09-04 17:04:57",
+          "serviceName" : "user",
+          "serviceId" : "goms_user_192.168.8.98:9180_192.168.8.98:9080",
+          "projectName" : "goms",
+          "trace" : null
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "VyQNsHsBU4boCFpVw3X4",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e",
+          "request" : {
+            "method" : "POST",
+            "url" : "/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "192.168.8.98",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "goms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "14",
+              "Content-Type" : "application/x-www-form-urlencoded",
+              "Postman-Token" : "965cf7a2-1637-4b03-83ab-df123614ebea",
+              "User-Agent" : "PostmanRuntime/7.28.4",
+              "X-Request-Id" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "service.end",
+          "time" : "2021-09-04 17:04:57",
+          "serviceName" : "user",
+          "serviceId" : "goms_user_192.168.8.98:9180_192.168.8.98:9080",
+          "projectName" : "goms",
+          "trace" : {
+            "timing" : "13.2229ms"
+          }
+        }
+      },
+      {
+        "_index" : "trace_logs",
+        "_type" : "_doc",
+        "_id" : "WCQNsHsBU4boCFpVxHUF",
+        "_score" : 1.0,
+        "_source" : {
+          "requestId" : "09978d95-2c8f-4088-9cb8-f324dc9dec5e",
+          "request" : {
+            "method" : "POST",
+            "url" : "/api/user/login",
+            "urlParam" : "?field_1=1&field_2=2=",
+            "clientIp" : "127.0.0.1",
+            "headers" : {
+              "Accept" : "*/*",
+              "Accept-Encoding" : "gzip, deflate, br",
+              "Call-Service-Key" : "go-ms by panco",
+              "Connection" : "keep-alive",
+              "Content-Length" : "265",
+              "Content-Type" : "multipart/form-data; boundary=--------------------------860243771345130791268878",
+              "Postman-Token" : "965cf7a2-1637-4b03-83ab-df123614ebea",
+              "User-Agent" : "PostmanRuntime/7.28.4"
+            },
+            "body" : {
+              "ds1" : "11",
+              "ds2" : "111"
+            }
+          },
+          "event" : "request.end",
+          "time" : "2021-09-04 17:04:57",
+          "serviceName" : "gateway",
+          "serviceId" : "goms_gateway_192.168.8.98:8180_192.168.8.98:8080",
+          "projectName" : "goms",
+          "trace" : {
+            "timing" : "60.9127ms"
+          }
+        }
+      }
+    ]
+  }
+}
+```

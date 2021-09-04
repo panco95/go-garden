@@ -62,12 +62,12 @@ func Trace() gin.HandlerFunc {
 			endEvent = "request.end"
 		}
 
-		reqTrace := ReqTrace{
+		traceLog := TraceLog{
 			ProjectName: ProjectName,
 			ServiceName: ServiceName,
 			ServiceId:   ServiceId,
 			RequestId:   requestId,
-			Req: Req{
+			Request: Request{
 				ClientIp: GetClientIp(c),
 				Method:   GetMethod(c),
 				UrlParam: GetUrlParam(c),
@@ -80,9 +80,9 @@ func Trace() gin.HandlerFunc {
 		}
 
 		// 记录远程调试日志
-		RemoteTrace(&reqTrace)
+		PushTraceLog(&traceLog)
 		// 封装到gin请求上下文
-		c.Set("reqTrace", &reqTrace)
+		c.Set("traceLog", &traceLog)
 
 		// 执行请求接口
 		c.Next()
@@ -92,12 +92,12 @@ func Trace() gin.HandlerFunc {
 		// 记录远程调试日志，代表当前请求完毕
 		end := time.Now()
 		timing := utils.Timing(start, end)
-		reqTrace.Event = endEvent
-		reqTrace.Time = utils.ToDatetime(end)
-		reqTrace.Trace = Any{
+		traceLog.Event = endEvent
+		traceLog.Time = utils.ToDatetime(end)
+		traceLog.Trace = Any{
 			"timing": timing,
 		}
-		RemoteTrace(&reqTrace)
+		PushTraceLog(&traceLog)
 	}
 }
 
@@ -112,14 +112,14 @@ func CheckCallServiceKey() gin.HandlerFunc {
 	}
 }
 
-// GetReqTrace 获取reqTrace上下文
-func GetReqTrace(c *gin.Context) (*ReqTrace, error) {
-	t, success := c.Get("reqTrace")
+// GetTraceLog 获取reqTrace上下文
+func GetTraceLog(c *gin.Context) (*TraceLog, error) {
+	t, success := c.Get("traceLog")
 	if !success {
-		return nil, errors.New("reqTrace is nil")
+		return nil, errors.New("traceLog is nil")
 	}
-	rt := t.(*ReqTrace)
-	return rt, nil
+	tl := t.(*TraceLog)
+	return tl, nil
 }
 
 func GetMethod(c *gin.Context) string {

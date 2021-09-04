@@ -3,6 +3,7 @@ module goms
 go 1.16
 
 require (
+	github.com/apache/rocketmq-client-go/v2 v2.1.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
@@ -11,6 +12,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.28
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.8.1
+	github.com/streadway/amqp v1.0.0
 	github.com/ugorji/go v1.2.6 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.0
 	go.uber.org/zap v1.17.0

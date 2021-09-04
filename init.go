@@ -11,21 +11,25 @@ func Init(rpcPort, httpPort, serviceName, projectName string) {
 	InitProjectName(projectName)
 	InitServiceId(ProjectName, rpcPort, httpPort, serviceName)
 
-	etcdAddr := viper.GetString("etcdAddr")
-	if etcdAddr == "" {
-		log.Fatal("[config.yml] etcdAddr is nil")
-	}
+	etcdAddr := viper.GetStringSlice("etcdAddr")
 	err := EtcdConnect(etcdAddr)
 	if err != nil {
 		log.Fatal("[etcd] " + err.Error())
 	}
+	err = ServiceRegister()
+	if err != nil {
+		log.Fatal("[service register] " + err.Error())
+	}
 
 	esAddr := viper.GetString("esAddr")
-	if esAddr == "" {
-		log.Fatal("[config.yml] esAddr is nil")
-	}
 	err = EsConnect(esAddr)
 	if err != nil {
 		log.Fatal("[elasticsearch] " + err.Error())
+	}
+
+	amqpAddr := viper.GetString("amqpAddr")
+	err = AmqpConnect(amqpAddr)
+	if err != nil {
+		log.Fatal("[amqp] " + err.Error())
 	}
 }

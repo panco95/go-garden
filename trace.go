@@ -1,8 +1,12 @@
 package goms
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/streadway/amqp"
+	"log"
+)
 
-type Req struct {
+type Request struct {
 	Method   string `json:"method"`
 	Url      string `json:"url"`
 	UrlParam string `json:"urlParam"`
@@ -11,22 +15,37 @@ type Req struct {
 	Body     Any    `json:"body"`
 }
 
-// ReqTrace 请求上下文封装
-type ReqTrace struct {
-	RequestId   string `json:"requestId"`
-	Req         Req    `json:"req"`
-	Event       string `json:"event"`
-	Time        string `json:"time"`
-	ServiceName string `json:"serviceName"`
-	ServiceId   string `json:"serviceId"`
-	ProjectName string `json:"projectName"`
-	Trace       Any    `json:"trace"`
+type TraceLog struct {
+	RequestId   string  `json:"requestId"`
+	Request     Request `json:"request"`
+	Event       string  `json:"event"`
+	Time        string  `json:"time"`
+	ServiceName string  `json:"serviceName"`
+	ServiceId   string  `json:"serviceId"`
+	ProjectName string  `json:"projectName"`
+	Trace       Any     `json:"trace"`
 }
 
-func RemoteTrace(rc *ReqTrace) {
-	logJson, _ := json.Marshal(rc)
-	_, err := EsPut("logs", string(logJson))
+func PushTraceLog(traceLog *TraceLog) {
+	str, _ := json.Marshal(traceLog)
+	err := AmqpPublish("trace", string(str))
 	if err != nil {
-		Logger.Errorf("[elasticsearch] %s", err)
+		Logger.Debugf(err.Error())
 	}
+}
+
+func UploadTraceLog(traceLog string) error {
+	_, err := EsPut("trace_logs", traceLog)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AmqpConsumeTrace(msg amqp.Delivery) {
+	err := UploadTraceLog(string(msg.Body))
+	if err != nil {
+		Logger.Error("[amqp trace consumer error] " + err.Error())
+	}
+	log.Print("amqp trace consumer success")
 }

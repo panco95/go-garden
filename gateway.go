@@ -18,17 +18,17 @@ func GatewayRoute(r *gin.Engine) {
 		service := c.Param("service")
 		action := c.Param("action")
 		// 从reqTrace获取相关请求报文
-		reqTrace, err := GetReqTrace(c)
+		traceLog, err := GetTraceLog(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, FailRes())
 			Logger.Error()
 			return
 		}
-		method := reqTrace.Req.Method
-		headers := reqTrace.Req.Headers
-		urlParam := reqTrace.Req.UrlParam
-		body := reqTrace.Req.Body
-		requestId := reqTrace.RequestId
+		method := traceLog.Request.Method
+		headers := traceLog.Request.Headers
+		urlParam := traceLog.Request.UrlParam
+		body := traceLog.Request.Body
+		requestId := traceLog.RequestId
 
 		// 请求下游服务
 		data, err := CallService(c, service, action, method, urlParam, body, headers, requestId)
