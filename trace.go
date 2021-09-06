@@ -28,7 +28,7 @@ type TraceLog struct {
 
 func PushTraceLog(traceLog *TraceLog) {
 	str, _ := json.Marshal(traceLog)
-	err := AmqpPublish("trace", string(str))
+	err := AmqpPublish("trace", "trace", "trace", string(str))
 	if err != nil {
 		Logger.Debugf(err.Error())
 	}
@@ -42,7 +42,7 @@ func UploadTraceLog(traceLog string) error {
 	return nil
 }
 
-func AmqpConsumeTrace(msg amqp.Delivery) {
+func AmqpTraceConsume(msg amqp.Delivery) {
 	body := string(msg.Body)
 	err := UploadTraceLog(body)
 	if err != nil {
