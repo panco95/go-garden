@@ -1,6 +1,7 @@
 package goms
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -45,6 +46,52 @@ func GinServer(port, serviceName string, route func(r *gin.Engine)) error {
 
 	log.Printf("[%s] Http Listen on port: %s", serviceName, port)
 	return server.Run(":" + port)
+}
+
+// GatewayRoute 网关路由解析
+// 第一个参数：下游服务名称
+// 第二个参数：下游服务接口路由
+func GatewayRoute(r *gin.Engine) {
+	r.Any("api/:service/:action", func(c *gin.Context) {
+		// 服务名称和服务路由
+		service := c.Param("service")
+		action := c.Param("action")
+		// 从reqTrace获取相关请求报文
+		traceLog, err := GetTraceLog(c)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, FailRes())
+			Logger.Error()
+			return
+		}
+		method := traceLog.Request.Method
+		headers := traceLog.Request.Headers
+		urlParam := traceLog.Request.UrlParam
+		body := traceLog.Request.Body
+		requestId := traceLog.RequestId
+
+		// 请求下游服务
+		data, err := CallService(c, service, action, method, urlParam, body, headers, requestId)
+		if err != nil {
+			Logger.Error(ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
+			c.JSON(http.StatusInternalServerError, FailRes())
+			return
+		}
+		var result Any
+		err = json.Unmarshal([]byte(data), &result)
+		if err != nil {
+			Logger.Error(ErrorLog(service + "/" + action + " return invalid format: " + data))
+			c.JSON(http.StatusInternalServerError, FailRes())
+			return
+		}
+		c.JSON(http.StatusOK, SuccessRes(result))
+	})
+
+	// 集群信息查询接口
+	r.Any("cluster", func(c *gin.Context) {
+		c.JSON(http.StatusOK, SuccessRes(Any{
+			"services": Services,
+		}))
+	})
 }
 
 // Trace 链路追踪调试中间件
@@ -167,21 +214,4 @@ func GetHeaders(c *gin.Context) Any {
 		headers[k] = v[0]
 	}
 	return headers
-}
-
-func SuccessRes(data Any) Any {
-	response := Any{
-		"status": true,
-	}
-	for k, v := range data {
-		response[k] = v
-	}
-	return response
-}
-
-func FailRes() Any {
-	response := Any{
-		"status": false,
-	}
-	return response
 }
