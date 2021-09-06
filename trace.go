@@ -43,9 +43,16 @@ func UploadTraceLog(traceLog string) error {
 }
 
 func AmqpConsumeTrace(msg amqp.Delivery) {
-	err := UploadTraceLog(string(msg.Body))
+	body := string(msg.Body)
+	err := UploadTraceLog(body)
 	if err != nil {
-		Logger.Error("[amqp trace consumer error] " + err.Error())
+		log.Print("consume fail: " + err.Error())
+		Logger.Error("[trace consume fail] " + err.Error())
+		Logger.Error("[trace consume fail body] " + body)
 	}
-	log.Print("amqp trace consumer success")
+	err = msg.Ack(true)
+	if err != nil {
+		return
+	}
+	log.Print("consume success: " + body)
 }

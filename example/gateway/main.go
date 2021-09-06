@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"goms"
+	"log"
 )
 
 var (
@@ -12,6 +13,8 @@ var (
 
 func main() {
 	flag.Parse()
-	goms.Init(*rpcPort, *httpPort, "gateway", "goms")
-	goms.GinServer(*httpPort, "gateway", goms.GatewayRoute)
+	serviceName := "gateway"
+	projectName := "goms"
+	goms.Init(*rpcPort, *httpPort, serviceName, projectName)
+	log.Fatal(goms.GinServer(*httpPort, serviceName, goms.GatewayRoute))
 }

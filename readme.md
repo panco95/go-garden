@@ -148,7 +148,7 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 
 **四、开启trace链路跟踪日志消费服务，可以多开增加消费并发速度：**<br>
 ```
-go run .\example\traceConsumer\main.go
+go run example\traceConsumer\main.go
 ```
 <br>
 
@@ -254,7 +254,7 @@ go run .\example\traceConsumer\main.go
 2021/09/04 17:43:07 amqp trace consumer success
 2021/09/04 17:43:07 amqp trace consumer success
 ```
-2、浏览器登录kibana `http:127.0.0.1:5601`<br>
+2、浏览器登录kibana `http://127.0.0.1:5601`<br>
 3、点击dev tools<br>
 4、查询日志数据：<br>
 

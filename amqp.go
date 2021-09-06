@@ -2,6 +2,7 @@ package goms
 
 import (
 	"github.com/streadway/amqp"
+	"log"
 )
 
 var (
@@ -49,13 +50,15 @@ func AmqpConsumerRun(queue string, f func(msg amqp.Delivery)) error {
 	forever := make(chan bool)
 
 	q, err := ch.QueueDeclare(queue, false, false, false, false, nil)
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
 
 	go func() {
 		for msg := range msgs {
 			f(msg)
 		}
 	}()
+
+	log.Printf("[amqp] consumer is running")
 
 	<-forever
 	return nil

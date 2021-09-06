@@ -4,6 +4,7 @@ import (
 	"flag"
 	"github.com/gin-gonic/gin"
 	"goms"
+	"log"
 	"net/http"
 )
 
@@ -14,8 +15,10 @@ var (
 
 func main() {
 	flag.Parse()
-	goms.Init(*rpcPort, *httpPort, "user", "goms")
-	goms.GinServer(*httpPort, "user", route)
+	serviceName := "user"
+	projectName := "goms"
+	goms.Init(*rpcPort, *httpPort, serviceName, projectName)
+	log.Fatal(goms.GinServer(*httpPort, "user", route))
 }
 
 func route(r *gin.Engine) {

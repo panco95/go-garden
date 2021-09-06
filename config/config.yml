@@ -9,7 +9,7 @@ etcdAddr:
 esAddr: "http://192.168.125.181:9200"
 
 #rabbitmq address
-amqpaddr: "amqp://guest:guest@192.168.125.181:5672"
+amqpAddr: "amqp://guest:guest@192.168.125.181:5672"
 
 #services
 services:
