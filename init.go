@@ -8,17 +8,16 @@ import (
 func Init(rpcPort, httpPort, serviceName, projectName string) {
 	InitLog()
 	InitConfig("config/config.yml", "yml")
-	InitProjectName(projectName)
-	InitServiceId(ProjectName, rpcPort, httpPort, serviceName)
 
 	etcdAddr := viper.GetStringSlice("etcdAddr")
 	err := EtcdConnect(etcdAddr)
 	if err != nil {
 		log.Fatal("[etcd] " + err.Error())
 	}
-	err = ServiceRegister()
+
+	err = InitService(projectName, serviceName, httpPort, rpcPort)
 	if err != nil {
-		log.Fatal("[service register] " + err.Error())
+		log.Fatal("[etcd] " + err.Error())
 	}
 
 	esAddr := viper.GetString("esAddr")

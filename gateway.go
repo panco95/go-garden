@@ -15,7 +15,7 @@ func CallService(c *gin.Context, service, action, method, urlParam string, body,
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
-	serviceAddr, err := selectServiceNode(service)
+	serviceAddr, err := SelectServiceHttpAddr(service)
 	if err != nil {
 		return "", err
 	}
@@ -38,32 +38,7 @@ func CallService(c *gin.Context, service, action, method, urlParam string, body,
 	return result, nil
 }
 
-// 根据服务名称选择下游服务node
-// 负载均衡轮询+1
-func selectServiceNode(name string) (string, error) {
-	if _, ok := Services[name]; !ok {
-		return "", errors.New("service key not found")
-	}
-	serviceHttpAddr, err := AnalyzeHttpAddr(name, Services[name].PollNext)
-	if err != nil {
-		return "", err
-	}
-	go func() {
-		serviceNum := len(Services[name].Nodes)
-		index := Services[name].PollNext
-		ServicesLock.Lock()
-		if index >= serviceNum-1 {
-			Services[name].PollNext = 0
-		} else {
-			Services[name].PollNext = index + 1
-		}
-		Services[name].RequestFinish++
-		ServicesLock.Unlock()
-	}()
-	return serviceHttpAddr, nil
-}
-
-
+// SuccessRes 成功响应
 func SuccessRes(data Any) Any {
 	response := Any{
 		"status": true,
@@ -74,6 +49,7 @@ func SuccessRes(data Any) Any {
 	return response
 }
 
+// FailRes 失败响应
 func FailRes() Any {
 	response := Any{
 		"status": false,
