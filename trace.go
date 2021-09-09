@@ -3,9 +3,11 @@ package goms
 import (
 	"encoding/json"
 	"github.com/streadway/amqp"
+	"goms/drives"
 	"log"
 )
 
+// Request HTTP请求 调试结构体
 type Request struct {
 	Method   string `json:"method"`
 	Url      string `json:"url"`
@@ -15,6 +17,7 @@ type Request struct {
 	Body     Any    `json:"body"`
 }
 
+// TraceLog 调试日志结构体
 type TraceLog struct {
 	RequestId   string  `json:"requestId"`
 	Request     Request `json:"request"`
@@ -26,22 +29,27 @@ type TraceLog struct {
 	Trace       Any     `json:"trace"`
 }
 
+// PushTraceLog 推送调试日志
+// @Description 推送日志到消息队列，消息队列再存储到es
 func PushTraceLog(traceLog *TraceLog) {
 	str, _ := json.Marshal(traceLog)
-	err := AmqpPublish("trace", "trace", "trace", string(str))
+	err := drives.AmqpPublish("trace", "trace", "trace", string(str))
 	if err != nil {
 		Logger.Debugf(err.Error())
 	}
 }
 
+// UploadTraceLog 上传调试日志
+// @Description 上传到es
 func UploadTraceLog(traceLog string) error {
-	_, err := EsPut("trace_logs", traceLog)
+	_, err := drives.EsPut("trace_logs", traceLog)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
+// AmqpTraceConsume 调试日志消费逻辑
 func AmqpTraceConsume(msg amqp.Delivery) {
 	body := string(msg.Body)
 	err := UploadTraceLog(body)

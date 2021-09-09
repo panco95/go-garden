@@ -70,7 +70,7 @@ func GatewayRoute(r *gin.Engine) {
 		requestId := traceLog.RequestId
 
 		// 请求下游服务
-		data, err := CallService(c, service, action, method, urlParam, body, headers, requestId)
+		data, err := CallService(service, action, method, urlParam, body, headers, requestId)
 		if err != nil {
 			Logger.Error(ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
 			c.JSON(http.StatusInternalServerError, FailRes())

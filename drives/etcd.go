@@ -1,4 +1,4 @@
-package goms
+package drives
 
 import (
 	"context"
@@ -7,10 +7,12 @@ import (
 	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
+// Etcd etcd客户端
 var (
 	Etcd *clientV3.Client
 )
 
+// EtcdConnect 连接etcd
 func EtcdConnect(etcdAddr []string) error {
 	var err error
 	Etcd, err = clientV3.New(clientV3.Config{
@@ -32,7 +34,7 @@ func EtcdConnect(etcdAddr []string) error {
 	return nil
 }
 
-
+// GetKV 获取etcd某个key的value
 func GetKV(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	getResp, err := Etcd.Get(ctx, key)

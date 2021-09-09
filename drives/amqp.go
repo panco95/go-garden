@@ -1,14 +1,17 @@
-package goms
+package drives
 
 import (
 	"github.com/streadway/amqp"
 	"log"
 )
 
+// AmqpClient Rabbitmq消息队列客户端
 var (
 	AmqpClient *amqp.Connection
 )
 
+// AmqpConnect 连接到Rabbitmq
+// @param address rabbitmq连接地址
 func AmqpConnect(address string) error {
 	var err error
 	AmqpClient, err = amqp.Dial(address)
@@ -18,6 +21,11 @@ func AmqpConnect(address string) error {
 	return nil
 }
 
+// AmqpPublish 发布消息
+// @param queue 队列名称
+// @param exchange 交换机
+// @param routingKey 路由键
+// @param body 消息内容
 func AmqpPublish(queue, exchange, routingKey, body string) error {
 	ch, err := AmqpClient.Channel()
 	if err != nil {
@@ -43,7 +51,12 @@ func AmqpPublish(queue, exchange, routingKey, body string) error {
 	return nil
 }
 
-func AmqpConsumer(queue, exchange, routingKey string, f func(msg amqp.Delivery)) error {
+// AmqpConsumer 启动Rabbitmq消费者
+// @param queue 队列名称
+// @param exchange 交换机
+// @param routingKey 路由键
+// @param consumeFunc 消费方法
+func AmqpConsumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
 	ch, err := AmqpClient.Channel()
 	if err != nil {
 		return err
@@ -56,7 +69,7 @@ func AmqpConsumer(queue, exchange, routingKey string, f func(msg amqp.Delivery))
 
 	go func() {
 		for msg := range msgs {
-			f(msg)
+			consumeFunc(msg)
 		}
 	}()
 

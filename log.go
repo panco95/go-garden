@@ -9,6 +9,7 @@ import (
 
 var Logger *zap.SugaredLogger
 
+// InitLog 初始化本地日志引擎
 func InitLog() {
 	writeSyncer := GetLogWriter()
 	encoder := GetEncoder()

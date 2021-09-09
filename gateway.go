@@ -2,15 +2,20 @@ package goms
 
 import (
 	"errors"
-	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"time"
 )
 
-// CallService 调用下游服务
-// 服务重试：3次
-// 失败依次等待0.1s、0.2s
-func CallService(c *gin.Context, service, action, method, urlParam string, body, headers Any, requestId string) (string, error) {
+// CallService 调用Http服务
+// @Description     服务重试：3次，失败依次等待0.1s、0.2s
+// @param service   服务名称
+// @param action    服务行为
+// @param method    请求方式：GET || POST
+// @param urlParam  url请求参数
+// @param body      请求body结构体
+// @param headers   请求头结构体
+// @param requestId 请求id
+func CallService(service, action, method, urlParam string, body, headers Any, requestId string) (string, error) {
 	route := viper.GetString("services." + service + "." + action)
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
@@ -21,6 +26,7 @@ func CallService(c *gin.Context, service, action, method, urlParam string, body,
 	}
 
 	var result string
+	// 服务重试3次
 	for retry := 1; retry <= 3; retry++ {
 		url := "http://" + serviceAddr + route + urlParam
 		result, err = RequestService(url, method, body, headers, requestId)

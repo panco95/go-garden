@@ -11,8 +11,13 @@ import (
 	"time"
 )
 
-// RequestService
-// 请求服务
+// RequestService 请求下游服务封装
+// @param url 服务http地址
+// @param method 请求方式
+// @param body 请求body结构体
+// @param header 请求头结构体
+// @param requestId 请求id
+// @return string 响应内容
 func RequestService(url, method string, body, headers Any, requestId string) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,

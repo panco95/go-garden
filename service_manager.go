@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	clientV3 "go.etcd.io/etcd/client/v3"
+	"goms/drives"
 	"goms/utils"
 	"log"
 	"strings"
@@ -63,7 +64,7 @@ func InitService(projectName, serviceName, httpPort, rpcPort string) error {
 // ServiceRegister 注册当前服务
 func ServiceRegister() error {
 	// 新建租约
-	resp, err := Etcd.Grant(context.TODO(), 2)
+	resp, err := drives.Etcd.Grant(context.TODO(), 2)
 	if err != nil {
 		return err
 	}
@@ -71,12 +72,12 @@ func ServiceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = Etcd.Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
+	_, err = drives.Etcd.Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
 	// keep-alive
-	ch, err := Etcd.KeepAlive(context.TODO(), resp.ID)
+	ch, err := drives.Etcd.KeepAlive(context.TODO(), resp.ID)
 	if err != nil {
 		return err
 	}
@@ -106,7 +107,7 @@ func ServiceRegister() error {
 
 // ServiceWatcher 服务节点上下线监听
 func ServiceWatcher() {
-	rch := Etcd.Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
+	rch := drives.Etcd.Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -130,7 +131,7 @@ func ServiceWatcher() {
 // @return []string 服务节点数组
 func GetAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
+	resp, err := drives.Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf(err.Error())
@@ -149,7 +150,7 @@ func GetAllServices() []string {
 // @return []string 服务节点数组
 func GetServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, ProjectName+"_"+serviceName, clientV3.WithPrefix())
+	resp, err := drives.Etcd.Get(ctx, ProjectName+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf(err.Error())
