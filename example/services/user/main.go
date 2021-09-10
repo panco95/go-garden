@@ -15,10 +15,8 @@ var (
 
 func main() {
 	flag.Parse()
-	serviceName := "user"
-	projectName := "goms"
-	goms.Init(*rpcPort, *httpPort, serviceName, projectName)
-	log.Fatal(goms.GinServer(*httpPort, "user", route))
+	goms.Init(*rpcPort, *httpPort, "user", "goms")
+	log.Fatal(goms.GinServer(*httpPort, route, nil))
 }
 
 func route(r *gin.Engine) {

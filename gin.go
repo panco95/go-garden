@@ -14,7 +14,11 @@ import (
 )
 
 // GinServer 开启Gin服务
-func GinServer(port, serviceName string, route func(r *gin.Engine)) error {
+// @param port 监听端口
+// @param serviceName 服务名称
+// @param route gin路由
+// @param auth 鉴权中间件
+func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
@@ -22,7 +26,7 @@ func GinServer(port, serviceName string, route func(r *gin.Engine)) error {
 	if err != nil {
 		return errors.New("[Create runtime folder] " + err.Error())
 	}
-	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, serviceName))
+	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, ServiceName))
 	if err != nil {
 		return errors.New("[Create gin log file] " + err.Error())
 	}
@@ -41,9 +45,12 @@ func GinServer(port, serviceName string, route func(r *gin.Engine)) error {
 	}))
 	server.Use(gin.Recovery())
 	server.Use(Trace())
+	if auth != nil {
+		server.Use(auth())
+	}
 	route(server)
 
-	log.Printf("[%s] Http Listen on port: %s", serviceName, port)
+	log.Printf("[%s] Http Listen on port: %s", ServiceName, port)
 	return server.Run(":" + port)
 }
 
