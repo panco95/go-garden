@@ -10,7 +10,7 @@
 3、负载均衡<br>
 4、服务调用安全验证<br>
 5、服务重试<br>
-6、分布式链路追踪日志<br>
+6、分布式链路追踪<br>
 
 **准备工作：**<br>
 1、Etcd，Docker启动：<br>
@@ -31,6 +31,13 @@ docker run --rm -it -d --name kibana --net es -p 5601:5601 -e "discovery.type=si
 ```
 docker run --rm -it -d --name rabbitmq --hostname rabbitmq  -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
+<br>
+4、Zipkin，Docker启动：<br>
+
+```
+docker run --rm -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
+```
+
 
 **文档**<br>
 
@@ -49,6 +56,7 @@ etcdAddr:
   - "192.168.125.181:2379"
 esAddr: "http://192.168.125.181:9200"
 amqpaddr: "amqp://guest:guest@192.168.125.181:5672"
+zipkinAddr: "http://192.168.125.183:9411/api/v2/spans"
 services:
   user:
     register: "/register"

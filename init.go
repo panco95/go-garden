@@ -2,7 +2,6 @@ package goms
 
 import (
 	"github.com/spf13/viper"
-	"goms/drives"
 	"log"
 )
 
@@ -12,7 +11,7 @@ func Init(rpcPort, httpPort, serviceName, projectName string) {
 	InitConfig("configs/config.yml", "yml")
 
 	etcdAddr := viper.GetStringSlice("etcdAddr")
-	err := drives.EtcdConnect(etcdAddr)
+	err := EtcdConnect(etcdAddr)
 	if err != nil {
 		log.Fatal("[etcd] " + err.Error())
 	}
@@ -23,14 +22,20 @@ func Init(rpcPort, httpPort, serviceName, projectName string) {
 	}
 
 	esAddr := viper.GetString("esAddr")
-	err = drives.EsConnect(esAddr)
+	err = EsConnect(esAddr)
 	if err != nil {
 		log.Fatal("[elasticsearch] " + err.Error())
 	}
 
 	amqpAddr := viper.GetString("amqpAddr")
-	err = drives.AmqpConnect(amqpAddr)
+	err = AmqpConnect(amqpAddr)
 	if err != nil {
 		log.Fatal("[amqp] " + err.Error())
+	}
+
+	zipkinAddr := viper.GetString("zipkinAddr")
+	err = InitOpenTracing(serviceName, zipkinAddr, httpPort)
+	if err != nil {
+		log.Fatal("[openTracing] " + err.Error())
 	}
 }

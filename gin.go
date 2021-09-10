@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	"log"
 	"net/http"
@@ -103,6 +104,8 @@ func GatewayRoute(r *gin.Engine) {
 // Trace 链路追踪调试中间件
 func Trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		span := opentracing.StartSpan("test")
+
 		start := time.Now()
 
 		// 生成唯一requestId，提供给下游服务获取
@@ -151,6 +154,8 @@ func Trace() gin.HandlerFunc {
 			"timing": timing,
 		}
 		PushTraceLog(&traceLog)
+
+		span.Finish()
 	}
 }
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"goms"
-	"goms/drives"
 	"log"
 )
 
@@ -10,5 +9,5 @@ func main() {
 	serviceName := "traceConsumer"
 	projectName := "goms"
 	goms.Init("", "", serviceName, projectName)
-	log.Fatal(drives.AmqpConsumer("trace", "trace", "goms", goms.AmqpTraceConsume))
+	log.Fatal(goms.AmqpConsumer("trace", "trace", "goms", goms.AmqpTraceConsume))
 }

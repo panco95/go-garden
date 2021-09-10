@@ -3,7 +3,6 @@ package goms
 import (
 	"encoding/json"
 	"github.com/streadway/amqp"
-	"goms/drives"
 	"log"
 )
 
@@ -48,7 +47,7 @@ type TraceLog struct {
 // traceLog 调试日志结构体
 func PushTraceLog(traceLog *TraceLog) {
 	str, _ := json.Marshal(traceLog)
-	err := drives.AmqpPublish("trace", "trace", "goms", string(str))
+	err := AmqpPublish("trace", "trace", "goms", string(str))
 	if err != nil {
 		Logger.Debugf(err.Error())
 	}
@@ -58,7 +57,7 @@ func PushTraceLog(traceLog *TraceLog) {
 // @Description 上传到es
 // traceLog 调试日志结构体
 func UploadTraceLog(traceLog string) error {
-	_, err := drives.EsPut("trace_logs", traceLog)
+	_, err := EsPut("trace_logs", traceLog)
 	if err != nil {
 		return err
 	}

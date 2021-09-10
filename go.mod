@@ -9,6 +9,9 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olivere/elastic/v7 v7.0.28
+	github.com/opentracing/opentracing-go v1.2.0
+	github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5
+	github.com/openzipkin/zipkin-go v0.2.5
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/viper v1.8.1
 	github.com/streadway/amqp v1.0.0
