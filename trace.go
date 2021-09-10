@@ -2,7 +2,6 @@ package goms
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/streadway/amqp"
 	"goms/drives"
 	"log"
@@ -49,7 +48,7 @@ type TraceLog struct {
 // traceLog 调试日志结构体
 func PushTraceLog(traceLog *TraceLog) {
 	str, _ := json.Marshal(traceLog)
-	err := drives.AmqpPublish("trace", "trace", "trace", string(str))
+	err := drives.AmqpPublish("trace", "trace", "goms", string(str))
 	if err != nil {
 		Logger.Debugf(err.Error())
 	}
@@ -69,7 +68,6 @@ func UploadTraceLog(traceLog string) error {
 // AmqpTraceConsume 调试日志消费逻辑
 // @Parma msg rabbitmq消费消息体
 func AmqpTraceConsume(msg amqp.Delivery) {
-	fmt.Println(1)
 	body := string(msg.Body)
 	err := UploadTraceLog(body)
 	if err != nil {

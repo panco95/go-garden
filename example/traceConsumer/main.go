@@ -10,5 +10,5 @@ func main() {
 	serviceName := "traceConsumer"
 	projectName := "goms"
 	goms.Init("", "", serviceName, projectName)
-	log.Fatal(drives.AmqpConsumer("trace", "trace", "trace", goms.AmqpTraceConsume))
+	log.Fatal(drives.AmqpConsumer("trace", "trace", "goms", goms.AmqpTraceConsume))
 }

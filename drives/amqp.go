@@ -64,8 +64,21 @@ func AmqpConsumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(queue, "direct", true, false, false, false, nil)
-	err = ch.QueueBind(queue, routingKey, exchange, false, nil)
+	if err != nil {
+		log.Fatal("ExchangeDeclare：" + err.Error())
+	}
+	q, err := ch.QueueDeclare(queue, false, false, true, false, nil)
+	if err != nil {
+		log.Fatal("QueueDeclare：" + err.Error())
+	}
+	err = ch.QueueBind(q.Name, routingKey, exchange, false, nil)
+	if err != nil {
+		log.Fatal("QueueBind：" + err.Error())
+	}
 	msgs, err := ch.Consume(queue, "", false, false, false, false, nil)
+	if err != nil {
+		log.Print("Consume：" + err.Error())
+	}
 
 	go func() {
 		for msg := range msgs {
