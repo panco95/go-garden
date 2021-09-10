@@ -8,8 +8,8 @@ import (
 )
 
 // InitOpenTracing 初始化opentracing分布式链路追踪组件
-func InitOpenTracing(service, addr, port string) error {
-	trace, err := initZipkin(service, addr, port)
+func InitOpenTracing(service, addr, address string) error {
+	trace, err := initZipkin(service, addr, address)
 	if err != nil {
 		return err
 	}
@@ -18,9 +18,9 @@ func InitOpenTracing(service, addr, port string) error {
 }
 
 // 初始化zipkin组件
-func initZipkin(service, addr, port string) (opentracing.Tracer, error) {
+func initZipkin(service, addr, address string) (opentracing.Tracer, error) {
 	reporter := zkHttp.NewReporter(addr)
-	endpoint, err := zipkin.NewEndpoint(service, "localhost:"+port)
+	endpoint, err := zipkin.NewEndpoint(service, address)
 	if err != nil {
 		return nil, err
 	}

@@ -60,24 +60,26 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 // 第二个参数：下游服务接口路由
 func GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
+		g, _ := c.Get("span")
+		span := g.(opentracing.Span)
+
 		// 服务名称和服务路由
 		service := c.Param("service")
 		action := c.Param("action")
-		// 从reqTrace获取相关请求报文
-		traceLog, err := GetTraceLog(c)
+
+		request, err := GetRequest(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, FailRes())
-			Logger.Error(err)
+			span.LogKV("get request context fail")
 			return
 		}
-		method := traceLog.Request.Method
-		headers := traceLog.Request.Headers
-		urlParam := traceLog.Request.UrlParam
-		body := traceLog.Request.Body
-		requestId := traceLog.RequestId
+		method := request.Method
+		headers := request.Headers
+		urlParam := request.UrlParam
+		body := request.Body
 
 		// 请求下游服务
-		data, err := CallService(service, action, method, urlParam, body, headers, requestId)
+		data, err := CallService(span, service, action, method, urlParam, body, headers)
 		if err != nil {
 			Logger.Error("call " + service + "/" + action + " error: " + err.Error())
 			c.JSON(http.StatusInternalServerError, FailRes())
@@ -104,56 +106,28 @@ func GatewayRoute(r *gin.Engine) {
 // Trace 链路追踪调试中间件
 func Trace() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		span := opentracing.StartSpan("test")
+		var span opentracing.Span
+		// 尝试从header头获取span上下文
+		wireContext, _ := opentracing.GlobalTracer().Extract(
+			opentracing.HTTPHeaders,
+			opentracing.HTTPHeadersCarrier(c.Request.Header))
+		// 如果header中没有span，会新建root span，如果有，则会新建child span
+		span = opentracing.StartSpan(
+			"http",
+			//ext.RPCServerOption(wireContext),
+			opentracing.ChildOf(wireContext),
+		)
 
-		start := time.Now()
+		request := Request{
+			GetMethod(c), GetUrl(c), GetUrlParam(c), GetClientIp(c), GetHeaders(c), GetBody(c)}
+		span.SetTag("Request", request)
 
-		// 生成唯一requestId，提供给下游服务获取
-		requestId := c.GetHeader("X-Request-Id")
-		startEvent := "service.start"
-		endEvent := "service.end"
-		if requestId == "" || false == ParseUuid(requestId) {
-			requestId = NewUuid()
-			startEvent = "request.start"
-			endEvent = "request.end"
-		}
-
-		traceLog := TraceLog{
-			ProjectName: ProjectName,
-			ServiceName: ServiceName,
-			ServiceId:   ServiceId,
-			RequestId:   requestId,
-			Request: Request{
-				ClientIp: GetClientIp(c),
-				Method:   GetMethod(c),
-				UrlParam: GetUrlParam(c),
-				Headers:  GetHeaders(c),
-				Body:     GetBody(c),
-				Url:      GetUrl(c),
-			},
-			Event: startEvent,
-			Time:  ToDatetime(start),
-		}
-
-		// 记录远程调试日志
-		PushTraceLog(&traceLog)
-		// 封装到gin请求上下文
-		c.Set("traceLog", &traceLog)
+		// 保存请求上下文
+		c.Set("span", span)
+		c.Set("request", &request)
 
 		// 执行请求接口
 		c.Next()
-		c.Abort()
-
-		// 接口执行完毕后执行
-		// 记录远程调试日志，代表当前请求完毕
-		end := time.Now()
-		timing := Timing(start, end)
-		traceLog.Event = endEvent
-		traceLog.Time = ToDatetime(end)
-		traceLog.Trace = Any{
-			"timing": timing,
-		}
-		PushTraceLog(&traceLog)
 
 		span.Finish()
 	}
@@ -170,14 +144,14 @@ func CheckCallServiceKey() gin.HandlerFunc {
 	}
 }
 
-// GetTraceLog 获取reqTrace上下文
-func GetTraceLog(c *gin.Context) (*TraceLog, error) {
-	t, success := c.Get("traceLog")
+// GetRequest 获取request上下文
+func GetRequest(c *gin.Context) (*Request, error) {
+	t, success := c.Get("request")
 	if !success {
 		return nil, errors.New("traceLog is nil")
 	}
-	tl := t.(*TraceLog)
-	return tl, nil
+	r := t.(*Request)
+	return r, nil
 }
 
 // GetMethod 获取请求方式

@@ -3,6 +3,7 @@ package goms
 import (
 	"errors"
 	"fmt"
+	"github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,22 @@ import (
 	"time"
 )
 
+// Request HTTP请求 调试结构体
+// Method 请求方式
+// Url 请求地址
+// UrlParam 请求query参数
+// ClientIP 请求客户端IP
+// Headers 请求头map
+// Body 请求体map
+type Request struct {
+	Method   string `json:"method"`
+	Url      string `json:"url"`
+	UrlParam string `json:"urlParam"`
+	ClientIp string `json:"clientIp"`
+	Headers  Any    `json:"headers"`
+	Body     Any    `json:"body"`
+}
+
 // RequestService 请求下游服务封装
 // @param url 服务http地址
 // @param method 请求方式
@@ -18,7 +35,7 @@ import (
 // @param header 请求头结构体
 // @param requestId 请求id
 // @return string 响应内容
-func RequestService(url, method string, body, headers Any, requestId string) (string, error) {
+func RequestService(span opentracing.Span, url, method string, body, headers Any) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -42,8 +59,12 @@ func RequestService(url, method string, body, headers Any, requestId string) (st
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// 增加调用下游服务安全验证key
 	request.Header.Set("Call-Service-Key", viper.GetString("callServiceKey"))
-	// 增加请求ID，为了存储多服务调用链路日志
-	request.Header.Set("X-Request-Id", requestId)
+
+	// 给请求封装opentracing-span header头
+	opentracing.GlobalTracer().Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(request.Header))
 
 	res, err := client.Do(request)
 	if err != nil {

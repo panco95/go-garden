@@ -1,16 +1,16 @@
-package goms
+package elasticsearch
 
 import (
 	"context"
 	"github.com/olivere/elastic/v7"
 )
 
-var EsClient *elastic.Client
+var esClient *elastic.Client
 
 // EsConnect 初始化连接Elasticsearch
 func EsConnect(address string) error {
 	var err error
-	EsClient, err = elastic.NewClient(
+	esClient, err = elastic.NewClient(
 		elastic.SetURL(address),
 		elastic.SetSniff(false),
 	)
@@ -23,7 +23,7 @@ func EsConnect(address string) error {
 //EsPut 存储数据到es
 func EsPut(index, body string) (*elastic.IndexResponse, error) {
 	ctx := context.Background()
-	put, err := EsClient.Index().
+	put, err := esClient.Index().
 		Index(index).
 		BodyString(body).
 		Do(ctx)
@@ -31,4 +31,9 @@ func EsPut(index, body string) (*elastic.IndexResponse, error) {
 		return nil, err
 	}
 	return put, nil
+}
+
+// GetClient 获取ES客户端
+func GetClient() *elastic.Client {
+	return esClient
 }

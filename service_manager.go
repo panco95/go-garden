@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	clientV3 "go.etcd.io/etcd/client/v3"
+	"goms/pkg/etcd"
 	"log"
 	"strings"
 	"time"
@@ -32,11 +33,13 @@ var ServiceManagerChan chan ServiceManager
 // ProjectName 当前项目名称
 // ServiceId 当前服务ID：唯一性
 // ServiceName 当前服务名称
+// ServiceIp 当前服务器地址
 // Services 所有服务map
 var (
 	ProjectName = ""
 	ServiceId   string
 	ServiceName string
+	ServiceIp   string
 	Services    = make(map[string]*Service)
 )
 
@@ -48,9 +51,9 @@ var (
 func InitService(projectName, serviceName, httpPort, rpcPort string) error {
 	ProjectName = projectName
 	ServiceName = serviceName
-	intranetIp := GetOutboundIP()
-	intranetRpcAddr := intranetIp + ":" + rpcPort
-	intranetHttpAddr := intranetIp + ":" + httpPort
+	ServiceIp = GetOutboundIP()
+	intranetRpcAddr := ServiceIp + ":" + rpcPort
+	intranetHttpAddr := ServiceIp + ":" + httpPort
 	ServiceId = projectName + "_" + ServiceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
 
 	ServiceManagerChan = make(chan ServiceManager, 0)
@@ -62,7 +65,7 @@ func InitService(projectName, serviceName, httpPort, rpcPort string) error {
 // ServiceRegister 注册当前服务
 func ServiceRegister() error {
 	// 新建租约
-	resp, err := Etcd.Grant(context.TODO(), 2)
+	resp, err := etcd.GetClient().Grant(context.TODO(), 2)
 	if err != nil {
 		return err
 	}
@@ -70,12 +73,12 @@ func ServiceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = Etcd.Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
+	_, err = etcd.GetClient().Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
 	// keep-alive
-	ch, err := Etcd.KeepAlive(context.TODO(), resp.ID)
+	ch, err := etcd.GetClient().KeepAlive(context.TODO(), resp.ID)
 	if err != nil {
 		return err
 	}
@@ -105,7 +108,7 @@ func ServiceRegister() error {
 
 // ServiceWatcher 服务节点上下线监听
 func ServiceWatcher() {
-	rch := Etcd.Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
+	rch := etcd.GetClient().Watch(context.Background(), ProjectName+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -129,7 +132,7 @@ func ServiceWatcher() {
 // @return []string 服务节点数组
 func GetAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, ProjectName+"_", clientV3.WithPrefix())
+	resp, err := etcd.GetClient().Get(ctx, ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf(err.Error())
@@ -148,7 +151,7 @@ func GetAllServices() []string {
 // @return []string 服务节点数组
 func GetServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := Etcd.Get(ctx, ProjectName+"_"+serviceName, clientV3.WithPrefix())
+	resp, err := etcd.GetClient().Get(ctx, ProjectName+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf(err.Error())

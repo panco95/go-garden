@@ -1,20 +1,22 @@
-package goms
+package amqp
 
 import (
 	"github.com/streadway/amqp"
 	"log"
 )
 
-// AmqpClient Rabbitmq消息队列客户端
-var (
-	AmqpClient *amqp.Connection
-)
+var amqpClient *amqp.Connection
+
+// GetClient 获取rabbitmq客户端
+func GetClient() *amqp.Connection {
+	return amqpClient
+}
 
 // AmqpConnect 连接到Rabbitmq
 // @param address rabbitmq连接地址
 func AmqpConnect(address string) error {
 	var err error
-	AmqpClient, err = amqp.Dial(address)
+	amqpClient, err = amqp.Dial(address)
 	if err != nil {
 		return err
 	}
@@ -27,7 +29,7 @@ func AmqpConnect(address string) error {
 // @param routingKey 路由键
 // @param body 消息内容
 func AmqpPublish(queue, exchange, routingKey, body string) error {
-	ch, err := AmqpClient.Channel()
+	ch, err := amqpClient.Channel()
 	if err != nil {
 		return err
 	}
@@ -57,7 +59,7 @@ func AmqpPublish(queue, exchange, routingKey, body string) error {
 // @param routingKey 路由键
 // @param consumeFunc 消费方法
 func AmqpConsumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
-	ch, err := AmqpClient.Channel()
+	ch, err := amqpClient.Channel()
 	if err != nil {
 		return err
 	}
@@ -92,3 +94,16 @@ func AmqpConsumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.
 	<-forever
 	return nil
 }
+
+// ConsumeExample 消息消费示例
+// @Parma msg rabbitmq消费消息体
+func ConsumeExample(msg amqp.Delivery) {
+	body := string(msg.Body)
+	log.Print(body)
+	err := msg.Ack(true)
+	if err != nil {
+		return
+	}
+	log.Print("consume success!")
+}
+

@@ -2,6 +2,7 @@ package goms
 
 import (
 	"errors"
+	"github.com/opentracing/opentracing-go"
 	"github.com/spf13/viper"
 	"time"
 )
@@ -15,7 +16,7 @@ import (
 // @param body      请求body结构体
 // @param headers   请求头结构体
 // @param requestId 请求id
-func CallService(service, action, method, urlParam string, body, headers Any, requestId string) (string, error) {
+func CallService(span opentracing.Span, service, action, method, urlParam string, body, headers Any) (string, error) {
 	route := viper.GetString("services." + service + "." + action)
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
@@ -29,7 +30,7 @@ func CallService(service, action, method, urlParam string, body, headers Any, re
 	// 服务重试3次
 	for retry := 1; retry <= 3; retry++ {
 		url := "http://" + serviceAddr + route + urlParam
-		result, err = RequestService(url, method, body, headers, requestId)
+		result, err = RequestService(span, url, method, body, headers)
 		if err != nil {
 			if retry >= 3 {
 				return "", err
