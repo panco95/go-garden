@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"goms/utils"
 	"log"
 	"net/http"
 	"os"
@@ -19,7 +18,7 @@ func GinServer(port, serviceName string, route func(r *gin.Engine)) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
-	err := utils.CreateDir(path + "/runtime")
+	err := CreateDir(path + "/runtime")
 	if err != nil {
 		return errors.New("[Create runtime folder] " + err.Error())
 	}
@@ -60,7 +59,7 @@ func GatewayRoute(r *gin.Engine) {
 		traceLog, err := GetTraceLog(c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, FailRes())
-			Logger.Error()
+			Logger.Error(err)
 			return
 		}
 		method := traceLog.Request.Method
@@ -72,14 +71,14 @@ func GatewayRoute(r *gin.Engine) {
 		// 请求下游服务
 		data, err := CallService(service, action, method, urlParam, body, headers, requestId)
 		if err != nil {
-			Logger.Error(ErrorLog("call " + service + "/" + action + " error: " + err.Error()))
+			Logger.Error("call " + service + "/" + action + " error: " + err.Error())
 			c.JSON(http.StatusInternalServerError, FailRes())
 			return
 		}
 		var result Any
 		err = json.Unmarshal([]byte(data), &result)
 		if err != nil {
-			Logger.Error(ErrorLog(service + "/" + action + " return invalid format: " + data))
+			Logger.Error(service + "/" + action + " return invalid format: " + data)
 			c.JSON(http.StatusInternalServerError, FailRes())
 			return
 		}
@@ -103,8 +102,8 @@ func Trace() gin.HandlerFunc {
 		requestId := c.GetHeader("X-Request-Id")
 		startEvent := "service.start"
 		endEvent := "service.end"
-		if requestId == "" || false == utils.ParseUuid(requestId) {
-			requestId = utils.NewUuid()
+		if requestId == "" || false == ParseUuid(requestId) {
+			requestId = NewUuid()
 			startEvent = "request.start"
 			endEvent = "request.end"
 		}
@@ -123,7 +122,7 @@ func Trace() gin.HandlerFunc {
 				Url:      GetUrl(c),
 			},
 			Event: startEvent,
-			Time:  utils.ToDatetime(start),
+			Time:  ToDatetime(start),
 		}
 
 		// 记录远程调试日志
@@ -138,9 +137,9 @@ func Trace() gin.HandlerFunc {
 		// 接口执行完毕后执行
 		// 记录远程调试日志，代表当前请求完毕
 		end := time.Now()
-		timing := utils.Timing(start, end)
+		timing := Timing(start, end)
 		traceLog.Event = endEvent
-		traceLog.Time = utils.ToDatetime(end)
+		traceLog.Time = ToDatetime(end)
 		traceLog.Trace = Any{
 			"timing": timing,
 		}
@@ -169,14 +168,17 @@ func GetTraceLog(c *gin.Context) (*TraceLog, error) {
 	return tl, nil
 }
 
+// GetMethod 获取请求方式
 func GetMethod(c *gin.Context) string {
 	return strings.ToUpper(c.Request.Method)
 }
 
+// GetClientIp 获取请求客户端ip
 func GetClientIp(c *gin.Context) string {
 	return c.ClientIP()
 }
 
+// GetBody 获取请求body
 func GetBody(c *gin.Context) Any {
 	body := Any{}
 	h := c.GetHeader("Content-Type")
@@ -193,10 +195,12 @@ func GetBody(c *gin.Context) Any {
 	return body
 }
 
+// GetUrl 获取请求路径
 func GetUrl(c *gin.Context) string {
 	return c.Request.URL.Path
 }
 
+// GetUrlParam 获取请求query参数
 func GetUrlParam(c *gin.Context) string {
 	requestUrl := c.Request.RequestURI
 	urlSplit := strings.Split(requestUrl, "?")
@@ -208,6 +212,7 @@ func GetUrlParam(c *gin.Context) string {
 	return requestUrl
 }
 
+// GetHeaders 获取请求头map
 func GetHeaders(c *gin.Context) Any {
 	headers := Any{}
 	for k, v := range c.Request.Header {

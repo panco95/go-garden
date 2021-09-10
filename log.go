@@ -1,7 +1,6 @@
 package goms
 
 import (
-	"encoding/json"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -35,13 +34,4 @@ func GetLogWriter() zapcore.WriteSyncer {
 		Compress:   false,
 	}
 	return zapcore.AddSync(lumberJackLogger)
-}
-
-func ErrorLog(err string) string {
-	m := Any{
-		"error": err,
-	}
-	e, _ := json.Marshal(m)
-	s := string(e)
-	return s
 }

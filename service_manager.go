@@ -5,7 +5,6 @@ import (
 	"errors"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"goms/drives"
-	"goms/utils"
 	"log"
 	"strings"
 	"time"
@@ -50,7 +49,7 @@ var (
 func InitService(projectName, serviceName, httpPort, rpcPort string) error {
 	ProjectName = projectName
 	ServiceName = serviceName
-	intranetIp := utils.GetOutboundIP()
+	intranetIp := GetOutboundIP()
 	intranetRpcAddr := intranetIp + ":" + rpcPort
 	intranetHttpAddr := intranetIp + ":" + httpPort
 	ServiceId = projectName + "_" + ServiceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
