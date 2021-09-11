@@ -1,7 +1,6 @@
 package goms
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -45,7 +44,7 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 			param.ErrorMessage)
 	}))
 	server.Use(gin.Recovery())
-	server.Use(Trace())
+	server.Use(OpenTracing())
 	if auth != nil {
 		server.Use(auth())
 	}
@@ -60,41 +59,8 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 // 第二个参数：下游服务接口路由
 func GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
-		g, _ := c.Get("span")
-		span := g.(opentracing.Span)
-
-		// 服务名称和服务路由
-		service := c.Param("service")
-		action := c.Param("action")
-
-		request, err := GetRequest(c)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, FailRes())
-			span.LogKV("get request context fail")
-			return
-		}
-		method := request.Method
-		headers := request.Headers
-		urlParam := request.UrlParam
-		body := request.Body
-
-		// 请求下游服务
-		data, err := CallService(span, service, action, method, urlParam, body, headers)
-		if err != nil {
-			Logger.Error("call " + service + "/" + action + " error: " + err.Error())
-			c.JSON(http.StatusInternalServerError, FailRes())
-			return
-		}
-		var result Any
-		err = json.Unmarshal([]byte(data), &result)
-		if err != nil {
-			Logger.Error(service + "/" + action + " return invalid format: " + data)
-			c.JSON(http.StatusInternalServerError, FailRes())
-			return
-		}
-		c.JSON(http.StatusOK, SuccessRes(result))
+		Gateway(c)
 	})
-
 	// 集群信息查询接口
 	r.Any("cluster", func(c *gin.Context) {
 		c.JSON(http.StatusOK, SuccessRes(Any{
@@ -103,30 +69,18 @@ func GatewayRoute(r *gin.Engine) {
 	})
 }
 
-// Trace 链路追踪调试中间件
-func Trace() gin.HandlerFunc {
+// OpenTracing 链路追踪中间件
+func OpenTracing() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var span opentracing.Span
-		// 尝试从header头获取span上下文
-		wireContext, _ := opentracing.GlobalTracer().Extract(
-			opentracing.HTTPHeaders,
-			opentracing.HTTPHeadersCarrier(c.Request.Header))
-		// 如果header中没有span，会新建root span，如果有，则会新建child span
-		span = opentracing.StartSpan(
-			"http",
-			//ext.RPCServerOption(wireContext),
-			opentracing.ChildOf(wireContext),
-		)
+		span := StartSpanFromHeader(c.Request.Header)
 
 		request := Request{
 			GetMethod(c), GetUrl(c), GetUrlParam(c), GetClientIp(c), GetHeaders(c), GetBody(c)}
 		span.SetTag("Request", request)
 
-		// 保存请求上下文
 		c.Set("span", span)
 		c.Set("request", &request)
 
-		// 执行请求接口
 		c.Next()
 
 		span.Finish()
@@ -144,13 +98,32 @@ func CheckCallServiceKey() gin.HandlerFunc {
 	}
 }
 
+// GetContext 获取Set保存的的上下文
+func GetContext(c *gin.Context, name string) (interface{}, error) {
+	t, success := c.Get(name)
+	if !success {
+		return nil, errors.New(name + " is nil")
+	}
+	return t, nil
+}
+
 // GetRequest 获取request上下文
 func GetRequest(c *gin.Context) (*Request, error) {
-	t, success := c.Get("request")
-	if !success {
-		return nil, errors.New("traceLog is nil")
+	t, err := GetContext(c, "request")
+	if err != nil {
+		return nil, err
 	}
 	r := t.(*Request)
+	return r, nil
+}
+
+// GetSpan 获取openTracing span上下文
+func GetSpan(c *gin.Context) (opentracing.Span, error) {
+	t, err := GetContext(c, "span")
+	if err != nil {
+		return nil, err
+	}
+	r := t.(opentracing.Span)
 	return r, nil
 }
 

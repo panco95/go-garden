@@ -5,6 +5,7 @@ import (
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
+	"net/http"
 )
 
 // InitOpenTracing 初始化opentracing分布式链路追踪组件
@@ -29,4 +30,19 @@ func initZipkin(service, addr, address string) (opentracing.Tracer, error) {
 		return nil, err
 	}
 	return zkOt.Wrap(trace), nil
+}
+
+// StartSpanFromHeader 从请求头获取span
+// 如果header中没有span，会新建root span，如果有，则会新建child span
+func StartSpanFromHeader(header http.Header) opentracing.Span {
+	var span opentracing.Span
+	wireContext, _ := opentracing.GlobalTracer().Extract(
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(header))
+	span = opentracing.StartSpan(
+		"http",
+		//ext.RPCServerOption(wireContext),
+		opentracing.ChildOf(wireContext),
+	)
+	return span
 }

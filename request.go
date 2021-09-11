@@ -16,7 +16,7 @@ import (
 // Method 请求方式
 // Url 请求地址
 // UrlParam 请求query参数
-// ClientIP 请求客户端IP
+// ClientIp 请求客户端IP
 // Headers 请求头map
 // Body 请求体map
 type Request struct {
@@ -29,44 +29,45 @@ type Request struct {
 }
 
 // RequestService 请求下游服务封装
+// @param span opentracing span
 // @param url 服务http地址
 // @param method 请求方式
 // @param body 请求body结构体
 // @param header 请求头结构体
 // @param requestId 请求id
 // @return string 响应内容
-func RequestService(span opentracing.Span, url, method string, body, headers Any) (string, error) {
+func RequestService(span opentracing.Span, url string, request *Request) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
 
 	// 封装请求body
 	var s string
-	for k, v := range body {
+	for k, v := range request.Body {
 		s += fmt.Sprintf("%v=%v&", k, v)
 	}
 	s = strings.Trim(s, "&")
-	request, err := http.NewRequest(method, url, strings.NewReader(s))
+	r, err := http.NewRequest(request.Method, url, strings.NewReader(s))
 	if err != nil {
 		return "", err
 	}
 
 	// 新建request请求
-	for k, v := range headers {
-		request.Header.Add(k, v.(string))
+	for k, v := range request.Headers {
+		r.Header.Add(k, v.(string))
 	}
 	// 增加body格式头
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// 增加调用下游服务安全验证key
-	request.Header.Set("Call-Service-Key", viper.GetString("callServiceKey"))
+	r.Header.Set("Call-Service-Key", viper.GetString("callServiceKey"))
 
 	// 给请求封装opentracing-span header头
 	opentracing.GlobalTracer().Inject(
 		span.Context(),
 		opentracing.HTTPHeaders,
-		opentracing.HTTPHeadersCarrier(request.Header))
+		opentracing.HTTPHeadersCarrier(r.Header))
 
-	res, err := client.Do(request)
+	res, err := client.Do(r)
 	if err != nil {
 		return "", err
 	}
