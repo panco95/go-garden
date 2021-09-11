@@ -20,7 +20,7 @@ func main() {
 }
 
 func route(r *gin.Engine) {
-	r.Use(goms.CheckCallServiceKey())
+	r.Use(goms.CheckCallSafeMiddleware())
 	r.Any("login", func(c *gin.Context) {
 		c.JSON(http.StatusOK, goms.Any{
 			"code": 0,

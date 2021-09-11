@@ -17,15 +17,15 @@ func Gateway(ctx interface{}) {
 	switch t.String() {
 	case "*gin.Context":
 		c := ctx.(*gin.Context)
-		ginSupport(c)
+		gatewayGin(c)
 		break
 	default:
 		break
 	}
 }
 
-// gin框架支持
-func ginSupport(c *gin.Context) {
+// 网关：gin框架支持
+func gatewayGin(c *gin.Context) {
 	// openTracing span
 	span, err := GetSpan(c)
 	if err != nil {

@@ -1,11 +1,13 @@
 package goms
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
 	"net/http"
+	"reflect"
 )
 
 // InitOpenTracing 初始化opentracing分布式链路追踪组件
@@ -45,4 +47,32 @@ func StartSpanFromHeader(header http.Header) opentracing.Span {
 		opentracing.ChildOf(wireContext),
 	)
 	return span
+}
+
+// RequestTracing http请求链路跟踪
+func RequestTracing(ctx interface{}, span opentracing.Span) {
+	t := reflect.TypeOf(ctx)
+	switch t.String() {
+	case "*gin.Context":
+		c := ctx.(*gin.Context)
+		requestTracingGin(c, span)
+		break
+	default:
+		break
+	}
+}
+
+// RequestTracing http请求链路跟踪：gin框架支持
+func requestTracingGin(c *gin.Context, span opentracing.Span) {
+	request := Request{
+		GetMethod(c),
+		GetUrl(c),
+		GetUrlParam(c),
+		GetClientIp(c),
+		GetHeaders(c),
+		GetBody(c)}
+	span.SetTag("Request", request)
+
+	c.Set("span", span)
+	c.Set("request", &request)
 }

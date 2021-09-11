@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"github.com/spf13/viper"
 	"log"
 	"net/http"
 	"os"
@@ -44,7 +43,7 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 			param.ErrorMessage)
 	}))
 	server.Use(gin.Recovery())
-	server.Use(OpenTracing())
+	server.Use(OpenTracingMiddleware())
 	if auth != nil {
 		server.Use(auth())
 	}
@@ -69,29 +68,20 @@ func GatewayRoute(r *gin.Engine) {
 	})
 }
 
-// OpenTracing 链路追踪中间件
-func OpenTracing() gin.HandlerFunc {
+// OpenTracingMiddleware 链路追踪中间件
+func OpenTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		span := StartSpanFromHeader(c.Request.Header)
-
-		request := Request{
-			GetMethod(c), GetUrl(c), GetUrlParam(c), GetClientIp(c), GetHeaders(c), GetBody(c)}
-		span.SetTag("Request", request)
-
-		c.Set("span", span)
-		c.Set("request", &request)
-
+		RequestTracing(c, span)
 		c.Next()
-
 		span.Finish()
 	}
 }
 
-// CheckCallServiceKey 服务调用安全验证
-func CheckCallServiceKey() gin.HandlerFunc {
+// CheckCallSafeMiddleware 服务调用安全验证中间件
+func CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		requestKey := c.GetHeader("Call-Service-Key")
-		if strings.Compare(requestKey, viper.GetString("callServiceKey")) != 0 {
+		if !CheckCallSafe(c.GetHeader("Call-Service-Key")) {
 			c.JSON(http.StatusForbidden, FailRes())
 			c.Abort()
 		}
