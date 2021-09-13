@@ -3,10 +3,13 @@ callServiceKey: "goms by panco"
 etcdAddr:
   - "192.168.125.184:2379"
 zipkinAddr: "http://192.168.125.184:9411/api/v2/spans"
-#esAddr: "http://192.168.125.184:9200"
-#amqpAddr: "amqp://guest:guest@192.168.125.184:5672"
+redisAddr: "192.168.125.184:6379"
+esAddr: "http://192.168.125.184:9200"
+amqpAddr: "amqp://guest:guest@192.168.125.184:5672"
 
 services:
   user:
-    register: "/register"
     login: "/login"
+    exists: "/exists"
+  order:
+    submit: "/submit"

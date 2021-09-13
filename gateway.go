@@ -2,13 +2,9 @@ package goms
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/opentracing/opentracing-go"
-	"github.com/spf13/viper"
 	"net/http"
 	"reflect"
-	"time"
 )
 
 // Gateway 网关，http服务判断
@@ -59,44 +55,6 @@ func gatewayGin(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, SuccessRes(result))
-}
-
-// CallService 调用Http服务
-// @Description     服务重试：3次，失败依次等待0.1s、0.2s
-// @param service   服务名称
-// @param action    服务行为
-// @param method    请求方式：GET || POST
-// @param urlParam  url请求参数
-// @param body      请求body结构体
-// @param headers   请求头结构体
-// @param requestId 请求id
-func CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
-	route := viper.GetString("services." + service + "." + action)
-	if len(route) == 0 {
-		return "", errors.New("service route config not found")
-	}
-	serviceAddr, err := SelectServiceHttpAddr(service)
-	if err != nil {
-		return "", err
-	}
-
-	var result string
-	// 服务重试3次
-	for retry := 1; retry <= 3; retry++ {
-		url := "http://" + serviceAddr + route + result
-		result, err = RequestService(span, url, request)
-		if err != nil {
-			if retry >= 3 {
-				return "", err
-			} else {
-				time.Sleep(time.Millisecond * time.Duration(retry*100))
-				continue
-			}
-		}
-		break
-	}
-
-	return result, nil
 }
 
 // SuccessRes 成功响应

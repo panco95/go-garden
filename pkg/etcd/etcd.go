@@ -7,17 +7,17 @@ import (
 	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
-var etcd *clientV3.Client
+var client *clientV3.Client
 
 // GetClient 获取etcd客户端
 func GetClient() *clientV3.Client {
-	return etcd
+	return client
 }
 
 // Connect 连接etcd
 func Connect(etcdAddr []string) error {
 	var err error
-	etcd, err = clientV3.New(clientV3.Config{
+	client, err = clientV3.New(clientV3.Config{
 		Endpoints:   etcdAddr,
 		DialTimeout: 2 * time.Second,
 	})
@@ -28,7 +28,7 @@ func Connect(etcdAddr []string) error {
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	for _, addr := range etcdAddr {
-		_, err = etcd.Status(timeoutCtx, addr)
+		_, err = client.Status(timeoutCtx, addr)
 		if err != nil {
 			return err
 		}
@@ -39,7 +39,7 @@ func Connect(etcdAddr []string) error {
 // GetKV 获取etcd某个key的value
 func GetKV(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	getResp, err := etcd.Get(ctx, key)
+	getResp, err := client.Get(ctx, key)
 	cancel()
 	if err != nil {
 		return "", err

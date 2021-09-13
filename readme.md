@@ -26,6 +26,11 @@ docker run --rm -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=ye
 docker run --rm -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```
 
+3、示例程序依赖redis数据库，Docker启动：<br>
+```
+docker run --rm -it -d --name redis -p 6379:6379 redis
+```
+
 
 **文档**<br>
 

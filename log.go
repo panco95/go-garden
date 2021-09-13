@@ -1,9 +1,11 @@
 package goms
 
 import (
+	"fmt"
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
 )
 
 var Logger *zap.SugaredLogger
@@ -34,4 +36,13 @@ func GetLogWriter() zapcore.WriteSyncer {
 		Compress:   false,
 	}
 	return zapcore.AddSync(lumberJackLogger)
+}
+
+// Fatal 程序强制退出 + 日志记录
+// @Param label 日志标签
+// @Param err 错误
+func Fatal(label string, err error) {
+	e := fmt.Sprintf("[%s] %s", label, err)
+	Logger.Error(e)
+	log.Fatal(e)
 }

@@ -5,18 +5,18 @@ import (
 	"log"
 )
 
-var amqpClient *amqp.Connection
+var client *amqp.Connection
 
 // GetClient 获取rabbitmq客户端
 func GetClient() *amqp.Connection {
-	return amqpClient
+	return client
 }
 
 // Connect 连接到Rabbitmq
 // @param address rabbitmq连接地址
 func Connect(address string) error {
 	var err error
-	amqpClient, err = amqp.Dial(address)
+	client, err = amqp.Dial(address)
 	if err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func Connect(address string) error {
 // @param routingKey 路由键
 // @param body 消息内容
 func Publish(queue, exchange, routingKey, body string) error {
-	ch, err := amqpClient.Channel()
+	ch, err := client.Channel()
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func Publish(queue, exchange, routingKey, body string) error {
 // @param routingKey 路由键
 // @param consumeFunc 消费方法
 func Consumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
-	ch, err := amqpClient.Channel()
+	ch, err := client.Channel()
 	if err != nil {
 		return err
 	}

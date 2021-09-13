@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"github.com/gin-gonic/gin"
 	"goms"
+	"goms/example/gateway/middleware"
 	"log"
 )
 
@@ -15,13 +15,5 @@ var (
 func main() {
 	flag.Parse()
 	goms.Init(*rpcPort, *httpPort, "gateway")
-	log.Fatal(goms.GinServer(*httpPort, goms.GatewayRoute, auth))
-}
-
-func auth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 在这里写网关统一鉴权逻辑
-		c.Next()
-		log.Printf(c.Request.RequestURI)
-	}
+	log.Fatal(goms.GinServer(*httpPort, goms.GatewayRoute, middleware.Auth))
 }

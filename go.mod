@@ -6,6 +6,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gin-gonic/gin v1.7.4
 	github.com/go-playground/validator/v10 v10.9.0 // indirect
+	github.com/go-redis/redis/v8 v8.11.3
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/olivere/elastic/v7 v7.0.28

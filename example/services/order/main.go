@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"goms"
-	"goms/example/services/user/route"
+	"goms/example/services/order/route"
 	"log"
 )
 
@@ -14,6 +14,6 @@ var (
 
 func main() {
 	flag.Parse()
-	goms.Init(*rpcPort, *httpPort, "user")
+	goms.Init(*rpcPort, *httpPort, "order")
 	log.Fatal(goms.GinServer(*httpPort, route.Route, nil))
 }
