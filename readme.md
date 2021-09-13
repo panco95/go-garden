@@ -181,7 +181,7 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 
 2、打开postman，选择GET/POST请求方式，URL输入gateway任一节点http地址，然后加上访问用户服务的路由(config/services.yml)如：
 ``http://192.168.125.179:8081/api/user/login?a=1&b=3
-``，可增加任意header和url_param，body支持application/json、form-data、application/x-www-form-urlencoded，最后gateway都会封装为application/json请求下游服务，请求返回json数据：<br>
+``，可增加任意请求头、body等，最后gateway会带上原始请求报文和链路跟踪相关参数请求下游服务：<br>
 
 ```
 {
@@ -241,5 +241,6 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 **五、查看opentracing分布式链路跟踪日志：**<br>
 
 1、浏览器登录zipkin `http://127.0.0.1:9411`<br>
+2、点击run query，可以查询到刚刚请求的整个链路耗时情况和请求报文
 2、关于opentracing请查阅相关文档，本项目集成的是zipkin
 
