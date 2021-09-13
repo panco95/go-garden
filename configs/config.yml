@@ -1,15 +1,8 @@
 projectName: "goms"
-callServiceKey: "goms by panco"
+callServiceKey: "goms by 11panco"
 etcdAddr:
   - "192.168.125.184:2379"
 zipkinAddr: "http://192.168.125.184:9411/api/v2/spans"
 redisAddr: "192.168.125.184:6379"
-esAddr: "http://192.168.125.184:9200"
+elasticsearchAddr: "http://192.168.125.184:9200"
 amqpAddr: "amqp://guest:guest@192.168.125.184:5672"
-
-services:
-  user:
-    login: "/login"
-    exists: "/exists"
-  order:
-    submit: "/submit"

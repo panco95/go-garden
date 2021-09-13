@@ -21,8 +21,7 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
-	err := CreateDir(path + "/runtime")
-	if err != nil {
+	if err := CreateDir(path + "/runtime"); err != nil {
 		return errors.New("[Create runtime folder] " + err.Error())
 	}
 	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, ServiceName))

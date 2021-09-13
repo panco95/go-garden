@@ -48,8 +48,7 @@ func gatewayGin(c *gin.Context) {
 		return
 	}
 	var result Any
-	err = json.Unmarshal([]byte(data), &result)
-	if err != nil {
+	if err := json.Unmarshal([]byte(data), &result) ;err != nil {
 		Logger.Error(service + "/" + action + " return invalid format: " + data)
 		c.JSON(http.StatusInternalServerError, FailRes())
 		return

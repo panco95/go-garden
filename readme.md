@@ -35,12 +35,17 @@ docker run --rm -it -d --name redis -p 6379:6379 redis
 **文档**<br>
 
 **一、配置文件**<br><br>
-路径：config/config.yml<br>
+路径：configs目录<br>
 projectName：所有服务所属项目名称，非微服务节点名称<br>
 callServiceKey: 服务调用安全验证key<br>
 etcdAddr: etcd地址，集群可多行填写<br>
 zipkinAddr: zipkin地址<br>
-services：服务配置<br>
+redisAddr: redis地址<br>
+esAddr: elasticsearch地址<br>
+amqpAddr: rabbitmq地址<br>
+
+services：服务节点路由配置<br>
+
 配置示例：
 
 ```
@@ -49,6 +54,7 @@ callServiceKey: "goms by panco"
 etcdAddr:
   - "192.168.125.181:2379"
 zipkinAddr: "http://192.168.125.183:9411/api/v2/spans"
+
 services:
   user:
     register: "/register"

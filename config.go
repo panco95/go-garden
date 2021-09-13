@@ -1,22 +1,53 @@
 package goms
 
 import (
+	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"log"
 )
 
+var Config config
+
+type config struct {
+	ProjectName       string
+	CallServiceKey    string
+	EtcdAddr          []string
+	ZipkinAddr        string
+	RedisAddr         string
+	ElasticsearchAddr string
+	AmqpAddr          string
+	Services          map[string]map[string]string
+}
+
 // InitConfig 初始化配置文件
-func InitConfig(filePath, fileType string) {
+func InitConfig(path, fileType string) {
+	viper.AddConfigPath(path)
 	viper.SetConfigType(fileType)
-	viper.SetConfigFile(filePath)
-	viper.WatchConfig()
+
+	viper.SetConfigName("config")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("[Config] %s", err)
+	}
+
+	viper.SetConfigName("services")
+	if err := viper.MergeInConfig(); err != nil {
+		log.Fatalf("[Config] %s", err)
+	}
+
 	//配置文件变化监听
+	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		Logger.Debugf("[Config] %s has changed", filePath)
+		UnmarshalConfig()
 	})
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatal("[Config] " + err.Error())
+	UnmarshalConfig()
+}
+
+// UnmarshalConfig 解析配置文件到结构体
+func UnmarshalConfig() {
+	if err := viper.Unmarshal(&Config); err != nil {
+		e := fmt.Sprintf("unmarshal config error: %s", err)
+		log.Print(e)
+		Logger.Error(e)
 	}
 }
