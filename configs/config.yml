@@ -1,21 +1,12 @@
-#service call key
+projectName: "goms"
 callServiceKey: "goms by panco"
-
-#etcd address, support cluster
 etcdAddr:
-  - "192.168.129.144:2379"
+  - "192.168.125.184:2379"
+zipkinAddr: "http://192.168.125.184:9411/api/v2/spans"
+#esAddr: "http://192.168.125.184:9200"
+#amqpAddr: "amqp://guest:guest@192.168.125.184:5672"
 
-#elasticsearch address
-#esAddr: "http://192.168.129.144:9200"
-#rabbitmq address
-#amqpAddr: "amqp://guest:guest@192.168.129.144:5672"
-
-#zipkin address
-zipkinAddr: "http://192.168.129.144:9411/api/v2/spans"
-
-#services
 services:
   user:
-    #routes
     register: "/register"
     login: "/login"

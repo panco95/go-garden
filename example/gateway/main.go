@@ -14,7 +14,7 @@ var (
 
 func main() {
 	flag.Parse()
-	goms.Init(*rpcPort, *httpPort, "gateway", "goms")
+	goms.Init(*rpcPort, *httpPort, "gateway")
 	log.Fatal(goms.GinServer(*httpPort, goms.GatewayRoute, auth))
 }
 

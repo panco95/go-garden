@@ -14,8 +14,8 @@ func GetClient() *clientV3.Client {
 	return etcd
 }
 
-// EtcdConnect 连接etcd
-func EtcdConnect(etcdAddr []string) error {
+// Connect 连接etcd
+func Connect(etcdAddr []string) error {
 	var err error
 	etcd, err = clientV3.New(clientV3.Config{
 		Endpoints:   etcdAddr,

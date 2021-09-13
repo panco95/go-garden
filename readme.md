@@ -4,13 +4,15 @@
 **说明：**<br>
 本项目是由个人开发的微服务基础框架，项目正在积极开发中，很期待得到你的star。<br>
 
-**已实现功能：**<br>
+**特性：**<br>
 1、服务注册发现<br>
 2、网关路由分发<br>
-3、负载均衡<br>
-4、服务调用安全验证<br>
-5、服务重试<br>
-6、OpenTracing分布式链路追踪<br>
+3、负载均衡策略<br>
+4、服务调用安全<br>
+5、服务重试策略<br>
+6、分布式链路追踪<br>
+7、可选组件Rabbitmq、Elasticsearch<br>
+8、支持Gin等Web框架<br>
 
 **准备工作：**<br>
 1、Etcd，Docker启动：<br>
@@ -29,12 +31,15 @@ docker run --rm -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 **一、配置文件**<br><br>
 路径：config/config.yml<br>
+projectName：所有服务所属项目名称，非微服务节点名称<br>
 callServiceKey: 服务调用安全验证key<br>
-etcdAddr: etcd服务地址，集群可多行填写<br>
+etcdAddr: etcd地址，集群可多行填写<br>
+zipkinAddr: zipkin地址<br>
 services：服务配置<br>
 配置示例：
 
 ```
+projectName: "goms"
 callServiceKey: "goms by panco"
 etcdAddr:
   - "192.168.125.181:2379"
@@ -56,6 +61,8 @@ services:
 参数：<br>
 -http_port：http监听端口<br>
 -rpc_port：rpc监听端口<br>
+
+说明：gateway是网关节点，接受所有客户端请求，然后内部会根据请求的url转发到配置好的service路由，多个gateway节点需要使用nginx等前端配置负载均衡转发请求<br>
 
 模拟三个Gateway网关节点进行集群架设：<br>
 ```
@@ -83,6 +90,7 @@ go run example/gateway/main.go -http_port 8082 -rpc_port 8182
 -rpc_port：rpc监听端口<br>
 -etcd_addr：etcd服务地址（支持集群格式：`127.0.0.1:2379|127.0.0.1:2380`）<br>
 
+说明：service服务不需要使用nginx等前端转发，会由gateway进行转发到service<br>
 模拟三个user服务节点进行集群架设：<br>
 ```
 go run example/services/user/main.go -http_port 9080 -rpc_port 9180
@@ -232,6 +240,6 @@ goms_user_192.168.125.179:9182_192.168.125.179:9082
 
 **五、查看opentracing分布式链路跟踪日志：**<br>
 
-2、浏览器登录zipkin `http://127.0.0.1:9411`<br>
-3、关于opentracing请查阅相关文档，本项目集成的是zipkin
+1、浏览器登录zipkin `http://127.0.0.1:9411`<br>
+2、关于opentracing请查阅相关文档，本项目集成的是zipkin
 

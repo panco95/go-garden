@@ -12,9 +12,9 @@ func GetClient() *amqp.Connection {
 	return amqpClient
 }
 
-// AmqpConnect 连接到Rabbitmq
+// Connect 连接到Rabbitmq
 // @param address rabbitmq连接地址
-func AmqpConnect(address string) error {
+func Connect(address string) error {
 	var err error
 	amqpClient, err = amqp.Dial(address)
 	if err != nil {
@@ -23,12 +23,12 @@ func AmqpConnect(address string) error {
 	return nil
 }
 
-// AmqpPublish 发布消息
+// Publish 发布消息
 // @param queue 队列名称
 // @param exchange 交换机
 // @param routingKey 路由键
 // @param body 消息内容
-func AmqpPublish(queue, exchange, routingKey, body string) error {
+func Publish(queue, exchange, routingKey, body string) error {
 	ch, err := amqpClient.Channel()
 	if err != nil {
 		return err
@@ -53,12 +53,12 @@ func AmqpPublish(queue, exchange, routingKey, body string) error {
 	return nil
 }
 
-// AmqpConsumer 启动Rabbitmq消费者
+// Consumer 启动Rabbitmq消费者
 // @param queue 队列名称
 // @param exchange 交换机
 // @param routingKey 路由键
 // @param consumeFunc 消费方法
-func AmqpConsumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
+func Consumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
 	ch, err := amqpClient.Channel()
 	if err != nil {
 		return err

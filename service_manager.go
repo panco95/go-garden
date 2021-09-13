@@ -49,6 +49,9 @@ var (
 // @param httpPort http监听端口
 // @param rpcPort rpc监听端口
 func InitService(projectName, serviceName, httpPort, rpcPort string) error {
+	if projectName == "" {
+		projectName = "goms"
+	}
 	ProjectName = projectName
 	ServiceName = serviceName
 	ServiceIp = GetOutboundIP()

@@ -7,8 +7,8 @@ import (
 
 var esClient *elastic.Client
 
-// EsConnect 初始化连接Elasticsearch
-func EsConnect(address string) error {
+// Connect 连接Elasticsearch
+func Connect(address string) error {
 	var err error
 	esClient, err = elastic.NewClient(
 		elastic.SetURL(address),
@@ -20,8 +20,8 @@ func EsConnect(address string) error {
 	return nil
 }
 
-//EsPut 存储数据到es
-func EsPut(index, body string) (*elastic.IndexResponse, error) {
+// Put 存储数据
+func Put(index, body string) (*elastic.IndexResponse, error) {
 	ctx := context.Background()
 	put, err := esClient.Index().
 		Index(index).
