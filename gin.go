@@ -48,7 +48,7 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 	}
 	route(server)
 
-	log.Printf("[%s] Http Listen on port: %s", Config.ServiceName, port)
+	log.Printf("[%s] Http listen on port: %s", Config.ServiceName, port)
 	return server.Run(":" + port)
 }
 

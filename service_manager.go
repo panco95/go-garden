@@ -3,7 +3,9 @@ package garden
 import (
 	"context"
 	"errors"
+	"fmt"
 	"garden/drives/etcd"
+	"garden/drives/ping"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"log"
 	"strings"
@@ -45,9 +47,6 @@ var (
 // @param httpPort http监听端口
 // @param rpcPort rpc监听端口
 func InitService(projectName, serviceName, httpPort, rpcPort string) error {
-	if projectName == "" {
-		projectName = "garden"
-	}
 	ServiceIp = GetOutboundIP()
 	intranetRpcAddr := ServiceIp + ":" + rpcPort
 	intranetHttpAddr := ServiceIp + ":" + httpPort
@@ -242,6 +241,7 @@ func ServiceManageWatch(ch chan ServiceManager) {
 			case "addNode": // 添加服务节点
 				CreateServiceKey(sm.ServiceName)
 				Services[sm.ServiceName].Nodes = append(Services[sm.ServiceName].Nodes, sm.ServiceAddr)
+				pingServiceRpc(sm.ServiceName)
 				break
 
 			case "delNode": // 删除服务节点
@@ -292,4 +292,28 @@ func SelectServiceHttpAddr(name string) (string, error) {
 	ServiceManagerChan <- sm
 
 	return serviceHttpAddr, nil
+}
+
+// pingServiceRpc Ping其他服务Rpc地址
+func pingServiceRpc(serviceName string) {
+	var l string
+	rpcAddress, err := GetServiceRpcAddr(serviceName, len(Services[serviceName].Nodes)-1)
+	if err != nil {
+		l = fmt.Sprintf("GetSericeRpcAddr [%s %s] error : %s", serviceName, rpcAddress, err)
+		log.Print(l)
+		Logger.Debugf(l)
+		return
+	}
+	if rpcAddress != ServiceIp+":"+Config.RpcPort {
+		s, err := ping.Ping(rpcAddress)
+		if err != nil {
+			l = fmt.Sprintf("ping [%s %s] error : %s", serviceName, rpcAddress, err)
+			log.Print(l)
+			Logger.Debugf(l)
+			return
+		}
+		l = fmt.Sprintf("ping rpc [%s %s] %s", serviceName, rpcAddress, s)
+		log.Print(l)
+		Logger.Debugf(l)
+	}
 }
