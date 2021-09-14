@@ -2,5 +2,5 @@ services:
   user:
     login: "/login"
     exists: "/exists"
-  order:
-    submit: "/submit"
+  pay:
+    order: "/order"

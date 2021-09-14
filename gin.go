@@ -1,4 +1,4 @@
-package goms
+package garden
 
 import (
 	"errors"
@@ -22,11 +22,11 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 	server := gin.Default()
 	path, _ := os.Getwd()
 	if err := CreateDir(path + "/runtime"); err != nil {
-		return errors.New("[Create runtime folder] " + err.Error())
+		return err
 	}
-	file, err := os.Create(fmt.Sprintf("%s/runtime/gin_%s.log", path, ServiceName))
+	file, err := os.Create(fmt.Sprintf("%s/runtime/gin.log", path))
 	if err != nil {
-		return errors.New("[Create gin log file] " + err.Error())
+		return err
 	}
 	gin.DefaultWriter = file
 	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
@@ -61,7 +61,7 @@ func GatewayRoute(r *gin.Engine) {
 	})
 	// 集群信息查询接口
 	r.Any("cluster", func(c *gin.Context) {
-		c.JSON(http.StatusOK, SuccessRes(Any{
+		c.JSON(http.StatusOK, GatewaySuccess(Any{
 			"services": Services,
 		}))
 	})
@@ -81,7 +81,7 @@ func OpenTracingMiddleware() gin.HandlerFunc {
 func CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !CheckCallSafe(c.GetHeader("Call-Service-Key")) {
-			c.JSON(http.StatusForbidden, FailRes())
+			c.JSON(http.StatusForbidden, GatewayFail())
 			c.Abort()
 		}
 	}

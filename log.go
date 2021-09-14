@@ -1,4 +1,4 @@
-package goms
+package garden
 
 import (
 	"fmt"

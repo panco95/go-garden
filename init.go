@@ -1,32 +1,43 @@
-package goms
+package garden
 
 import (
-	"goms/pkg/etcd"
-	"goms/pkg/redis"
+	"garden/drives/amqp"
+	"garden/drives/etcd"
+	"garden/drives/redis"
 )
 
 // Init 启动一个服务的组件初始化封装
-func Init(rpcPort, httpPort, serviceName string) {
+func Init() {
 	InitLog()
 	InitConfig("configs", "yml")
 
-	err := etcd.Connect(Config.EtcdAddr)
-	if err != nil {
+	if err := etcd.Connect(Config.EtcdAddress); err != nil {
 		Fatal("Etcd", err)
 	}
 
-	err = InitService(Config.ProjectName, serviceName, httpPort, rpcPort)
-	if err != nil {
+	if err := InitService(Config.ProjectName, Config.ServiceName, Config.HttpPort, Config.RpcPort); err != nil {
 		Fatal("InitService", err)
 	}
 
-	err = InitOpenTracing(serviceName, Config.ZipkinAddr, GetOutboundIP()+":"+httpPort)
-	if err != nil {
+	if err := InitOpenTracing(Config.ServiceName, Config.ZipkinAddress, GetOutboundIP()+":"+Config.HttpPort); err != nil {
 		Fatal("Zipkin", err)
 	}
 
-	err = redis.Connect(Config.RedisAddr)
-	if err != nil {
-		Fatal("Redis", err)
+	if Config.RedisAddress != "" {
+		if err := redis.Connect(Config.RedisAddress); err != nil {
+			Fatal("Redis", err)
+		}
+	}
+
+	if Config.AmqpAddress != "" {
+		if err := amqp.Connect(Config.AmqpAddress); err != nil {
+			Fatal("Amqp", err)
+		}
+	}
+
+	if Config.ElasticsearchAddress != "" {
+		if err := redis.Connect(Config.ElasticsearchAddress); err != nil {
+			Fatal("Elasticsearch", err)
+		}
 	}
 }

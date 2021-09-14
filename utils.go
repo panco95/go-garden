@@ -1,4 +1,4 @@
-package goms
+package garden
 
 import (
 	uuid "github.com/satori/go.uuid"
@@ -8,9 +8,6 @@ import (
 	"strconv"
 	"time"
 )
-
-//Any 任意类型map封装
-type Any map[string]interface{}
 
 // NewUuid 生成UUID
 func NewUuid() string {

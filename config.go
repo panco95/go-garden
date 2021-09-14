@@ -1,4 +1,4 @@
-package goms
+package garden
 
 import (
 	"fmt"
@@ -10,14 +10,17 @@ import (
 var Config config
 
 type config struct {
-	ProjectName       string
-	CallServiceKey    string
-	EtcdAddr          []string
-	ZipkinAddr        string
-	RedisAddr         string
-	ElasticsearchAddr string
-	AmqpAddr          string
-	Services          map[string]map[string]string
+	ProjectName          string
+	ServiceName          string
+	HttpPort             string
+	RpcPort              string
+	CallServiceKey       string
+	EtcdAddress          []string
+	ZipkinAddress        string
+	RedisAddress         string
+	ElasticsearchAddress string
+	AmqpAddress          string
+	Services             map[string]map[string]string
 }
 
 // InitConfig 初始化配置文件

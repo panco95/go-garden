@@ -1,10 +1,10 @@
-package goms
+package garden
 
 import (
 	"context"
 	"errors"
+	"garden/drives/etcd"
 	clientV3 "go.etcd.io/etcd/client/v3"
-	"goms/pkg/etcd"
 	"log"
 	"strings"
 	"time"
@@ -37,8 +37,8 @@ var ServiceManagerChan chan ServiceManager
 // Services 所有服务map
 var (
 	ProjectName = ""
-	ServiceId   string
 	ServiceName string
+	ServiceId   string
 	ServiceIp   string
 	Services    = make(map[string]*Service)
 )
@@ -50,14 +50,14 @@ var (
 // @param rpcPort rpc监听端口
 func InitService(projectName, serviceName, httpPort, rpcPort string) error {
 	if projectName == "" {
-		projectName = "goms"
+		projectName = "garden"
 	}
 	ProjectName = projectName
 	ServiceName = serviceName
 	ServiceIp = GetOutboundIP()
 	intranetRpcAddr := ServiceIp + ":" + rpcPort
 	intranetHttpAddr := ServiceIp + ":" + httpPort
-	ServiceId = projectName + "_" + ServiceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
+	ServiceId = projectName + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
 
 	ServiceManagerChan = make(chan ServiceManager, 0)
 	go ServiceManageWatch(ServiceManagerChan)

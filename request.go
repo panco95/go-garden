@@ -1,10 +1,9 @@
-package goms
+package garden
 
 import (
 	"errors"
 	"fmt"
 	"github.com/opentracing/opentracing-go"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -38,7 +37,7 @@ type Request struct {
 // @param headers   请求头结构体
 // @param requestId 请求id
 func CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
-	route := viper.GetString("services." + service + "." + action)
+	route := Config.Services[service][action]
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
@@ -97,7 +96,7 @@ func RequestService(span opentracing.Span, url string, request *Request) (string
 	// 增加body格式头
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// 增加调用下游服务安全验证key
-	r.Header.Set("Call-Service-Key", viper.GetString("callServiceKey"))
+	r.Header.Set("Call-Service-Key", Config.CallServiceKey)
 
 	// 给请求封装opentracing-span header头
 	opentracing.GlobalTracer().Inject(

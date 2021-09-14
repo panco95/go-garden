@@ -1,12 +1,11 @@
-package goms
+package garden
 
 import (
-	"github.com/spf13/viper"
 	"strings"
 )
 
 func CheckCallSafe(key string) bool {
-	if strings.Compare(key, viper.GetString("callServiceKey")) != 0 {
+	if strings.Compare(key, Config.CallServiceKey) != 0 {
 		return false
 	}
 	return true

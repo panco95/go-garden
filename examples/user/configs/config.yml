@@ -1,0 +1,12 @@
+ProjectName: "garden"
+ServiceName: "user"
+HttpPort: "8081"
+RpcPort: "8181"
+CallServiceKey: "garden"
+EtcdAddress:
+  - "192.168.125.184:2379"
+ZipkinAddress: "http://192.168.125.184:9411/api/v2/spans"
+
+RedisAddress: "192.168.125.184:6379"
+#ElasticsearchAddress: "http://192.168.125.184:9200"
+#AmqpAddress: "amqp://guest:guest@192.168.125.184:5672"

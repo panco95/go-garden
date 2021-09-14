@@ -1,0 +1,4 @@
+2021-09-14T14:51:16.797+0800	ERROR	garden/gateway.go:47	call order/submit error: service route config not found
+2021-09-14T14:52:34.665+0800	ERROR	garden/gateway.go:47	call pay/order error: service key not found
+2021-09-14T15:02:02.169+0800	ERROR	garden/log.go:46	[Amqp] dial tcp 192.168.125.184:5672: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.
+2021-09-14T15:02:30.795+0800	ERROR	garden/log.go:46	[Amqp] dial tcp 192.168.125.184:5672: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.

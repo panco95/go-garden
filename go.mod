@@ -1,4 +1,4 @@
-module goms
+module garden
 
 go 1.16
 

@@ -1,9 +1,9 @@
-package goms
+package garden
 
 import (
+	"garden/drives/zipkin"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"goms/pkg/zipkin"
 	"net/http"
 	"reflect"
 )
