@@ -12,7 +12,7 @@ go-garden是由个人开发的微服务基础框架，项目正在积极开发�
 5、服务重试策略<br>
 6、分布式链路追踪<br>
 7、可选组件Redis、Rabbitmq、Elasticsearch<br>
-8、支持Gin框架进行开发<br>
+8、支持Gin<br>
 
 **准备工作：**<br>
 1、Etcd，Docker启动：<br>
@@ -60,4 +60,9 @@ services:
     action1: "/route1"
 ```
 说明：访问网关 /api/serviceName/actionName 会自动转发到服务接口 /route1 路由
+<br><br>
 
+二、示例程序：<br>
+API网关：/examples/gateway<br>
+用户中心：/examples/user<br>
+支付中心：/examples/pay<br>
