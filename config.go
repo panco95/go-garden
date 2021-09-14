@@ -1,10 +1,8 @@
 package garden
 
 import (
-	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"log"
 )
 
 var Config config
@@ -30,12 +28,12 @@ func InitConfig(path, fileType string) {
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("[Config] %s", err)
+		Fatal("Config", err)
 	}
 
 	viper.SetConfigName("services")
 	if err := viper.MergeInConfig(); err != nil {
-		log.Fatalf("[Config] %s", err)
+		Fatal("Config", err)
 	}
 
 	//配置文件变化监听
@@ -49,8 +47,6 @@ func InitConfig(path, fileType string) {
 // UnmarshalConfig 解析配置文件到结构体
 func UnmarshalConfig() {
 	if err := viper.Unmarshal(&Config); err != nil {
-		e := fmt.Sprintf("unmarshal config error: %s", err)
-		log.Print(e)
-		Logger.Error(e)
+		Fatal("Config", err)
 	}
 }

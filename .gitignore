@@ -1,4 +1,5 @@
 .idea
 /runtime
-/runtime/gin.log
-/runtime/logs/log.log
+/examples/gateway/runtime
+/examples/user/runtime
+/examples/pay/runtime

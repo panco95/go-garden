@@ -1,6 +1,6 @@
 services:
   user:
-    login: "/login"
-    exists: "/exists"
+    login: /login
+    exists: /exists
   pay:
-    order: "/order"
+    order: /order

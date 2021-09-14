@@ -1,3 +1,0 @@
-192.168.8.98 - [Tue, 14 Sep 2021 15:03:50 CST] "POST /order HTTP/1.1 200 0s "PostmanRuntime/7.28.4" "
-192.168.8.98 - [Tue, 14 Sep 2021 15:03:53 CST] "POST /order HTTP/1.1 200 2.141ms "PostmanRuntime/7.28.4" "
-192.168.8.98 - [Tue, 14 Sep 2021 15:04:07 CST] "POST /order HTTP/1.1 200 1.0141ms "PostmanRuntime/7.28.4" "

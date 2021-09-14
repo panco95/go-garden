@@ -5,7 +5,7 @@ import "github.com/gin-gonic/gin"
 // Run 服务启动
 // 目前仅支持gin框架
 func Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
-	Fatal("run", GinServer(Config.HttpPort, route, auth))
+	Fatal("Run", GinServer(Config.HttpPort, route, auth))
 }
 
 // Any 抽象map封装
