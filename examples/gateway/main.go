@@ -6,17 +6,17 @@ import (
 )
 
 func main() {
-	// 服务初始化
+	// server init
 	garden.Init()
-	// 服务启动
+	// server run
 	garden.Run(garden.GatewayRoute, Auth)
 }
 
-// Auth 自定义全局中间件
+// Auth Customize the global middleware
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 前置逻辑
+		// before logic
 		c.Next()
-		// 后置逻辑
+		// after logic
 	}
 }
