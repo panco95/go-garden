@@ -63,9 +63,12 @@ docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 #### 2. Gateway网关服务
 
-* 创建quick_gateway目录后进入目录
-* 执行 `go mod init` 初始化一个go项目
-* 新建go程序入口文件 `main.go` 并输入以下代码：
+创建quick_gateway目录后进入目录
+
+执行 `go mod init qucik_gateway` 初始化项目
+
+新建go程序入口文件 `main.go` 并输入以下代码：
+
 ```golang
 package main
 
@@ -90,8 +93,80 @@ func Auth() gin.HandlerFunc {
 	}
 }
 ```
-* 安装go mod包： `go mod tidy`
-* 执行程序：`go run main.go`
+安装go mod包： `go mod tidy`
+
+执行程序：`go run main.go`
+
+这时候程序会报一个错误且异常退出，因为没办法继续执行下去：
+
+```
+PS D:\code_self\quick_gateway> go run .\main.go
+2021/09/15 16:44:32 [Config] Config File "config" Not Found in "[D:\\code_self\\quick_gateway\\configs]"
+exit status 1
+```
+
+同时Go Garden会保存日志到项目目录的 `runtime`目录下，记得查看哦！言归正传，我们看日志内容可知道，是配置config找不到，因为我们还没有创建配置文件，接下来讲解下配置文件。
+
+在项目根目录创建 `configs` 目录并且在目录下创建配置文件 `config.yml` ，我们把相关配置输入，记得修改相关配置为你的环境噢，192.168.125.184 是我开发环境Linux虚拟机的ip啦~ ：
+
+```yml
+ServiceName: gateway
+HttpPort: 8080
+RpcPort: 8180
+CallServiceKey: garden
+EtcdAddress:
+  - 192.168.125.184:2379
+ZipkinAddress: http://192.168.125.184:9411/api/v2/spans
+
+RedisAddress: 192.168.125.184:6379
+#ElasticsearchAddress: http://192.168.125.184:9200
+#AmqpAddress: amqp://guest:guest@192.168.125.184:5672
+```
+下面详细说明了每个配置项的作用：
+
+|        配置项         |                                               说明                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| ServiceName          | 服务名称，这里我们输入gateway即可                                                                   |
+| HttpPort             | http监听端口                                                                                      |
+| RpcPort              | rpc监听端口                                                                                       |
+| CallServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                                     |
+| EtcdAddress          | Etcd地址，这里我们填写正确的IP加端口，如果是etcd集群的话我们可以多行填写对应地址                         |
+| ZipkinAddress        | zipkin服务的api地址                                                                                |
+| RedisAddress         | redis服务的IP加端口                                                                                |
+| ElasticsearchAddress | es服务的地址，我们的示例项目没有用到es，那么我们可以备注掉，程序启动的时候也不会去执行连接请求             |
+| AmqpAddress          | rabbitmq服务的地址，我们的示例项目没有用到rabbitmq，那么我们可以备注掉，程序启动的时候也不会去执行连接请求 |
+
+好了，配置文件创建好了，那么我们现在再来启动一下程序 `go run main.go` 看看吧！
+
+本以为会开开心心的看到程序启动成功，没想到又报了一个错：
+
+```
+PS D:\code_self\quick_gateway> go run .\main.go
+2021/09/15 17:08:36 [Config] Config File "routes" Not Found in "[D:\\code_self\\quick_gateway\\configs]"
+exit status 1
+```
+
+这也是一个配置文件找不到的错误，但是呢，不是我们上面创建的 `config.yml` ，这次是缺少了 `routes.yml` ，这个配置文件是干嘛的呢？我们想想看，不管是gateway网关调用下游业务服务还是服务A调用服务B，我们是不知情下游服务的具体请求地址的，我们可能只知道他这个接口叫做 `login` ？可能完整的地址是 `/api/user/login`，也可能是 `/api/v1/user/login`，那么我们现在要调用服务B的 `login`，就要根据路由配置来获取具体的请求地址。在传统架构里可能直接把地址写在代码里面，万一某一天服务B修改了这个接口的路由，那么得在所有上游服务修改代码更新为正确地址，这是非常蛋疼的架构！
+好了，言归正传，现在我们来创建路由配置 `routes.yml` 吧！
+
+```yml
+routes:
+  user:
+    login: /login
+    exists: /exists
+  pay:
+    order: /order
+```
+我大胆的猜测，大家看到这个配置内容好像懂了点什么，但是又不是完全懂，那么我来讲解一下吧，我们搭建的微服务示例就基于这么一个路由配置。
+首先第一行是固定的，大家不用修改，看第二行 `user` ，表示的是user服务，因为Go Garden是微服务框架嘛，那么我们一个项目肯定会拆分到很多的服务，例如 用户中心、支付中心、数据中心等等，我们这里的 `user` 代表的就是用户中心服务，然后它的下面又两行，分别是 `login: /login` 和 `exists: /exists` ，它们表示的是user服务有两个接口，名称分别为 login 和 exists，也就是冒号前面的是接口名称，冒号后面的是服务具体的接口path，如果我们的服务 `login` 接口路由是 `/api/v1/login` ，那么我们就要在这里要在这里修改它，`user` 服务监听login接口应该是这样子的： `	r.POST("login", func(c *gin.Context) {...})` ，那么一次类推下面的 `exists` 接口和下面的 `pay` 服务的 `order` 接口都是一样的意思，在这里我们为了简单就没有写多余的接口path，大家在实际开发项目中是可以增加 `v1` 这样的前缀的，以免未来更新接口不兼容老接口时可以增加 `v2` 前缀，总之，这个配置文件就是为了实现 `服务->接口名->接口路由` 这个规则的。
+好了，现在我们把配置文件创建好后，我们可以再来启动程序 `go run main.go` ：
+
+```
+PS D:\code_self\quick_gateway> go run .\main.go
+2021/09/15 17:46:29 [gateway] Http listen on port: 8080
+2021/09/15 17:46:29 [gateway] Rpc listen on port: 8180
+```
+终于我们把gateway网关服务启动成功啦！根据打印信息，我们可以看到服务监听了 http和rpc两个端口。
 
 ## 许可证
 

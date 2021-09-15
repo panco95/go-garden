@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"garden"
+	"github.com/panco95/go-garden"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

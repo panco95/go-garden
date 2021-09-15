@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"garden"
-	"garden/drives/redis"
 	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden"
+	"github.com/panco95/go-garden/drives/redis"
 	"net/http"
 )
 
