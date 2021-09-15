@@ -5,7 +5,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Ping ping rpc服务端
 func Ping(address string) (string, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {

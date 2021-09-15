@@ -1,4 +1,4 @@
-services:
+routes:
   user:
     login: /login
     exists: /exists

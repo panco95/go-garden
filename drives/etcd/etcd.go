@@ -9,12 +9,10 @@ import (
 
 var client *clientV3.Client
 
-// GetClient 获取etcd客户端
-func GetClient() *clientV3.Client {
+func Client() *clientV3.Client {
 	return client
 }
 
-// Connect 连接etcd
 func Connect(etcdAddr []string) error {
 	var err error
 	client, err = clientV3.New(clientV3.Config{
@@ -36,7 +34,6 @@ func Connect(etcdAddr []string) error {
 	return nil
 }
 
-// GetKV 获取etcd某个key的value
 func GetKV(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	getResp, err := client.Get(ctx, key)

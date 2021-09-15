@@ -7,7 +7,10 @@ import (
 
 var client *elastic.Client
 
-// Connect 连接Elasticsearch
+func Client() *elastic.Client {
+	return client
+}
+
 func Connect(address string) error {
 	var err error
 	client, err = elastic.NewClient(
@@ -20,7 +23,6 @@ func Connect(address string) error {
 	return nil
 }
 
-// Put 存储数据
 func Put(index, body string) (*elastic.IndexResponse, error) {
 	ctx := context.Background()
 	put, err := client.Index().
@@ -31,9 +33,4 @@ func Put(index, body string) (*elastic.IndexResponse, error) {
 		return nil, err
 	}
 	return put, nil
-}
-
-// GetClient 获取ES客户端
-func GetClient() *elastic.Client {
-	return client
 }

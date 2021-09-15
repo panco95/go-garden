@@ -7,7 +7,6 @@ import (
 	"reflect"
 )
 
-// Gateway 网关，http服务判断
 func Gateway(ctx interface{}) {
 	t := reflect.TypeOf(ctx)
 	switch t.String() {
@@ -20,7 +19,6 @@ func Gateway(ctx interface{}) {
 	}
 }
 
-// 网关：gin框架支持
 func gatewayGin(c *gin.Context) {
 	// openTracing span
 	span, err := GetSpan(c)
@@ -29,7 +27,7 @@ func gatewayGin(c *gin.Context) {
 		Logger.Errorf("[%s] %s", "GetSpan", err)
 		return
 	}
-	// request结构体
+	// request struct
 	request, err := GetRequest(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GatewayFail())
@@ -37,11 +35,11 @@ func gatewayGin(c *gin.Context) {
 		span.SetTag("GetRequestContext", err)
 		return
 	}
-	// 服务名称和服务路由
+
 	service := c.Param("service")
 	action := c.Param("action")
 
-	// 请求下游服务
+	// request service
 	data, err := CallService(span, service, action, request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GatewayFail())

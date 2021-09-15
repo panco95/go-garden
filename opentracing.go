@@ -9,7 +9,6 @@ import (
 	"reflect"
 )
 
-// InitOpenTracing 初始化opentracing分布式链路追踪组件
 func InitOpenTracing(service, addr, address string) error {
 	trace, err := zipkin.Connect(service, addr, address)
 	if err != nil {
@@ -19,8 +18,8 @@ func InitOpenTracing(service, addr, address string) error {
 	return nil
 }
 
-// StartSpanFromHeader 从请求头获取span
-// 如果header中没有span，会新建root span，如果有，则会新建child span
+// StartSpanFromHeader Get the opentracing span from the request header
+// If no span, in header creates new root span, if any, new child span
 func StartSpanFromHeader(header http.Header, operateName string) opentracing.Span {
 	var span opentracing.Span
 	wireContext, _ := opentracing.GlobalTracer().Extract(
@@ -34,7 +33,6 @@ func StartSpanFromHeader(header http.Header, operateName string) opentracing.Spa
 	return span
 }
 
-// RequestTracing http请求链路跟踪
 func RequestTracing(ctx interface{}, span opentracing.Span) {
 	t := reflect.TypeOf(ctx)
 	switch t.String() {
@@ -47,7 +45,6 @@ func RequestTracing(ctx interface{}, span opentracing.Span) {
 	}
 }
 
-// RequestTracing http请求链路跟踪：gin框架支持
 func requestTracingGin(c *gin.Context, span opentracing.Span) {
 	request := Request{
 		GetMethod(c),

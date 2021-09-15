@@ -8,7 +8,10 @@ import (
 
 var client *redis.Client
 
-// Connect 连接redis
+func Client() *redis.Client {
+	return client
+}
+
 func Connect(address string) error {
 	client = redis.NewClient(&redis.Options{
 		Addr:     address,
@@ -16,12 +19,7 @@ func Connect(address string) error {
 		DB:       0,
 	})
 	if client.Ping(context.Background()).Err() != nil {
-		return errors.New("Connect error")
+		return errors.New("connect error")
 	}
 	return nil
-}
-
-// Client 获取redis客户端
-func Client() *redis.Client {
-	return client
 }

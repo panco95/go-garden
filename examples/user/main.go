@@ -9,21 +9,18 @@ import (
 )
 
 func main() {
-	// 服务初始化
+	// server init
 	garden.Init()
-	// 服务启动
+	// server run
 	garden.Run(Route, nil)
 }
 
-// Route Gin路由
 func Route(r *gin.Engine) {
 	r.Use(garden.CheckCallSafeMiddleware()) // 调用接口安全验证
 	r.POST("login", Login)
 	r.POST("exists", Exists)
 }
 
-// Login 登录接口
-// @param username 用户名
 func Login(c *gin.Context) {
 	span, err := garden.GetSpan(c)
 	if err != nil {
@@ -48,9 +45,7 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, garden.ApiResponse(0, "登录成功", nil))
 }
 
-// Exists 查询用户是否存在接口
-// @param username 用户名
-// @return data.exists true || false
+// Exists Query if the user exists
 func Exists(c *gin.Context) {
 	var Validate VExists
 	if err := c.ShouldBind(&Validate); err != nil {
@@ -68,12 +63,12 @@ func Exists(c *gin.Context) {
 	}))
 }
 
-// VLogin login接口验证器
+// VLogin The login api validator
 type VLogin struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
 }
 
-// VExists exists接口验证器
+// VExists The exists interface validator
 type VExists struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
 }

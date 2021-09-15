@@ -7,7 +7,6 @@ import (
 	"garden/drives/redis"
 )
 
-// Init 启动一个服务的组件初始化封装
 func Init() {
 	InitLog()
 	InitConfig("configs", "yml")
@@ -44,7 +43,6 @@ func Init() {
 	}
 }
 
-// CheckConfig 检测配置是否合法
 func CheckConfig() {
 	if Config.ServiceName == "" {
 		Fatal("Config", errors.New("config empty: ServiceName"))

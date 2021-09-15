@@ -10,7 +10,6 @@ import (
 
 var Logger *zap.SugaredLogger
 
-// InitLog 初始化本地日志引擎
 func InitLog() {
 	writeSyncer := GetLogWriter()
 	encoder := GetEncoder()
@@ -38,11 +37,9 @@ func GetLogWriter() zapcore.WriteSyncer {
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-// Fatal 程序强制退出 + 日志记录
-// @Param label 日志标签
-// @Param err 错误
+// Fatal Programs are forced to exit and logging
 func Fatal(label string, err error) {
 	e := fmt.Sprintf("[%s] %s", label, err)
-	Logger.Fatal(e)
+	Logger.Error(e)
 	log.Fatal(e)
 }

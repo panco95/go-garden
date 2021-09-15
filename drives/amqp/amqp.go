@@ -7,13 +7,10 @@ import (
 
 var client *amqp.Connection
 
-// GetClient 获取rabbitmq客户端
-func GetClient() *amqp.Connection {
+func Client() *amqp.Connection {
 	return client
 }
 
-// Connect 连接到Rabbitmq
-// @param address rabbitmq连接地址
 func Connect(address string) error {
 	var err error
 	client, err = amqp.Dial(address)
@@ -23,11 +20,7 @@ func Connect(address string) error {
 	return nil
 }
 
-// Publish 发布消息
-// @param queue 队列名称
-// @param exchange 交换机
-// @param routingKey 路由键
-// @param body 消息内容
+// Publish message
 func Publish(queue, exchange, routingKey, body string) error {
 	ch, err := client.Channel()
 	if err != nil {
@@ -53,11 +46,7 @@ func Publish(queue, exchange, routingKey, body string) error {
 	return nil
 }
 
-// Consumer 启动Rabbitmq消费者
-// @param queue 队列名称
-// @param exchange 交换机
-// @param routingKey 路由键
-// @param consumeFunc 消费方法
+// Consumer message
 func Consumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
 	ch, err := client.Channel()
 	if err != nil {
@@ -95,8 +84,6 @@ func Consumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Deli
 	return nil
 }
 
-// ConsumeExample 消息消费示例
-// @Parma msg rabbitmq消费消息体
 func ConsumeExample(msg amqp.Delivery) {
 	body := string(msg.Body)
 	log.Print(body)

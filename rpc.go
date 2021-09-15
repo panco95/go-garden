@@ -7,8 +7,6 @@ import (
 	"net"
 )
 
-// InitRpc 启动RPC服务
-// @param port 监听端口
 func InitRpc(port string) {
 	listenAddress := ":" + port
 	listen, err := net.Listen("tcp", listenAddress)

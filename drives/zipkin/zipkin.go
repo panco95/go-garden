@@ -7,7 +7,6 @@ import (
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
 )
 
-// Connect 连接zipkin
 func Connect(service, addr, address string) (opentracing.Tracer, error) {
 	reporter := zkHttp.NewReporter(addr)
 	endpoint, err := zipkin.NewEndpoint(service, address)
@@ -20,4 +19,3 @@ func Connect(service, addr, address string) (opentracing.Tracer, error) {
 	}
 	return zkOt.Wrap(trace), nil
 }
-

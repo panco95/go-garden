@@ -17,10 +17,9 @@ type config struct {
 	RedisAddress         string
 	ElasticsearchAddress string
 	AmqpAddress          string
-	Services             map[string]map[string]string
+	Routes               map[string]map[string]string
 }
 
-// InitConfig 初始化配置文件
 func InitConfig(path, fileType string) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType(fileType)
@@ -30,12 +29,12 @@ func InitConfig(path, fileType string) {
 		Fatal("Config", err)
 	}
 
-	viper.SetConfigName("services")
+	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
 		Fatal("Config", err)
 	}
 
-	//配置文件变化监听
+	// watch config change
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		UnmarshalConfig()
@@ -43,7 +42,6 @@ func InitConfig(path, fileType string) {
 	UnmarshalConfig()
 }
 
-// UnmarshalConfig 解析配置文件到结构体
 func UnmarshalConfig() {
 	if err := viper.Unmarshal(&Config); err != nil {
 		Fatal("Config", err)

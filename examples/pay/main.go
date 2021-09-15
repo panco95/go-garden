@@ -8,20 +8,17 @@ import (
 )
 
 func main() {
-	// 服务初始化
+	// server init
 	garden.Init()
-	// 服务启动
+	// server run
 	garden.Run(Route, nil)
 }
 
-// Route gin路由
 func Route(r *gin.Engine) {
 	r.Use(garden.CheckCallSafeMiddleware())
 	r.POST("order", Order)
 }
 
-// Order 下单接口
-// @param username 用户名
 func Order(c *gin.Context) {
 	span, err := garden.GetSpan(c)
 	if err != nil {
@@ -37,7 +34,7 @@ func Order(c *gin.Context) {
 	}
 	username := c.DefaultPostForm("username", "")
 
-	// 调用user服务示例
+	// call [user] service example
 	service := "user"
 	action := "exists"
 	result, err := garden.CallService(span, service, action, &garden.Request{
@@ -60,7 +57,7 @@ func Order(c *gin.Context) {
 		span.SetTag("JsonUnmarshall", err)
 	}
 
-	// 解析获取user服务返回的数据，如果用户存在(exists=true)，那么下单成功
+	// Parse to get the data returned by the user service, and if the user exists (exists=true), then the order is successful
 	data := res["data"].(map[string]interface{})
 	exists := data["exists"].(bool)
 	if !exists {
@@ -73,7 +70,7 @@ func Order(c *gin.Context) {
 	}))
 }
 
-// VOrder 下单接口参数验证器
+// VOrder order api parameter validator
 type VOrder struct {
 	Username string `form:"username" binding:"required,max=20,min=1" `
 }
