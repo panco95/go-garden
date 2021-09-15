@@ -36,7 +36,6 @@ docker run --rm -it -d --name redis -p 6379:6379 redis
 一、配置文件说明：<br>
 1、configs\config.yml<br>
 必填配置项：
-ProjectName：项目名称<br>
 ServiceName：服务名称<br>
 HttpPort：http监听端口<br>
 RpcPort：rpc监听端口<br>

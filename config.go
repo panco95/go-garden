@@ -8,7 +8,6 @@ import (
 var Config config
 
 type config struct {
-	ProjectName          string
 	ServiceName          string
 	HttpPort             string
 	RpcPort              string

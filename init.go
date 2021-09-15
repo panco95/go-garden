@@ -17,7 +17,7 @@ func Init() {
 		Fatal("Etcd", err)
 	}
 
-	if err := InitService(Config.ProjectName, Config.ServiceName, Config.HttpPort, Config.RpcPort); err != nil {
+	if err := InitService(Config.ServiceName, Config.HttpPort, Config.RpcPort); err != nil {
 		Fatal("Init", err)
 	}
 
@@ -46,9 +46,6 @@ func Init() {
 
 // CheckConfig 检测配置是否合法
 func CheckConfig() {
-	if Config.ProjectName == "" {
-		Fatal("Config", errors.New("config empty: ProjectName"))
-	}
 	if Config.ServiceName == "" {
 		Fatal("Config", errors.New("config empty: ServiceName"))
 	}

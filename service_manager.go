@@ -42,15 +42,14 @@ var (
 )
 
 // InitService 初始化当前服务
-// @param projectName 项目名称
 // @param serviceName 服务名称
 // @param httpPort http监听端口
 // @param rpcPort rpc监听端口
-func InitService(projectName, serviceName, httpPort, rpcPort string) error {
+func InitService(serviceName, httpPort, rpcPort string) error {
 	ServiceIp = GetOutboundIP()
 	intranetRpcAddr := ServiceIp + ":" + rpcPort
 	intranetHttpAddr := ServiceIp + ":" + httpPort
-	ServiceId = projectName + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
+	ServiceId = "garden" + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
 
 	ServiceManagerChan = make(chan ServiceManager, 0)
 	go ServiceManageWatch(ServiceManagerChan)
@@ -104,7 +103,7 @@ func ServiceRegister() error {
 
 // ServiceWatcher 服务节点上下线监听
 func ServiceWatcher() {
-	rch := etcd.GetClient().Watch(context.Background(), Config.ProjectName+"_", clientV3.WithPrefix())
+	rch := etcd.GetClient().Watch(context.Background(), "garden_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -128,7 +127,7 @@ func ServiceWatcher() {
 // @return []string 服务节点数组
 func GetAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := etcd.GetClient().Get(ctx, Config.ProjectName+"_", clientV3.WithPrefix())
+	resp, err := etcd.GetClient().Get(ctx, "garden_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf("[%s] %s", "GetAllServices", err)
@@ -136,7 +135,7 @@ func GetAllServices() []string {
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), Config.ProjectName+"_")
+		arr := strings.Split(string(ev.Key), "garden_")
 		service := arr[1]
 		services = append(services, service)
 	}
@@ -147,7 +146,7 @@ func GetAllServices() []string {
 // @return []string 服务节点数组
 func GetServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := etcd.GetClient().Get(ctx, Config.ProjectName+"_"+serviceName, clientV3.WithPrefix())
+	resp, err := etcd.GetClient().Get(ctx, "garden_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		Logger.Debugf("[%s] %s", "GetServicesByName", err)
@@ -155,7 +154,7 @@ func GetServicesByName(serviceName string) []string {
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), Config.ProjectName+"_"+serviceName+"_")
+		arr := strings.Split(string(ev.Key), "garden_"+serviceName+"_")
 		serviceAddr := arr[1]
 		services = append(services, serviceAddr)
 	}

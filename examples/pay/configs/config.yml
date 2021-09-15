@@ -1,4 +1,3 @@
-ProjectName: garden
 ServiceName: pay
 HttpPort: 8082
 RpcPort: 8182

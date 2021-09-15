@@ -1,4 +1,3 @@
-ProjectName: garden
 ServiceName: user
 HttpPort: 8081
 RpcPort: 8181
