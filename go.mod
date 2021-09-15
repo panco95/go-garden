@@ -1,4 +1,4 @@
-module garden
+module github.com/panco95/go-garden
 
 go 1.16
 
