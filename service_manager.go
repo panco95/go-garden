@@ -131,7 +131,7 @@ func GetAllServices() []string {
 	resp, err := etcd.GetClient().Get(ctx, Config.ProjectName+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		Logger.Debugf(err.Error())
+		Logger.Debugf("[%s] %s", "GetAllServices", err)
 		return []string{}
 	}
 	var services []string
@@ -150,7 +150,7 @@ func GetServicesByName(serviceName string) []string {
 	resp, err := etcd.GetClient().Get(ctx, Config.ProjectName+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		Logger.Debugf(err.Error())
+		Logger.Debugf("[%s] %s", "GetServicesByName", err)
 		return []string{}
 	}
 	var services []string
@@ -299,20 +299,20 @@ func pingServiceRpc(serviceName string) {
 	var l string
 	rpcAddress, err := GetServiceRpcAddr(serviceName, len(Services[serviceName].Nodes)-1)
 	if err != nil {
-		l = fmt.Sprintf("GetSericeRpcAddr [%s %s] error : %s", serviceName, rpcAddress, err)
+		l = fmt.Sprintf("[%s][%s %s] %s", "GetSericeRpcAddr", serviceName, rpcAddress, err)
 		log.Print(l)
-		Logger.Debugf(l)
+		Logger.Errorf(l)
 		return
 	}
 	if rpcAddress != ServiceIp+":"+Config.RpcPort {
 		s, err := ping.Ping(rpcAddress)
 		if err != nil {
-			l = fmt.Sprintf("ping [%s %s] error : %s", serviceName, rpcAddress, err)
+			l = fmt.Sprintf("[%s][%s %s] %s", "PingRpc", serviceName, rpcAddress, err)
 			log.Print(l)
-			Logger.Debugf(l)
+			Logger.Errorf(l)
 			return
 		}
-		l = fmt.Sprintf("ping rpc [%s %s] %s", serviceName, rpcAddress, s)
+		l = fmt.Sprintf("[%s][%s %s] %s", "PingRpc", serviceName, rpcAddress, s)
 		log.Print(l)
 		Logger.Debugf(l)
 	}

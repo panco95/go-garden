@@ -1,6 +1,7 @@
 package garden
 
 import (
+	"encoding/json"
 	"garden/drives/zipkin"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
@@ -20,13 +21,13 @@ func InitOpenTracing(service, addr, address string) error {
 
 // StartSpanFromHeader 从请求头获取span
 // 如果header中没有span，会新建root span，如果有，则会新建child span
-func StartSpanFromHeader(header http.Header) opentracing.Span {
+func StartSpanFromHeader(header http.Header, operateName string) opentracing.Span {
 	var span opentracing.Span
 	wireContext, _ := opentracing.GlobalTracer().Extract(
 		opentracing.HTTPHeaders,
 		opentracing.HTTPHeadersCarrier(header))
 	span = opentracing.StartSpan(
-		"http",
+		operateName,
 		//ext.RPCServerOption(wireContext),
 		opentracing.ChildOf(wireContext),
 	)
@@ -55,7 +56,8 @@ func requestTracingGin(c *gin.Context, span opentracing.Span) {
 		GetClientIp(c),
 		GetHeaders(c),
 		GetBody(c)}
-	span.SetTag("Request", request)
+	s, _ := json.Marshal(&request)
+	span.SetTag("Request", string(s))
 
 	c.Set("span", span)
 	c.Set("request", &request)

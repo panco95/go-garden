@@ -25,16 +25,24 @@ func Route(r *gin.Engine) {
 // Login 登录接口
 // @param username 用户名
 func Login(c *gin.Context) {
+	span, err := garden.GetSpan(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, nil)
+		garden.Logger.Errorf("[%s] %s", "GetSpan", err)
+		return
+	}
+
 	var Validate VLogin
 	if err := c.ShouldBind(&Validate); err != nil {
 		c.JSON(http.StatusOK, garden.ApiResponse(1000, "参数非法", nil))
 		return
 	}
+
 	username := c.DefaultPostForm("username", "")
-	err := redis.Client().Set(context.Background(), "user."+username, 0, 0).Err()
-	if err != nil {
-		garden.Logger.Error("redis set error：" + err.Error())
+	if err := redis.Client().Set(context.Background(), "user."+username, 0, 0).Err(); err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
+		garden.Logger.Errorf("[%s] %s", "RedisSet", err)
+		span.SetTag("RedisSet", err)
 		return
 	}
 	c.JSON(http.StatusOK, garden.ApiResponse(0, "登录成功", nil))

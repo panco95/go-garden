@@ -26,14 +26,15 @@ func gatewayGin(c *gin.Context) {
 	span, err := GetSpan(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Error("get span fail")
+		Logger.Errorf("[%s] %s", "GetSpan", err)
 		return
 	}
 	// request结构体
 	request, err := GetRequest(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GatewayFail())
-		span.LogKV("get request context fail")
+		Logger.Errorf("[%s] %s", "GetRequestContext", err)
+		span.SetTag("GetRequestContext", err)
 		return
 	}
 	// 服务名称和服务路由
@@ -44,13 +45,15 @@ func gatewayGin(c *gin.Context) {
 	data, err := CallService(span, service, action, request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Error("call " + service + "/" + action + " error: " + err.Error())
+		Logger.Errorf("[%s][%s/%s] %s", "CallService", service, action, err)
+		span.SetTag("CallService", err)
 		return
 	}
 	var result Any
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		Logger.Error(service + "/" + action + " return invalid format: " + data)
 		c.JSON(http.StatusInternalServerError, GatewayFail())
+		Logger.Errorf("[%s][%s/%s] %s", "ReturnInvalidFormat", service, action, err)
+		span.SetTag("ReturnInvalidFormat", err)
 		return
 	}
 	c.JSON(http.StatusOK, GatewaySuccess(result))

@@ -23,6 +23,13 @@ func Route(r *gin.Engine) {
 // Order 下单接口
 // @param username 用户名
 func Order(c *gin.Context) {
+	span, err := garden.GetSpan(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, nil)
+		garden.Logger.Errorf("[%s] %s", "GetSpan", err)
+		return
+	}
+
 	var Validate VOrder
 	if err := c.ShouldBind(&Validate); err != nil {
 		c.JSON(http.StatusOK, garden.ApiResponse(1000, "非法参数", nil))
@@ -33,12 +40,6 @@ func Order(c *gin.Context) {
 	// 调用user服务示例
 	service := "user"
 	action := "exists"
-	span, err := garden.GetSpan(c)
-	if err != nil {
-		garden.Logger.Error("get span error：" + err.Error())
-		c.JSON(http.StatusInternalServerError, nil)
-		return
-	}
 	result, err := garden.CallService(span, service, action, &garden.Request{
 		Method: "POST",
 		Body: garden.Any{
@@ -46,15 +47,17 @@ func Order(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		garden.Logger.Error("call service error：" + err.Error())
 		c.JSON(http.StatusInternalServerError, nil)
+		garden.Logger.Errorf("[%s] %s", "CallService", err)
+		span.SetTag("CallService", err)
 		return
 	}
 	var res garden.Any
 	err = json.Unmarshal([]byte(result), &res)
 	if err != nil {
-		garden.Logger.Error("json unmarshall error：" + err.Error())
 		c.JSON(http.StatusInternalServerError, nil)
+		garden.Logger.Errorf("[%s] %s", "JsonUnmarshall", err)
+		span.SetTag("JsonUnmarshall", err)
 	}
 
 	// 解析获取user服务返回的数据，如果用户存在(exists=true)，那么下单成功

@@ -70,9 +70,13 @@ func GatewayRoute(r *gin.Engine) {
 // OpenTracingMiddleware 链路追踪中间件
 func OpenTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		span := StartSpanFromHeader(c.Request.Header)
+		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
+		span.SetTag("Result", "running")
 		RequestTracing(c, span)
+
 		c.Next()
+
+		span.SetTag("Result", "success")
 		span.Finish()
 	}
 }

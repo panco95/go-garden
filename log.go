@@ -43,6 +43,6 @@ func GetLogWriter() zapcore.WriteSyncer {
 // @Param err 错误
 func Fatal(label string, err error) {
 	e := fmt.Sprintf("[%s] %s", label, err)
-	Logger.Error(e)
+	Logger.Fatal(e)
 	log.Fatal(e)
 }
