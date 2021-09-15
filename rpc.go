@@ -1,7 +1,7 @@
 package garden
 
 import (
-	"garden/drives/ping"
+	"github.com/panco95/go-garden/drives/ping"
 	"google.golang.org/grpc"
 	"log"
 	"net"

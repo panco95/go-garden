@@ -2,7 +2,7 @@ package garden
 
 import (
 	"encoding/json"
-	"garden/drives/zipkin"
+	"github.com/panco95/go-garden/drives/zipkin"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
 	"net/http"

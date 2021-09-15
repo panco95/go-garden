@@ -2,9 +2,9 @@ package garden
 
 import (
 	"errors"
-	"garden/drives/amqp"
-	"garden/drives/etcd"
-	"garden/drives/redis"
+	"github.com/panco95/go-garden/drives/amqp"
+	"github.com/panco95/go-garden/drives/etcd"
+	"github.com/panco95/go-garden/drives/redis"
 )
 
 func Init() {
