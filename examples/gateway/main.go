@@ -1,7 +1,7 @@
 package main
 
 import (
-	"garden"
+	"github.com/panco95/go-garden"
 	"github.com/gin-gonic/gin"
 )
 
