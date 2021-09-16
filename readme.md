@@ -284,7 +284,11 @@ Go Garden基于`服务自动注册发现`特性，支持大规模的服务集群
 
 现在`user`服务右两个节点，我么可以称之为`user`服务集群，那么`gateway`调用`user`服务的时候会是什么一个情况呢？
 
-我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`服务控制的下游服务集群的负载均衡；如果是`gateway`服务集群呢，上游可能并没有服务，那么我们建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡。
+我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`控制下游服务集群的负载均衡，让两个`user`节点负载所有请求；
+
+如果`gateway`也是有多个实例服务的集群呢，上游并没有服务，那么建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡；
+
+后面会讲解到，不止是`gateway`，任意服务之间的调用，Go Garden都会采取负载均衡的方式去请求下游服务。
 
 ## 许可证
 

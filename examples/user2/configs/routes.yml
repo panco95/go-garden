@@ -1,0 +1,6 @@
+routes:
+  user:
+    login: /login
+    exists: /exists
+  pay:
+    order: /order

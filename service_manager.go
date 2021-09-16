@@ -239,7 +239,7 @@ func SelectServiceHttpAddr(name string) (string, error) {
 
 	sm := ServiceManager{
 		Operate:     "pullNext",
-		ServiceName: Config.ServiceName,
+		ServiceName: name,
 	}
 	ServiceManagerChan <- sm
 
