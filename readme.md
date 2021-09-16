@@ -61,9 +61,9 @@ docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
 #### 2. Gateway网关服务
 
-创建quick_gateway目录后进入目录
+创建gateway目录后进入目录
 
-执行 `go mod init qucik_gateway` 初始化项目
+执行 `go mod init gateway` 初始化项目
 
 新建go程序入口文件 `main.go` 并输入以下代码：
 
@@ -98,8 +98,8 @@ func Auth() gin.HandlerFunc {
 这时候程序会报一个错误且异常退出，因为没办法继续执行下去：
 
 ```
-PS D:\code_self\quick_gateway> go run .\main.go
-2021/09/15 16:44:32 [Config] Config File "config" Not Found in "[D:\\code_self\\quick_gateway\\configs]"
+PS D:\code_self\gateway> go run .\main.go
+2021/09/15 16:44:32 [Config] Config File "config" Not Found in "[D:\\code_self\\gateway\\configs]"
 exit status 1
 ```
 
@@ -139,8 +139,8 @@ ZipkinAddress: http://192.168.125.184:9411/api/v2/spans
 本以为会开开心心的看到程序启动成功，没想到又报了一个错：
 
 ```
-PS D:\code_self\quick_gateway> go run .\main.go
-2021/09/15 17:08:36 [Config] Config File "routes" Not Found in "[D:\\code_self\\quick_gateway\\configs]"
+PS D:\code_self\gateway> go run .\main.go
+2021/09/15 17:08:36 [Config] Config File "routes" Not Found in "[D:\\code_self\\gateway\\configs]"
 exit status 1
 ```
 
@@ -160,7 +160,7 @@ routes:
 好了，现在把配置文件创建好后，可以再次启动程序 `go run main.go` ：
 
 ```
-PS D:\code_self\quick_gateway> go run .\main.go
+PS D:\code_self\gateway> go run .\main.go
 2021/09/15 17:46:29 [gateway] Http listen on port: 8080
 2021/09/15 17:46:29 [gateway] Rpc listen on port: 8180
 ```
@@ -177,8 +177,8 @@ status是一个bool格式，false说明请求出错了，这时候可以打开ru
 ```
 看出是调用下游服务 `user`的`login`接口出错， `service index not found` 是因为并没有启动`user`服务，所以Go Garden并找不到服务地址，所以根本没法请求到下游的`user`服务，那么我们下面继续启动`user`服务。
 
-#### 3. 业务服务（User、Pay）
-跟gateway服务步骤一样创建好项目`quick_user`和配置文件`config.yml`、`routes.yml`，我们要稍稍改动以下`config.yml`的`ServiceName`，改为`user`，然后创建main.go程序启动入口文件：
+#### 3. User服务
+跟gateway服务步骤一样创建好项目`user`和配置文件`config.yml`、`routes.yml`，我们要稍稍改动以下`config.yml`的`ServiceName`，改为`user`，然后创建main.go程序启动入口文件：
 ```golang
 package main
 
@@ -247,11 +247,44 @@ PS D:\go-garden\examples\user> go run .\main.go
 2021/09/16 10:23:44 [PingRpc][user 192.168.8.98:8181] ok
 ```
 
-第一行表示`gateway`发现了`user`的一个node；
-
-第二行表示`gateway`也ping了一下`user`服务的Rpc端口。
+> 第一行表示`gateway`发现了`user`的一个服务节点；
+> 第二行表示`gateway`也ping了一下`user`服务的Rpc端口。
 
 总结一下，这就是Go Garden的`服务自动注册发现`特性，不论你启动多少个服务多少个节点，它们都能互相发现和通信。
+
+现在`user`服务启动成功，现在可以再次使用postman访问`gateway`的`user`服务路由：`http://127.0.0.1:8080/api/user/login`，增加一个请求参数`username`，发送请求，响应如下：
+
+```json
+{
+    "code": 0,
+    "data": null,
+    "msg": "登录成功",
+    "status": true
+}
+```
+返回参数`status`为`true`表示请求成功，注意，只有`status`参数是`gateway`返回的，以告诉客户端请求是否成功，其他参数都是`user`返回的，这样使得`gateway`和其他服务耦合度降低，数据格式可以右开发者自行设计。
+
+#### 4. 服务集群
+
+Go Garden基于`服务自动注册发现`特性，支持大规模的服务集群，例如`user`服务我们可以启动多个示例，现在我们复制一份`user`服务的代码，修改`config.yml`的两个监听端口防止端口冲突，改好端口后启动第二个`user`服务节点：`go run main.go`，查看输出：
+
+```
+2021/09/16 11:00:22 [PingRpc][gateway 192.168.8.98:8180] ok
+2021/09/16 11:00:22 [PingRpc][user 192.168.8.98:8181] ok
+2021/09/16 11:00:22 [user] Http listen on port: 8280
+2021/09/16 11:00:22 [user] Rpc listen on port: 8281
+```
+
+这是启动的第二个`user`服务节点，它发现了以及ping了`gateway`节点和第一个`user`节点，切换到`gateway`和`user`节点1，都会输出：
+
+```
+2021/09/16 11:00:22 [user] node [192.168.8.98:8281_192.168.8.98:8280] join
+2021/09/16 11:00:22 [PingRpc][user 192.168.8.98:8281] ok
+```
+
+现在`user`服务右两个节点，我么可以称之为`user`服务集群，那么`gateway`调用`user`服务的时候会是什么一个情况呢？
+
+我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`服务控制的下游服务集群的负载均衡；如果是`gateway`服务集群呢，上游可能并没有服务，那么我们建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡。
 
 ## 许可证
 
