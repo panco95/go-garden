@@ -2,4 +2,5 @@
 /runtime
 /examples/gateway/runtime
 /examples/user/runtime
+/examples/user2/runtime
 /examples/pay/runtime
