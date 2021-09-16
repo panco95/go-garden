@@ -230,7 +230,7 @@ func ServiceManageWatch(ch chan ServiceManager) {
 
 func SelectServiceHttpAddr(name string) (string, error) {
 	if _, ok := Services[name]; !ok {
-		return "", errors.New("service key not found")
+		return "", errors.New("service index not found")
 	}
 	serviceHttpAddr, err := GetServiceHttpAddr(name, Services[name].PollNext)
 	if err != nil {
