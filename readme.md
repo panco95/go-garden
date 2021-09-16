@@ -165,7 +165,7 @@ PS D:\code_self\gateway> go run .\main.go
 2021/09/15 17:46:29 [gateway] Rpc listen on port: 8180
 ```
 终于把gateway网关服务启动成功啦！根据打印信息，可以看到服务监听了 http和rpc两个端口。
-现在可以用postman访问网关服务了，地址： `http://127.0.0.1:8080`，会返回404状态码，因为没有带上路由所以网关找不到怎么请求下游服务的路由配置，带上配置好的路由试试：`http://127.0.0.1/api/user/login`，可以发现网关通过路由配置访问下游服务的格式为 `/api/服务名称/接口名称`，api前缀是固定的，访问这个地址不会返回404了，而是返回500状态码且带上了一个json格式数据：
+现在可以用postman访问网关服务了，地址： `http://127.0.0.1:8080`，会返回404状态码，因为没有带上路由所以网关找不到怎么请求下游服务的路由配置，带上配置好的路由试试：`http://127.0.0.1:8080/api/user/login`，可以发现网关通过路由配置访问下游服务的格式为 `/api/服务名称/接口名称`，api前缀是固定的，访问这个地址不会返回404了，而是返回500状态码且带上了一个json格式数据：
 ```json
 {
     "status": false
@@ -208,15 +208,15 @@ func Exists(c *gin.Context) {
 }
 
 ```
+
+这里省略了接口业务代码，请查看示例代码参考[examples/user](https://github.com/panco95/go-garden/tree/master/examples/user)
+
 观察代码，启动服务的时候有两个参数跟gateway不一样：
 
 1、`garden.Run()`第一个参数是路由，因为gateway的路由是在Go Garden内部集成的，所以`gateway`服务直接使用了`arden.GatewayRoute`，`user`服务需要自己实现路由，就是下面的`Route`函数，这是基于`Gin`框架的路由，第一行`r.Use(garden.CheckCallSafeMiddleware())`这是校验服务调用密钥的中间件，防止客户端跳过`gateway`直接请求`user`，这样的话`gateway`就发挥不了作用了，下面两行`r.Post("login",Login)`和`r.Post("exists",Exists)`就是具体的路由实现，再看看`routes.yml`可以看出是对应上的，假设这么写路由`r.Post("v1/login",Login)`，那在`routes.yml`应该写成`login: /v1/login`;
 
 2、第二个参数是全局中间件，在`gateway`网关服务中需要实现全局鉴权，所以我们添加了一个`Auth`中间件，我们假设`user`不需要单独的鉴权，所里这里直接写`nil`。
 
-
-
-这里省略了`Login`和`Exists`的具体逻辑，请查看示例代码参考[examples/user](https://github.com/panco95/go-garden/tree/master/examples/user)
 
 > 注意：示例代码逻辑实现用到了redis，所以我们需要启动redis服务以及在`config.yml`中填写连接地址。
 
@@ -284,11 +284,107 @@ Go Garden基于`服务自动注册发现`特性，支持大规模的服务集群
 
 现在`user`服务右两个节点，我么可以称之为`user`服务集群，那么`gateway`调用`user`服务的时候会是什么一个情况呢？
 
-我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`控制下游服务集群的负载均衡，让两个`user`节点负载所有请求；
+我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`服务控制的下游服务集群的负载均衡；如果是`gateway`服务集群呢，上游可能并没有服务，那么我们建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡。
 
-如果`gateway`也是有多个实例服务的集群呢，上游并没有服务，那么建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡；
 
-后面会讲解到，不止是`gateway`，任意服务之间的调用，Go Garden都会采取负载均衡的方式去请求下游服务。
+#### 5. 服务之间调用
+
+现在解决了`gateay`网关到下游服务的路由分发，那么现在来解决服务到服务之间的调用，上面`user`服务的`exists`接口就是提供给其他服务调用（查询某用户是否存在）；
+
+现在来创建一个`pay`服务，`config.yml`中`ServiceName`改为`pay`，RpcPort和Http修改为没有使用过的端口，然后创建main.go程序启动入口文件：
+
+```golang
+package main
+
+import (
+	"encoding/json"
+	"github.com/panco95/go-garden"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+func main() {
+	garden.Init()
+	garden.Run(Route, nil)
+}
+
+func Route(r *gin.Engine) {
+	r.Use(garden.CheckCallSafeMiddleware())
+	r.POST("order", Order)
+}
+
+func Order(c *gin.Context) {
+    ...
+}
+```
+这里省略了接口业务代码，请查看示例代码参考[examples/pay](https://github.com/panco95/go-garden/tree/master/examples/pay)
+
+观察代码，`pay`服务有一个`order`接口，这是下单接口，请求这个接口需要传参数`username`，用Postman请求一下试试吧！增加`username`请求参数，请求`gateway`地址：`http://127.0.0.1:8080/api/pay/order` ，随便填看看返回什么：
+
+```json
+{
+    "code": 1000,
+    "data": null,
+    "msg": "下单失败",
+    "status": true
+}
+```
+
+下单失败了，原因是`order`接口中间会调用`user`服务`exists`接口查询你传入的`username`是否在系统中存在，如果存在才会下单成功，我们观察调用`user`服务核心代码：
+
+```golang
+	span, err := garden.GetSpan(c)
+	
+     ...
+     
+	username := c.DefaultPostForm("username", "")
+
+	service := "user"
+	action := "exists"
+	result, err := garden.CallService(span, service, action, &garden.Request{
+		Method: "POST",
+		Body: garden.Any{
+			"username": username,
+		},
+	})
+	
+    ...
+    
+	var res garden.Any
+	err = json.Unmarshal([]byte(result), &res)
+	
+    ...
+    
+	exists := data["exists"].(bool)
+	if !exists {
+		c.JSON(http.StatusOK, garden.ApiResponse(1000, "下单失败", nil))
+		return
+	}
+	orderId := garden.NewUuid()
+	c.JSON(http.StatusOK, garden.ApiResponse(0, "下单成功", garden.Any{
+		"orderId": orderId,
+	}))
+
+```
+* 首先函数开头从请求上下文获取`span`，这是链路追踪相关变量，暂时不管
+* 接着获取请求参数`username`
+* 下面是调用服务核心函数`garden.CallService`，第二个参数表示服务名称，第三个参数表示接口名称，这里我们调用的是`user`服务的`exists`接口，第四个参数表示请求报文，我们定义了参数`username`
+* 请求成功后，我们接收到`user`返回的数据，如果返回参数`exists`为true就生成订单号返回成功数据
+
+现在重新请求`http://127.0.0.1:8080/api/user/login`和`http://127.0.0.1/api/pay/order` ，记得两次请求参数`username`要保持一致，这样业务逻辑才会顺畅，下单接口正确返回数据如下：
+
+```json
+{
+    "code": 0,
+    "data": {
+        "orderId": "7d7111af-0090-419b-84cb-fa4db023fba0"
+    },
+    "msg": "下单成功",
+    "status": true
+}
+```
+
+大功告成，服务之间的相互调用就是这么简单！
 
 ## 许可证
 
