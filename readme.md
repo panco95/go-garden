@@ -29,8 +29,6 @@ Go Garden为分布式系统架构的开发提供了核心需求，包括微服�
 
 ## 快速开始
 
-`go get -u github.com/panco95/go-garden`
-
 ```golang
 import "github.com/panco95/go-garden"
 
@@ -118,7 +116,7 @@ EtcdAddress:
   - 192.168.125.184:2379
 ZipkinAddress: http://192.168.125.184:9411/api/v2/spans
 
-RedisAddress: 192.168.125.184:6379
+#RedisAddress: 192.168.125.184:6379
 #ElasticsearchAddress: http://192.168.125.184:9200
 #AmqpAddress: amqp://guest:guest@192.168.125.184:5672
 ```
@@ -132,7 +130,7 @@ RedisAddress: 192.168.125.184:6379
 | CallServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
 | EtcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写对应地址                       |
 | ZipkinAddress        | zipkin服务的api地址                                                                   |
-| RedisAddress         | redis服务的IP加端口                                                                   |
+| RedisAddress         | redis服务的IP加端口,示例项目有用到，现在可以暂时备注掉                                    |
 | ElasticsearchAddress | es服务的地址，示例项目没有用到es，可以备注掉，程序启动的时候也不会去执行连接请求             |
 | AmqpAddress          | rabbitmq服务的地址，示例项目没有用到rabbitmq，可以备注掉，程序启动的时候也不会去执行连接请求 |
 
@@ -178,6 +176,82 @@ status是一个bool格式，false说明请求出错了，这时候可以打开ru
 2021-09-16T09:30:21.515+0800	ERROR	go-garden@v0.0.0-20210915075049-1d412199ed03/gateway.go:46	[CallService][user/login] service index not found
 ```
 看出是调用下游服务 `user`的`login`接口出错， `service index not found` 是因为并没有启动`user`服务，所以Go Garden并找不到服务地址，所以根本没法请求到下游的`user`服务，那么我们下面继续启动`user`服务。
+
+#### 3. 业务服务（User、Pay）
+跟gateway服务步骤一样创建好项目`quick_user`和配置文件`config.yml`、`routes.yml`，我们要稍稍改动以下`config.yml`的`ServiceName`，改为`user`，然后创建main.go程序启动入口文件：
+```golang
+package main
+
+import (
+	"context"
+	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden"
+	"net/http"
+)
+
+func main() {
+	garden.Init()
+	garden.Run(Route, nil)
+}
+
+func Route(r *gin.Engine) {
+	r.Use(garden.CheckCallSafeMiddleware()) // 调用接口安全验证
+	r.POST("login", Login)
+	r.POST("exists", Exists)
+}
+
+func Login(c *gin.Context) {
+    ...
+}
+func Exists(c *gin.Context) {
+    ...
+}
+
+```
+观察代码，启动服务的时候有两个参数跟gateway不一样：
+
+1、`garden.Run()`第一个参数是路由，因为gateway的路由是在Go Garden内部集成的，所以`gateway`服务直接使用了`arden.GatewayRoute`，`user`服务需要自己实现路由，就是下面的`Route`函数，这是基于`Gin`框架的路由，第一行`r.Use(garden.CheckCallSafeMiddleware())`这是校验服务调用密钥的中间件，防止客户端跳过`gateway`直接请求`user`，这样的话`gateway`就发挥不了作用了，下面两行`r.Post("login",Login)`和`r.Post("exists",Exists)`就是具体的路由实现，再看看`routes.yml`可以看出是对应上的，假设这么写路由`r.Post("v1/login",Login)`，那在`routes.yml`应该写成`login: /v1/login`;
+
+2、第二个参数是全局中间件，在`gateway`网关服务中需要实现全局鉴权，所以我们添加了一个`Auth`中间件，我们假设`user`不需要单独的鉴权，所里这里直接写`nil`。
+
+
+
+这里省略了`Login`和`Exists`的具体逻辑，请查看示例代码参考[examples/user](https://github.com/panco95/go-garden/tree/master/examples/user)
+
+> 注意：示例代码逻辑实现用到了redis，所以我们需要启动redis服务以及在`config.yml`中填写连接地址。
+
+Docker启动redis：
+
+`docker run --rm -it -d --name redis -p 6379:6379 redis`
+
+修改config.yml：
+```yml
+...
+RedisAddress: 192.168.125.184:6379
+...
+```
+
+一切准备就绪，启动`user`服务：`go run main.go`，查看输出：
+```
+PS D:\go-garden\examples\user> go run .\main.go
+2021/09/16 10:23:44 [PingRpc][gateway 192.168.8.98:8180] ok
+2021/09/16 10:23:44 [user] Http listen on port: 8081
+2021/09/16 10:23:44 [user] Rpc listen on port: 8181
+```
+跟`gateway`一样，监听了Http、Rpc两个端口，同时启动服务的时候还做了一件事情，就是发现了上面启动的的`gateway`服务，而且ping了一下`gateway`的Rpc端口保证可正常通信；
+
+接着我们切换到`gateway`服务的窗口，也输出了两行打印信息：
+
+```
+2021/09/16 10:23:44 [user] node [192.168.8.98:8181_192.168.8.98:8081] join
+2021/09/16 10:23:44 [PingRpc][user 192.168.8.98:8181] ok
+```
+
+第一行表示`gateway`发现了`user`的一个node；
+
+第二行表示`gateway`也ping了一下`user`服务的Rpc端口。
+
+总结一下，这就是Go Garden的`服务自动注册发现`特性，不论你启动多少个服务多少个节点，它们都能互相发现和通信。
 
 ## 许可证
 
