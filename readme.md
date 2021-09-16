@@ -39,10 +39,11 @@ garden.Run(Route, Auth)
 ```
 
 ## 教程：基于Go Garden快速构建微服务
-访问 [examples](https://github.com/panco95/go-garden/tree/master/examples) 查看教程
+访问 [基于Go Garden快速构建微服务](https://github.com/panco95/go-garden/tree/master/docs/tutorial.md) 学习如何使用Go
+Garden
 
-## 示例
-访问 [examples](https://github.com/panco95/go-garden/tree/master/docs/tutorial.md) 查看详细使用示例
+## 示例代码
+访问 [examples](https://github.com/panco95/go-garden/tree/master/examples) 查看教程
 
 ## 许可证
 

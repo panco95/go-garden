@@ -354,8 +354,8 @@ func Order(c *gin.Context) {
 
 打开后就是`Zipkin`的后台界面，我们点击`Run Query`按钮查询，查询结果就出来了，一个`order`接口请求经过三个服务，每个服务的执行时间和相关调试数据都可以查询到，截图：
 
-![1](opentrace-1.png "1")
-![2](opentrace-2.png "1")
+![pic-1](https://raw.githubusercontent.com/panco95/go-garden/master/docs/opentrace-1.png "1")
+![pic02](https://raw.githubusercontent.com/panco95/go-garden/master/docs/opentrace-2.png "1")
 
 我们在业务代码里也可以非常简单的存储调试数据，Go Garden内部已经实现了服务之间的链路关联，代码示例：
 
