@@ -5,6 +5,7 @@ import (
 	"github.com/panco95/go-garden/drives/amqp"
 	"github.com/panco95/go-garden/drives/etcd"
 	"github.com/panco95/go-garden/drives/redis"
+	"github.com/panco95/go-garden/utils"
 )
 
 func Init() {
@@ -20,7 +21,7 @@ func Init() {
 		Fatal("Init", err)
 	}
 
-	if err := InitOpenTracing(Config.ServiceName, Config.ZipkinAddress, GetOutboundIP()+":"+Config.HttpPort); err != nil {
+	if err := InitOpenTracing(Config.ServiceName, Config.ZipkinAddress, utils.GetOutboundIP()+":"+Config.HttpPort); err != nil {
 		Fatal("OpenTracing", err)
 	}
 

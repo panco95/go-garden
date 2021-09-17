@@ -1,7 +1,7 @@
 package garden
 
 import (
-	"github.com/panco95/go-garden/drives/ping"
+	"github.com/panco95/go-garden/sync"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -15,7 +15,7 @@ func InitRpc(port string) {
 	}
 
 	s := grpc.NewServer()
-	ping.RegisterPingServer(s, ping.Service)
+	sync.RegisterSyncServer(s, sync.Server)
 
 	log.Printf("[%s] Rpc listen on port: %s", Config.ServiceName, port)
 	Fatal("Rpc", s.Serve(listen))

@@ -1,8 +1,11 @@
 ## 基于Go Garden快速构建微服务
 
+
+> Go Garden的Http服务基于Gin开发，在教程中会涉及到Gin框架的内容，例如请求上下文、中间件等，如开发者不了解Gin，请先去看看Gin相关文档！
+
 ### 1. 准备工作
 
-> Go Garden基于Etcd实现服务注册发现，基于Zipkin实现服务链路追踪，所以需要成功启动必须安装好Etcd和Zipkin
+Go Garden基于Etcd实现服务注册发现，基于Zipkin实现服务链路追踪，所以需要成功启动必须安装好Etcd和Zipkin
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 准备好一个Linux系统虚拟机，且安装好Docker
@@ -193,21 +196,18 @@ RedisAddress: 192.168.125.184:6379
 一切准备就绪，启动`user`服务：`go run main.go`，查看输出：
 ```
 PS D:\go-garden\examples\user> go run .\main.go
-2021/09/16 10:23:44 [PingRpc][gateway 192.168.8.98:8180] ok
 2021/09/16 10:23:44 [user] Http listen on port: 8081
 2021/09/16 10:23:44 [user] Rpc listen on port: 8181
 ```
-跟`gateway`一样，监听了Http、Rpc两个端口，同时启动服务的时候还做了一件事情，就是发现了上面启动的的`gateway`服务，而且ping了一下`gateway`的Rpc端口保证可正常通信；
+跟`gateway`一样，监听了Http、Rpc两个端口，同时启动服务的时候还做了一件事情，就是`发现`了上面启动的的`gateway`服务；
 
 接着我们切换到`gateway`服务的窗口，也输出了两行打印信息：
 
 ```
 2021/09/16 10:23:44 [user] node [192.168.8.98:8181_192.168.8.98:8081] join
-2021/09/16 10:23:44 [PingRpc][user 192.168.8.98:8181] ok
 ```
 
-> 第一行表示`gateway`发现了`user`的一个服务节点；
-> 第二行表示`gateway`也ping了一下`user`服务的Rpc端口。
+> 表示`gateway`发现了`user`的一个服务节点；
 
 总结一下，这就是Go Garden的`服务自动注册发现`特性，不论你启动多少个服务多少个节点，它们都能互相发现和通信。
 
@@ -228,17 +228,14 @@ PS D:\go-garden\examples\user> go run .\main.go
 Go Garden基于`服务自动注册发现`特性，支持大规模的服务集群，例如`user`服务我们可以启动多个示例，现在我们复制一份`user`服务的代码，修改`config.yml`的两个监听端口防止端口冲突，改好端口后启动第二个`user`服务节点：`go run main.go`，查看输出：
 
 ```
-2021/09/16 11:00:22 [PingRpc][gateway 192.168.8.98:8180] ok
-2021/09/16 11:00:22 [PingRpc][user 192.168.8.98:8181] ok
 2021/09/16 11:00:22 [user] Http listen on port: 8280
 2021/09/16 11:00:22 [user] Rpc listen on port: 8281
 ```
 
-这是启动的第二个`user`服务节点，它发现了以及ping了`gateway`节点和第一个`user`节点，切换到`gateway`和`user`节点1，都会输出：
+这是启动的第二个`user`服务节点，它`发现`了`gateway`节点和第一个`user`节点，切换到`gateway`和`user`节点1，都会输出：
 
 ```
 2021/09/16 11:00:22 [user] node [192.168.8.98:8281_192.168.8.98:8280] join
-2021/09/16 11:00:22 [PingRpc][user 192.168.8.98:8281] ok
 ```
 
 现在`user`服务右两个节点，我么可以称之为`user`服务集群，那么`gateway`调用`user`服务的时候会是什么一个情况呢？
@@ -354,8 +351,8 @@ func Order(c *gin.Context) {
 
 打开后就是`Zipkin`的后台界面，我们点击`Run Query`按钮查询，查询结果就出来了，一个`order`接口请求经过三个服务，每个服务的执行时间和相关调试数据都可以查询到，截图：
 
-![pic-1](https://raw.githubusercontent.com/panco95/go-garden/master/docs/opentrace-1.png "1")
-![pic02](https://raw.githubusercontent.com/panco95/go-garden/master/docs/opentrace-2.png "1")
+![pic-1](opentrace-1.png "1")
+![pic02](opentrace-2.png "1")
 
 我们在业务代码里也可以非常简单的存储调试数据，Go Garden内部已经实现了服务之间的链路关联，代码示例：
 
@@ -366,4 +363,15 @@ func Test(c *gin.Context) {
 }
 ```
 
+在写业务接口的适合，不仅可以使用`garden.Logger`输出日志，还可以使用`span`输出链路追踪日志，大家可以根绝业务情况同时使用。
 
+
+### 7. 动态配置与配置同步
+
+1、不管是`gateway`路由分发还是其他服务之间调用，Go Garden都是读取`routes.yml`配置文件来做相关操作的，假设需要修改/增加/删除一个路由配置，Go Garden会监听到`routes.yml`配置文件的变化从而更新路由配置，这是单机服务动态配置；
+
+2、Go Garden是分布式的微服务框架，并不是一个单机的服务，有各种服务集群在线上运行。那么问题来了，如何保证所有服务集群配置统一呢？
+
+Go Garden实现了所有服务之间的实时同步，并不需要开发者关心同步逻辑；开发者只需要更新整个架构中任意一个服务的配置文件，就会自动同步到其他服务。
+
+试着修改`gateway`服务的`routes.yml`后保存，然后打开其他服务的配置文件看看~

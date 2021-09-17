@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/utils"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +17,7 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
-	if err := CreateDir(path + "/runtime"); err != nil {
+	if err := utils.CreateDir(path + "/runtime"); err != nil {
 		return err
 	}
 	file, err := os.Create(fmt.Sprintf("%s/runtime/gin.log", path))

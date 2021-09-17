@@ -1,11 +1,13 @@
 package garden
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/panco95/go-garden/drives/etcd"
-	"github.com/panco95/go-garden/drives/ping"
+	"github.com/panco95/go-garden/sync"
+	"github.com/panco95/go-garden/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"log"
 	"strings"
@@ -26,13 +28,14 @@ type ServiceManager struct {
 var ServiceManagerChan chan ServiceManager
 
 var (
+	SyncCache []byte
 	ServiceId string
 	ServiceIp string
 	Services  = make(map[string]*Service)
 )
 
 func InitService(serviceName, httpPort, rpcPort string) error {
-	ServiceIp = GetOutboundIP()
+	ServiceIp = utils.GetOutboundIP()
 	intranetRpcAddr := ServiceIp + ":" + rpcPort
 	intranetHttpAddr := ServiceIp + ":" + httpPort
 	ServiceId = "garden" + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
@@ -198,7 +201,6 @@ func ServiceManageWatch(ch chan ServiceManager) {
 			case "addNode":
 				CreateServiceIndex(sm.ServiceName)
 				Services[sm.ServiceName].Nodes = append(Services[sm.ServiceName].Nodes, sm.ServiceAddr)
-				pingServiceRpc(sm.ServiceName)
 				break
 
 			case "delNode":
@@ -246,25 +248,37 @@ func SelectServiceHttpAddr(name string) (string, error) {
 	return serviceHttpAddr, nil
 }
 
-func pingServiceRpc(serviceName string) {
-	var l string
-	rpcAddress, err := GetServiceRpcAddr(serviceName, len(Services[serviceName].Nodes)-1)
+// SyncRoutes sync routes.yml to other each service
+func SyncRoutes() {
+	fileData, err := utils.ReadFile("configs/routes.yml")
 	if err != nil {
-		l = fmt.Sprintf("[%s][%s %s] %s", "GetSericeRpcAddr", serviceName, rpcAddress, err)
-		log.Print(l)
-		Logger.Errorf(l)
+		Logger.Errorf("[%s] %s", "SyncRoutes", err)
 		return
 	}
-	if rpcAddress != ServiceIp+":"+Config.RpcPort {
-		s, err := ping.Ping(rpcAddress)
-		if err != nil {
-			l = fmt.Sprintf("[%s][%s %s] %s", "PingRpc", serviceName, rpcAddress, err)
-			log.Print(l)
-			Logger.Errorf(l)
-			return
+
+	if bytes.Compare(SyncCache, fileData) == 0 {
+		return
+	}
+
+	SyncCache = fileData
+
+	for k, v := range Services {
+		for i := 0; i < len(v.Nodes); i++ {
+			serviceRpcAddress, err := GetServiceRpcAddr(k, i)
+			if err != nil {
+				Logger.Errorf("[%s] %s", "GetServiceRpcAddr", err)
+				continue
+			}
+			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", ServiceIp, Config.RpcPort)) != 0 {
+				result, err := sync.SendSyncRoutes(serviceRpcAddress, fileData)
+				if err != nil {
+					Logger.Errorf("[%s] %s", "SendSyncRoutes", err)
+					continue
+				}
+				if result != true {
+					Logger.Errorf("[%s] %s", "SendSyncRoutesResult", errors.New("false"))
+				}
+			}
 		}
-		l = fmt.Sprintf("[%s][%s %s] %s", "PingRpc", serviceName, rpcAddress, s)
-		log.Print(l)
-		Logger.Debugf(l)
 	}
 }

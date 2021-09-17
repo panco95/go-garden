@@ -3,6 +3,8 @@ package garden
 import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"path/filepath"
+	"strings"
 )
 
 var Config config
@@ -34,12 +36,17 @@ func InitConfig(path, fileType string) {
 		Fatal("Config", err)
 	}
 
-	// watch config change
+	UnmarshalConfig()
+
+	// watch config file 'routes.yml' change
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		UnmarshalConfig()
+		filename := filepath.Base(e.Name)
+		if strings.Compare(filename,"routes.yml") == 0 {
+			UnmarshalConfig()
+			go SyncRoutes()
+		}
 	})
-	UnmarshalConfig()
 }
 
 func UnmarshalConfig() {

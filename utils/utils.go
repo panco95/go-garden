@@ -1,7 +1,8 @@
-package garden
+package utils
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -88,4 +89,24 @@ func PathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func ReadFile(filepath string) ([]byte, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func WriteFile(filepath string, data []byte) error {
+	if err := ioutil.WriteFile(filepath, data, 0777); err != nil {
+		return nil
+	}
+	return nil
 }
