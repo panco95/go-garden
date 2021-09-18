@@ -4,52 +4,53 @@ import (
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
+	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/drives/redis"
 	"net/http"
 )
 
+var service core.Garden
+
 func main() {
-	// server init
-	garden.Init()
-	// server run
-	garden.Run(Route, nil)
+	service = garden.NewService()
+	service.Run(Route, nil)
 }
 
 func Route(r *gin.Engine) {
-	r.Use(garden.CheckCallSafeMiddleware()) // 调用接口安全验证
+	r.Use(service.CheckCallSafeMiddleware()) // 调用接口安全验证
 	r.POST("login", Login)
 	r.POST("exists", Exists)
 }
 
 func Login(c *gin.Context) {
-	span, err := garden.GetSpan(c)
+	span, err := core.GetSpan(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Log(garden.ErrorLevel, "GetSpan", err)
+		service.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
 	var Validate VLogin
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(http.StatusOK, garden.ApiResponse(1000, "参数非法", nil))
+		c.JSON(http.StatusOK, ApiResponse(1000, "参数非法", nil))
 		return
 	}
 
 	username := c.DefaultPostForm("username", "")
 	if err := redis.Client().Set(context.Background(), "user."+username, 0, 0).Err(); err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Log(garden.ErrorLevel, "RedisSet", err)
+		service.Log(core.ErrorLevel, "RedisSet", err)
 		span.SetTag("RedisSet", err)
 		return
 	}
-	c.JSON(http.StatusOK, garden.ApiResponse(0, "登录成功", nil))
+	c.JSON(http.StatusOK, ApiResponse(0, "登录成功", nil))
 }
 
 // Exists Query if the user exists
 func Exists(c *gin.Context) {
 	var Validate VExists
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(http.StatusOK, garden.ApiResponse(1000, "参数非法", nil))
+		c.JSON(http.StatusOK, ApiResponse(1000, "参数非法", nil))
 		return
 	}
 	username := c.DefaultPostForm("username", "")
@@ -58,7 +59,7 @@ func Exists(c *gin.Context) {
 	if err != nil {
 		exists = false
 	}
-	c.JSON(http.StatusOK, garden.ApiResponse(0, "", garden.MapData{
+	c.JSON(http.StatusOK, ApiResponse(0, "", core.MapData{
 		"exists": exists,
 	}))
 }
@@ -71,4 +72,12 @@ type VLogin struct {
 // VExists The exists interface validator
 type VExists struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
+}
+
+func ApiResponse(code int, msg string, data interface{}) core.MapData {
+	return core.MapData{
+		"code": code,
+		"msg":  msg,
+		"data": data,
+	}
 }

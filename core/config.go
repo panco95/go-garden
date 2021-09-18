@@ -1,4 +1,4 @@
-package garden
+package core
 
 import (
 	"github.com/fsnotify/fsnotify"
@@ -7,9 +7,7 @@ import (
 	"strings"
 )
 
-var Config config
-
-type config struct {
+type Cfg struct {
 	Debug                bool
 	ServiceName          string
 	HttpPort             string
@@ -23,35 +21,35 @@ type config struct {
 	Routes               map[string]map[string]string
 }
 
-func initConfig(path, fileType string) {
+func (g *Garden) initConfig(path, fileType string) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType(fileType)
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		Log(FatalLevel, "Config", err)
+		g.Log(FatalLevel, "Config", err)
 	}
 
 	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
-		Log(FatalLevel, "Config", err)
+		g.Log(FatalLevel, "Config", err)
 	}
 
-	unmarshalConfig()
+	g.unmarshalConfig()
 
 	// watch config file 'routes.yml' change
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		filename := filepath.Base(e.Name)
 		if strings.Compare(filename, "routes.yml") == 0 {
-			unmarshalConfig()
-			go syncRoutes()
+			g.unmarshalConfig()
+			go g.syncRoutes()
 		}
 	})
 }
 
-func unmarshalConfig() {
-	if err := viper.Unmarshal(&Config); err != nil {
-		Log(ErrorLevel, "Config", err)
+func (g *Garden) unmarshalConfig() {
+	if err := viper.Unmarshal(&g.Cfg); err != nil {
+		g.Log(ErrorLevel, "Config", err)
 	}
 }

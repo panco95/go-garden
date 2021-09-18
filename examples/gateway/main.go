@@ -3,13 +3,15 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
+	"github.com/panco95/go-garden/core"
 )
 
+var service core.Garden
+
 func main() {
-	// server init
-	garden.Init()
-	// server run
-	garden.Run(garden.GatewayRoute, Auth)
+	service = garden.NewService()
+	service.Bootstrap()
+	service.Run(service.GatewayRoute, Auth)
 }
 
 // Auth Customize the global middleware

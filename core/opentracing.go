@@ -1,4 +1,4 @@
-package garden
+package core
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 	"reflect"
 )
 
-func initOpenTracing(service, addr, address string) error {
+func (g *Garden) initOpenTracing(service, addr, address string) error {
 	trace, err := zipkin.Connect(service, addr, address)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-package garden
+package core
 
 import (
 	"errors"
@@ -20,12 +20,12 @@ type Request struct {
 	Body     MapData `json:"body"`
 }
 
-func CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
-	route := Config.Routes[service][action]
+func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
+	route := g.Cfg.Routes[service][action]
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
-	serviceAddr, err := selectServiceHttpAddr(service)
+	serviceAddr, err := g.selectServiceHttpAddr(service)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func CallService(span opentracing.Span, service, action string, request *Request
 	// 服务重试3次
 	for retry := 1; retry <= 3; retry++ {
 		url := "http://" + serviceAddr + route + result
-		result, err = requestService(span, url, request)
+		result, err = g.requestService(span, url, request)
 		if err != nil {
 			if retry >= 3 {
 				return "", err
@@ -49,7 +49,7 @@ func CallService(span opentracing.Span, service, action string, request *Request
 	return result, nil
 }
 
-func requestService(span opentracing.Span, url string, request *Request) (string, error) {
+func (g *Garden) requestService(span opentracing.Span, url string, request *Request) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -72,7 +72,7 @@ func requestService(span opentracing.Span, url string, request *Request) (string
 	// Add the body format header
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// Increase calls to the downstream service security validation key
-	r.Header.Set("Call-Service-Key", Config.CallServiceKey)
+	r.Header.Set("Call-Service-Key", g.Cfg.CallServiceKey)
 
 	// add request opentracing span header
 	opentracing.GlobalTracer().Inject(

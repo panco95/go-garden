@@ -1,4 +1,4 @@
-package garden
+package core
 
 import (
 	"fmt"
@@ -8,21 +8,7 @@ import (
 	"os"
 )
 
-var logging *zap.SugaredLogger
-
-type Level int8
-
-const (
-	DebugLevel Level = iota - 1
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	DPanicLevel
-	PanicLevel
-	FatalLevel
-)
-
-func initLog() {
+func (g *Garden) initLog() {
 	encoder := getEncoder()
 
 	var cores []zapcore.Core
@@ -31,7 +17,7 @@ func initLog() {
 	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 	cores = append(cores, fileCore)
 
-	if Config.Debug {
+	if g.Cfg.Debug {
 		consoleDebug := zapcore.Lock(os.Stdout)
 		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.DebugLevel)
 		cores = append(cores, consoleCore)
@@ -40,7 +26,27 @@ func initLog() {
 	core := zapcore.NewTee(cores...)
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
-	logging = logger.Sugar()
+	g.log = logger.Sugar()
+}
+
+func (g *Garden) Log(level Level, label string, data interface{}) {
+	format := logFormat(label, data)
+	switch level {
+	case DebugLevel:
+		g.log.Debug(format)
+	case InfoLevel:
+		g.log.Info(format)
+	case WarnLevel:
+		g.log.Debug(format)
+	case ErrorLevel:
+		g.log.Debug(format)
+	case DPanicLevel:
+		g.log.Debug(format)
+	case PanicLevel:
+		g.log.Debug(format)
+	case FatalLevel:
+		g.log.Debug(format)
+	}
 }
 
 func getEncoder() zapcore.Encoder {
@@ -65,24 +71,4 @@ func getLogWriter() zapcore.WriteSyncer {
 func logFormat(label string, log interface{}) string {
 	e := fmt.Sprintf("[%s] %s", label, log)
 	return e
-}
-
-func Log(level Level, label string, data interface{}) {
-	format := logFormat(label, data)
-	switch level {
-	case DebugLevel:
-		logging.Debug(format)
-	case InfoLevel:
-		logging.Info(format)
-	case WarnLevel:
-		logging.Warn(format)
-	case ErrorLevel:
-		logging.Error(format)
-	case DPanicLevel:
-		logging.DPanic(format)
-	case PanicLevel:
-		logging.Panic(format)
-	case FatalLevel:
-		logging.Fatal(format)
-	}
 }

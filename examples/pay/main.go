@@ -4,57 +4,56 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
+	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/utils"
 	"net/http"
 )
 
+var service core.Garden
+
 func main() {
-	// server init
-	garden.Init()
-	// server run
-	garden.Run(Route, nil)
+	service = garden.NewService()
+	service.Run(Route, nil)
 }
 
 func Route(r *gin.Engine) {
-	r.Use(garden.CheckCallSafeMiddleware())
+	r.Use(service.CheckCallSafeMiddleware())
 	r.POST("order", Order)
 }
 
 func Order(c *gin.Context) {
-	span, err := garden.GetSpan(c)
+	span, err := core.GetSpan(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Log(garden.ErrorLevel, "GetSpan", err)
+		service.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
 	var Validate VOrder
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(http.StatusOK, garden.ApiResponse(1000, "非法参数", nil))
+		c.JSON(http.StatusOK, ApiResponse(1000, "非法参数", nil))
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 
 	// call [user] service example
-	service := "user"
-	action := "exists"
-	result, err := garden.CallService(span, service, action, &garden.Request{
+	result, err := service.CallService(span, "user", "exists", &core.Request{
 		Method: "POST",
-		Body: garden.MapData{
+		Body: core.MapData{
 			"username": username,
 		},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Log(garden.ErrorLevel, "CallService", err)
+		service.Log(core.ErrorLevel, "CallService", err)
 		span.SetTag("CallService", err)
 		return
 	}
-	var res garden.MapData
+	var res core.MapData
 	err = json.Unmarshal([]byte(result), &res)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Log(garden.ErrorLevel, "JsonUnmarshall", err)
+		service.Log(core.ErrorLevel, "JsonUnmarshall", err)
 		span.SetTag("JsonUnmarshall", err)
 	}
 
@@ -62,11 +61,11 @@ func Order(c *gin.Context) {
 	data := res["data"].(map[string]interface{})
 	exists := data["exists"].(bool)
 	if !exists {
-		c.JSON(http.StatusOK, garden.ApiResponse(1000, "下单失败", nil))
+		c.JSON(http.StatusOK, ApiResponse(1000, "下单失败", nil))
 		return
 	}
 	orderId := utils.NewUuid()
-	c.JSON(http.StatusOK, garden.ApiResponse(0, "下单成功", garden.MapData{
+	c.JSON(http.StatusOK, ApiResponse(0, "下单成功", core.MapData{
 		"orderId": orderId,
 	}))
 }
@@ -74,4 +73,12 @@ func Order(c *gin.Context) {
 // VOrder order api parameter validator
 type VOrder struct {
 	Username string `form:"username" binding:"required,max=20,min=1" `
+}
+
+func ApiResponse(code int, msg string, data interface{}) core.MapData {
+	return core.MapData{
+		"code": code,
+		"msg":  msg,
+		"data": data,
+	}
 }

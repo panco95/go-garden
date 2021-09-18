@@ -1,4 +1,4 @@
-package garden
+package core
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func runGin(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
@@ -37,27 +37,27 @@ func runGin(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc)
 			param.ErrorMessage)
 	}))
 	server.Use(gin.Recovery())
-	server.Use(openTracingMiddleware())
+	server.Use(g.openTracingMiddleware())
 	if auth != nil {
 		server.Use(auth())
 	}
 	route(server)
 
-	Log(InfoLevel, Config.ServiceName, fmt.Sprintf("Http listen on port: %s", port))
+	g.Log(InfoLevel, g.Cfg.ServiceName, fmt.Sprintf("Http listen on port: %s", port))
 	return server.Run(":" + port)
 }
 
-func GatewayRoute(r *gin.Engine) {
+func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
-		gateway(c)
+		g.gateway(c)
 	})
 }
 
-func openTracingMiddleware() gin.HandlerFunc {
+func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		span := startSpanFromHeader(c.Request.Header, c.Request.RequestURI)
-		span.SetTag("ServiceIp", serviceIp)
-		span.SetTag("ServiceId", serviceId)
+		span.SetTag("ServiceIp", g.serviceIp)
+		span.SetTag("ServiceId", g.serviceId)
 		span.SetTag("Result", "running")
 		requestTracing(c, span)
 
@@ -68,9 +68,9 @@ func openTracingMiddleware() gin.HandlerFunc {
 	}
 }
 
-func CheckCallSafeMiddleware() gin.HandlerFunc {
+func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !checkCallSafe(c.GetHeader("Call-Service-Key")) {
+		if !g.checkCallSafe(c.GetHeader("Call-Service-Key")) {
 			c.JSON(http.StatusForbidden, gatewayFail())
 			c.Abort()
 		}
