@@ -6,7 +6,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/panco95/go-garden/drives/zipkin"
 	"net/http"
-	"reflect"
 )
 
 func (g *Garden) initOpenTracing(service, addr, address string) error {
@@ -33,19 +32,7 @@ func startSpanFromHeader(header http.Header, operateName string) opentracing.Spa
 	return span
 }
 
-func requestTracing(ctx interface{}, span opentracing.Span) {
-	t := reflect.TypeOf(ctx)
-	switch t.String() {
-	case "*gin.Context":
-		c := ctx.(*gin.Context)
-		requestTracingGin(c, span)
-		break
-	default:
-		break
-	}
-}
-
-func requestTracingGin(c *gin.Context, span opentracing.Span) {
+func requestTracing(c *gin.Context, span opentracing.Span) {
 	request := Request{
 		getMethod(c),
 		getUrl(c),

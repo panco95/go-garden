@@ -28,7 +28,7 @@ Go Garden为分布式系统架构的开发提供了核心需求，包括微服�
 
 ## 开发者必读
 
-Go Garden考虑到开发者的使用门槛，并没有实现Http框架，而是集成了评价较高的Gin框架。这样可以大大减少开发者的学习路径，如果你是Go初学者，请提前阅读Gin框架文档。
+Go Garden考虑到开发者的使用门槛，并没有自行造轮子实现Http框架，而是选择使用较为成熟的Gin作为底层Http服务，这样可以大大减少开发者的学习路径，如果你是Go初学者，请提前阅读Gin框架文档。
 
 
 ## 快速开始
@@ -36,10 +36,10 @@ Go Garden考虑到开发者的使用门槛，并没有实现Http框架，而是�
 ```golang
 import "github.com/panco95/go-garden"
 
-// initialise
-garden.Init()
-// start the service
-garden.Run(Route, Auth)
+func main() {
+    service := garden.NewService()
+    service.Run(nil, nil)
+}
 ```
 
 ## 教程：基于Go Garden快速构建微服务

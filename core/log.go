@@ -5,6 +5,7 @@ import (
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log"
 	"os"
 )
 
@@ -45,7 +46,11 @@ func (g *Garden) Log(level Level, label string, data interface{}) {
 	case PanicLevel:
 		g.log.Debug(format)
 	case FatalLevel:
-		g.log.Debug(format)
+		if g.isBootstrap == 1 {
+			g.log.Debug(format)
+		} else {
+			log.Fatal(format)
+		}
 	}
 }
 

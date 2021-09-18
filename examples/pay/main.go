@@ -49,6 +49,7 @@ func Order(c *gin.Context) {
 		span.SetTag("CallService", err)
 		return
 	}
+
 	var res core.MapData
 	err = json.Unmarshal([]byte(result), &res)
 	if err != nil {

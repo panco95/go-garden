@@ -10,7 +10,6 @@ var service core.Garden
 
 func main() {
 	service = garden.NewService()
-	service.Bootstrap()
 	service.Run(service.GatewayRoute, Auth)
 }
 

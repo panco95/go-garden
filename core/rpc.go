@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/panco95/go-garden/sync"
+	"github.com/panco95/go-garden/core/sync"
 	"google.golang.org/grpc"
 	"net"
 )
