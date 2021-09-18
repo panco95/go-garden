@@ -3,9 +3,10 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"github.com/panco95/go-garden/utils"
+	"github.com/panco95/go-garden/core/utils"
 	"net/http"
 	"os"
 	"strings"
@@ -42,6 +43,8 @@ func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.
 		server.Use(auth())
 	}
 	route(server)
+
+	pprof.Register(server)
 
 	g.Log(InfoLevel, g.Cfg.ServiceName, fmt.Sprintf("Http listen on port: %s", port))
 	return server.Run(":" + port)

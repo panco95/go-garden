@@ -160,7 +160,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/drives/redis"
+	"github.com/panco95/go-garden/core/drives/redis"
 	"net/http"
 )
 
@@ -273,7 +273,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/utils"
+	"github.com/panco95/go-garden/core/utils"
 	"net/http"
 )
 
@@ -406,3 +406,7 @@ Go Garden封装了规范的日志函数，用如下代码进行调用：
 	service.Log(core.ErrorLevel, "JsonUnmarshall", err)
 ```
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，建议传入`error`或`string`变量。
+
+### 9. 性能监控pprof
+
+每个服务都默认开启pprof，访问路径 `/debug/pprof`

@@ -2,7 +2,7 @@ package sync
 
 import (
 	"context"
-	"github.com/panco95/go-garden/utils"
+	"github.com/panco95/go-garden/core/utils"
 	"google.golang.org/grpc"
 )
 

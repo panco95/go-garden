@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"github.com/panco95/go-garden/drives/zipkin"
+	"github.com/panco95/go-garden/core/drives/zipkin"
 	"net/http"
 )
 

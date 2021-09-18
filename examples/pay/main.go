@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/utils"
+	"github.com/panco95/go-garden/core/utils"
 	"net/http"
 )
 
