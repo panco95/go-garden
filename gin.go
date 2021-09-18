@@ -56,6 +56,8 @@ func GatewayRoute(r *gin.Engine) {
 func openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		span := startSpanFromHeader(c.Request.Header, c.Request.RequestURI)
+		span.SetTag("ServiceIp", serviceIp)
+		span.SetTag("ServiceId", serviceId)
 		span.SetTag("Result", "running")
 		requestTracing(c, span)
 
