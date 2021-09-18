@@ -6,14 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
 	"github.com/panco95/go-garden/utils"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 )
 
-func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+func runGin(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
@@ -38,27 +37,27 @@ func GinServer(port string, route func(r *gin.Engine), auth func() gin.HandlerFu
 			param.ErrorMessage)
 	}))
 	server.Use(gin.Recovery())
-	server.Use(OpenTracingMiddleware())
+	server.Use(openTracingMiddleware())
 	if auth != nil {
 		server.Use(auth())
 	}
 	route(server)
 
-	log.Printf("[%s] Http listen on port: %s", Config.ServiceName, port)
+	Log(InfoLevel, Config.ServiceName, fmt.Sprintf("Http listen on port: %s", port))
 	return server.Run(":" + port)
 }
 
 func GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
-		Gateway(c)
+		gateway(c)
 	})
 }
 
-func OpenTracingMiddleware() gin.HandlerFunc {
+func openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
+		span := startSpanFromHeader(c.Request.Header, c.Request.RequestURI)
 		span.SetTag("Result", "running")
-		RequestTracing(c, span)
+		requestTracing(c, span)
 
 		c.Next()
 
@@ -69,14 +68,14 @@ func OpenTracingMiddleware() gin.HandlerFunc {
 
 func CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if !CheckCallSafe(c.GetHeader("Call-Service-Key")) {
-			c.JSON(http.StatusForbidden, GatewayFail())
+		if !checkCallSafe(c.GetHeader("Call-Service-Key")) {
+			c.JSON(http.StatusForbidden, gatewayFail())
 			c.Abort()
 		}
 	}
 }
 
-func GetContext(c *gin.Context, name string) (interface{}, error) {
+func getContext(c *gin.Context, name string) (interface{}, error) {
 	t, success := c.Get(name)
 	if !success {
 		return nil, errors.New(name + " is nil")
@@ -84,8 +83,8 @@ func GetContext(c *gin.Context, name string) (interface{}, error) {
 	return t, nil
 }
 
-func GetRequest(c *gin.Context) (*Request, error) {
-	t, err := GetContext(c, "request")
+func getRequest(c *gin.Context) (*Request, error) {
+	t, err := getContext(c, "request")
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +93,7 @@ func GetRequest(c *gin.Context) (*Request, error) {
 }
 
 func GetSpan(c *gin.Context) (opentracing.Span, error) {
-	t, err := GetContext(c, "span")
+	t, err := getContext(c, "span")
 	if err != nil {
 		return nil, err
 	}
@@ -102,16 +101,16 @@ func GetSpan(c *gin.Context) (opentracing.Span, error) {
 	return r, nil
 }
 
-func GetMethod(c *gin.Context) string {
+func getMethod(c *gin.Context) string {
 	return strings.ToUpper(c.Request.Method)
 }
 
-func GetClientIp(c *gin.Context) string {
+func getClientIp(c *gin.Context) string {
 	return c.ClientIP()
 }
 
-func GetBody(c *gin.Context) Any {
-	body := Any{}
+func getBody(c *gin.Context) MapData {
+	body := MapData{}
 	h := c.GetHeader("Content-Type")
 	// 获取表单格式请求参数
 	if strings.Contains(h, "multipart/form-data") || strings.Contains(h, "application/x-www-form-urlencoded") {
@@ -125,11 +124,11 @@ func GetBody(c *gin.Context) Any {
 	return body
 }
 
-func GetUrl(c *gin.Context) string {
+func getUrl(c *gin.Context) string {
 	return c.Request.URL.Path
 }
 
-func GetUrlParam(c *gin.Context) string {
+func getUrlParam(c *gin.Context) string {
 	requestUrl := c.Request.RequestURI
 	urlSplit := strings.Split(requestUrl, "?")
 	if len(urlSplit) > 1 {
@@ -140,8 +139,8 @@ func GetUrlParam(c *gin.Context) string {
 	return requestUrl
 }
 
-func GetHeaders(c *gin.Context) Any {
-	headers := Any{}
+func getHeaders(c *gin.Context) MapData {
+	headers := MapData{}
 	for k, v := range c.Request.Header {
 		headers[k] = v[0]
 	}

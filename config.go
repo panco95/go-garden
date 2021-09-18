@@ -10,6 +10,7 @@ import (
 var Config config
 
 type config struct {
+	Debug                bool
 	ServiceName          string
 	HttpPort             string
 	RpcPort              string
@@ -22,35 +23,35 @@ type config struct {
 	Routes               map[string]map[string]string
 }
 
-func InitConfig(path, fileType string) {
+func initConfig(path, fileType string) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType(fileType)
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		Fatal("Config", err)
+		Log(FatalLevel, "Config", err)
 	}
 
 	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
-		Fatal("Config", err)
+		Log(FatalLevel, "Config", err)
 	}
 
-	UnmarshalConfig()
+	unmarshalConfig()
 
 	// watch config file 'routes.yml' change
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		filename := filepath.Base(e.Name)
-		if strings.Compare(filename,"routes.yml") == 0 {
-			UnmarshalConfig()
-			go SyncRoutes()
+		if strings.Compare(filename, "routes.yml") == 0 {
+			unmarshalConfig()
+			go syncRoutes()
 		}
 	})
 }
 
-func UnmarshalConfig() {
+func unmarshalConfig() {
 	if err := viper.Unmarshal(&Config); err != nil {
-		Fatal("Config", err)
+		Log(ErrorLevel, "Config", err)
 	}
 }

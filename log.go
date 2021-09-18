@@ -5,28 +5,53 @@ import (
 	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log"
+	"os"
 )
 
-var Logger *zap.SugaredLogger
+var logging *zap.SugaredLogger
 
-func InitLog() {
-	writeSyncer := GetLogWriter()
-	encoder := GetEncoder()
-	core := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
+type Level int8
 
-	logger := zap.New(core, zap.AddCaller())
-	Logger = logger.Sugar()
+const (
+	DebugLevel Level = iota - 1
+	InfoLevel
+	WarnLevel
+	ErrorLevel
+	DPanicLevel
+	PanicLevel
+	FatalLevel
+)
+
+func initLog() {
+	encoder := getEncoder()
+
+	var cores []zapcore.Core
+
+	writeSyncer := getLogWriter()
+	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
+	cores = append(cores, fileCore)
+
+	if Config.Debug {
+		consoleDebug := zapcore.Lock(os.Stdout)
+		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.DebugLevel)
+		cores = append(cores, consoleCore)
+	}
+
+	core := zapcore.NewTee(cores...)
+	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+
+	logging = logger.Sugar()
 }
 
-func GetEncoder() zapcore.Encoder {
+func getEncoder() zapcore.Encoder {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-func GetLogWriter() zapcore.WriteSyncer {
+func getLogWriter() zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   "./runtime/logs/log.log",
 		MaxSize:    2,
@@ -37,9 +62,27 @@ func GetLogWriter() zapcore.WriteSyncer {
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-// Fatal Programs are forced to exit and logging
-func Fatal(label string, err error) {
-	e := fmt.Sprintf("[%s] %s", label, err)
-	Logger.Error(e)
-	log.Fatal(e)
+func logFormat(label string, log interface{}) string {
+	e := fmt.Sprintf("[%s] %s", label, log)
+	return e
+}
+
+func Log(level Level, label string, data interface{}) {
+	format := logFormat(label, data)
+	switch level {
+	case DebugLevel:
+		logging.Debug(format)
+	case InfoLevel:
+		logging.Info(format)
+	case WarnLevel:
+		logging.Warn(format)
+	case ErrorLevel:
+		logging.Error(format)
+	case DPanicLevel:
+		logging.DPanic(format)
+	case PanicLevel:
+		logging.Panic(format)
+	case FatalLevel:
+		logging.Fatal(format)
+	}
 }

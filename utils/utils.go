@@ -3,7 +3,6 @@ package utils
 import (
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"strconv"
@@ -54,16 +53,16 @@ func GetIntranetIp() string {
 	return "127.0.0.1"
 }
 
-func GetOutboundIP() string {
+func GetOutboundIP() (string, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
 
-	return localAddr.IP.String()
+	return localAddr.IP.String(), nil
 }
 
 func CreateDir(path string) error {

@@ -12,12 +12,12 @@ import (
 )
 
 type Request struct {
-	Method   string `json:"method"`
-	Url      string `json:"url"`
-	UrlParam string `json:"urlParam"`
-	ClientIp string `json:"clientIp"`
-	Headers  Any    `json:"headers"`
-	Body     Any    `json:"body"`
+	Method   string  `json:"method"`
+	Url      string  `json:"url"`
+	UrlParam string  `json:"urlParam"`
+	ClientIp string  `json:"clientIp"`
+	Headers  MapData `json:"headers"`
+	Body     MapData `json:"body"`
 }
 
 func CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
@@ -25,7 +25,7 @@ func CallService(span opentracing.Span, service, action string, request *Request
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
-	serviceAddr, err := SelectServiceHttpAddr(service)
+	serviceAddr, err := selectServiceHttpAddr(service)
 	if err != nil {
 		return "", err
 	}
@@ -34,7 +34,7 @@ func CallService(span opentracing.Span, service, action string, request *Request
 	// 服务重试3次
 	for retry := 1; retry <= 3; retry++ {
 		url := "http://" + serviceAddr + route + result
-		result, err = RequestService(span, url, request)
+		result, err = requestService(span, url, request)
 		if err != nil {
 			if retry >= 3 {
 				return "", err
@@ -49,7 +49,7 @@ func CallService(span opentracing.Span, service, action string, request *Request
 	return result, nil
 }
 
-func RequestService(span opentracing.Span, url string, request *Request) (string, error) {
+func requestService(span opentracing.Span, url string, request *Request) (string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}

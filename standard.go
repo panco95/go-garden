@@ -1,16 +1,13 @@
 package garden
 
-import "github.com/gin-gonic/gin"
+type MapData map[string]interface{}
 
-func Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
-	go InitRpc(Config.RpcPort)
-	Fatal("Run", GinServer(Config.HttpPort, route, auth))
-}
+var(
+	syncCache []byte
+)
 
-type Any map[string]interface{}
-
-func GatewaySuccess(data Any) Any {
-	response := Any{
+func gatewaySuccess(data MapData) MapData {
+	response := MapData{
 		"status": true,
 	}
 	for k, v := range data {
@@ -19,15 +16,15 @@ func GatewaySuccess(data Any) Any {
 	return response
 }
 
-func GatewayFail() Any {
-	response := Any{
+func gatewayFail() MapData {
+	response := MapData{
 		"status": false,
 	}
 	return response
 }
 
-func ApiResponse(code int, msg string, data interface{}) Any {
-	return Any{
+func ApiResponse(code int, msg string, data interface{}) MapData {
+	return MapData{
 		"code": code,
 		"msg":  msg,
 		"data": data,

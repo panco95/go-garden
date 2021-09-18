@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-func Gateway(ctx interface{}) {
+func gateway(ctx interface{}) {
 	t := reflect.TypeOf(ctx)
 	switch t.String() {
 	case "*gin.Context":
@@ -23,15 +23,15 @@ func gatewayGin(c *gin.Context) {
 	// openTracing span
 	span, err := GetSpan(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Errorf("[%s] %s", "GetSpan", err)
+		c.JSON(http.StatusInternalServerError, gatewayFail())
+		Log(ErrorLevel, "GetSpan", err)
 		return
 	}
 	// request struct
-	request, err := GetRequest(c)
+	request, err := getRequest(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Errorf("[%s] %s", "GetRequestContext", err)
+		c.JSON(http.StatusInternalServerError, gatewayFail())
+		Log(ErrorLevel, "GetRequestContext", err)
 		span.SetTag("GetRequestContext", err)
 		return
 	}
@@ -42,17 +42,17 @@ func gatewayGin(c *gin.Context) {
 	// request service
 	data, err := CallService(span, service, action, request)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Errorf("[%s][%s/%s] %s", "CallService", service, action, err)
+		c.JSON(http.StatusInternalServerError, gatewayFail())
+		Log(ErrorLevel, "CallService", err)
 		span.SetTag("CallService", err)
 		return
 	}
-	var result Any
+	var result MapData
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		c.JSON(http.StatusInternalServerError, GatewayFail())
-		Logger.Errorf("[%s][%s/%s] %s", "ReturnInvalidFormat", service, action, err)
+		c.JSON(http.StatusInternalServerError, gatewayFail())
+		Log(ErrorLevel, "ReturnInvalidFormat", err)
 		span.SetTag("ReturnInvalidFormat", err)
 		return
 	}
-	c.JSON(http.StatusOK, GatewaySuccess(result))
+	c.JSON(http.StatusOK, gatewaySuccess(result))
 }

@@ -1,3 +1,4 @@
+Debug: true
 ServiceName: user
 HttpPort: 8081
 RpcPort: 8181

@@ -1,3 +1,4 @@
+Debug: true
 ServiceName: gateway
 HttpPort: 8080
 RpcPort: 8180

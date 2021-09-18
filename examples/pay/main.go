@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/panco95/go-garden"
 	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden"
+	"github.com/panco95/go-garden/utils"
 	"net/http"
 )
 
@@ -23,7 +24,7 @@ func Order(c *gin.Context) {
 	span, err := garden.GetSpan(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Logger.Errorf("[%s] %s", "GetSpan", err)
+		garden.Log(garden.ErrorLevel, "GetSpan", err)
 		return
 	}
 
@@ -39,21 +40,21 @@ func Order(c *gin.Context) {
 	action := "exists"
 	result, err := garden.CallService(span, service, action, &garden.Request{
 		Method: "POST",
-		Body: garden.Any{
+		Body: garden.MapData{
 			"username": username,
 		},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Logger.Errorf("[%s] %s", "CallService", err)
+		garden.Log(garden.ErrorLevel, "CallService", err)
 		span.SetTag("CallService", err)
 		return
 	}
-	var res garden.Any
+	var res garden.MapData
 	err = json.Unmarshal([]byte(result), &res)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Logger.Errorf("[%s] %s", "JsonUnmarshall", err)
+		garden.Log(garden.ErrorLevel, "JsonUnmarshall", err)
 		span.SetTag("JsonUnmarshall", err)
 	}
 
@@ -64,8 +65,8 @@ func Order(c *gin.Context) {
 		c.JSON(http.StatusOK, garden.ApiResponse(1000, "下单失败", nil))
 		return
 	}
-	orderId := garden.NewUuid()
-	c.JSON(http.StatusOK, garden.ApiResponse(0, "下单成功", garden.Any{
+	orderId := utils.NewUuid()
+	c.JSON(http.StatusOK, garden.ApiResponse(0, "下单成功", garden.MapData{
 		"orderId": orderId,
 	}))
 }

@@ -1,22 +1,22 @@
 package garden
 
 import (
+	"fmt"
 	"github.com/panco95/go-garden/sync"
 	"google.golang.org/grpc"
-	"log"
 	"net"
 )
 
-func InitRpc(port string) {
+func runRpc(port string) {
 	listenAddress := ":" + port
 	listen, err := net.Listen("tcp", listenAddress)
 	if err != nil {
-		Fatal("Rpc", err)
+		Log(FatalLevel, "Rpc", err)
 	}
 
 	s := grpc.NewServer()
 	sync.RegisterSyncServer(s, sync.Server)
 
-	log.Printf("[%s] Rpc listen on port: %s", Config.ServiceName, port)
-	Fatal("Rpc", s.Serve(listen))
+	Log(InfoLevel, Config.ServiceName, fmt.Sprintf("Rpc listen on port: %s", port))
+	Log(FatalLevel, "Rpc", s.Serve(listen).Error())
 }

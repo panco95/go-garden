@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/panco95/go-garden"
 	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden"
 )
 
 func main() {

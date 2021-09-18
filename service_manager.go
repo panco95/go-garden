@@ -9,44 +9,46 @@ import (
 	"github.com/panco95/go-garden/sync"
 	"github.com/panco95/go-garden/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
-	"log"
 	"strings"
 	"time"
 )
 
-type Service struct {
+type service struct {
 	PollNext int
 	Nodes    []string
 }
 
-type ServiceManager struct {
+type serviceManager struct {
 	Operate     string
 	ServiceName string
 	ServiceAddr string
 }
 
-var ServiceManagerChan chan ServiceManager
+var serviceManagerChan chan serviceManager
 
 var (
-	SyncCache []byte
-	ServiceId string
-	ServiceIp string
-	Services  = make(map[string]*Service)
+	serviceId string
+	serviceIp string
+	services  = make(map[string]*service)
 )
 
-func InitService(serviceName, httpPort, rpcPort string) error {
-	ServiceIp = utils.GetOutboundIP()
-	intranetRpcAddr := ServiceIp + ":" + rpcPort
-	intranetHttpAddr := ServiceIp + ":" + httpPort
-	ServiceId = "garden" + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
+func initService(serviceName, httpPort, rpcPort string) error {
+	var err error
+	serviceIp, err = utils.GetOutboundIP()
+	if err != nil {
+		return err
+	}
+	intranetRpcAddr := serviceIp + ":" + rpcPort
+	intranetHttpAddr := serviceIp + ":" + httpPort
+	serviceId = "garden" + "_" + serviceName + "_" + intranetRpcAddr + "_" + intranetHttpAddr
 
-	ServiceManagerChan = make(chan ServiceManager, 0)
-	go ServiceManageWatch(ServiceManagerChan)
+	serviceManagerChan = make(chan serviceManager, 0)
+	go serviceManageWatch(serviceManagerChan)
 
-	return ServiceRegister()
+	return serviceRegister()
 }
 
-func ServiceRegister() error {
+func serviceRegister() error {
 	// New lease
 	resp, err := etcd.Client().Grant(context.TODO(), 2)
 	if err != nil {
@@ -56,7 +58,7 @@ func ServiceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = etcd.Client().Put(context.TODO(), ServiceId, "0", clientV3.WithLease(resp.ID))
+	_, err = etcd.Client().Put(context.TODO(), serviceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
@@ -74,22 +76,22 @@ func ServiceRegister() error {
 		}
 	}()
 
-	services := GetAllServices()
+	services := getAllServices()
 	for _, service := range services {
 		arr := strings.Split(service, "_")
 		serviceName := arr[0]
 		serviceRpcAddr := arr[1]
 		serviceHttpAddr := arr[2]
 
-		AddServiceNode(serviceName, serviceRpcAddr+"_"+serviceHttpAddr)
+		addServiceNode(serviceName, serviceRpcAddr+"_"+serviceHttpAddr)
 	}
 
-	go ServiceWatcher()
+	go serviceWatcher()
 
 	return nil
 }
 
-func ServiceWatcher() {
+func serviceWatcher() {
 	rch := etcd.Client().Watch(context.Background(), "garden_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
@@ -100,22 +102,22 @@ func ServiceWatcher() {
 			serviceAddr := rpcAddr + "_" + httpAddr
 			switch ev.Type {
 			case 0: //put
-				AddServiceNode(serviceName, serviceAddr)
-				log.Printf("[%s] node [%s] join \n", serviceName, serviceAddr)
+				addServiceNode(serviceName, serviceAddr)
+				Log(InfoLevel, "Service", fmt.Sprintf("[%s] node [%s] join", serviceName, serviceAddr))
 			case 1: //delete
-				DelServiceNode(serviceName, serviceAddr)
-				log.Printf("[%s] node [%s] leave \n", serviceName, serviceAddr)
+				delServiceNode(serviceName, serviceAddr)
+				Log(InfoLevel, "Service", fmt.Sprintf("[%s] node [%s] leave", serviceName, serviceAddr))
 			}
 		}
 	}
 }
 
-func GetAllServices() []string {
+func getAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	resp, err := etcd.Client().Get(ctx, "garden_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		Logger.Debugf("[%s] %s", "GetAllServices", err)
+		Log(ErrorLevel, "GetAllServices", err)
 		return []string{}
 	}
 	var services []string
@@ -127,12 +129,12 @@ func GetAllServices() []string {
 	return services
 }
 
-func GetServicesByName(serviceName string) []string {
+func getServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	resp, err := etcd.Client().Get(ctx, "garden_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		Logger.Debugf("[%s] %s", "GetServicesByName", err)
+		Log(ErrorLevel, "GetServicesByName", err)
 		return []string{}
 	}
 	var services []string
@@ -144,70 +146,70 @@ func GetServicesByName(serviceName string) []string {
 	return services
 }
 
-func AddServiceNode(name, addr string) {
-	sm := ServiceManager{
+func addServiceNode(name, addr string) {
+	sm := serviceManager{
 		Operate:     "addNode",
 		ServiceName: name,
 		ServiceAddr: addr,
 	}
-	ServiceManagerChan <- sm
+	serviceManagerChan <- sm
 }
 
-func DelServiceNode(name, addr string) {
-	sm := ServiceManager{
+func delServiceNode(name, addr string) {
+	sm := serviceManager{
 		Operate:     "delNode",
 		ServiceName: name,
 		ServiceAddr: addr,
 	}
-	ServiceManagerChan <- sm
+	serviceManagerChan <- sm
 }
 
-func CreateServiceIndex(name string) {
-	if !ExistsService(name) {
-		Services[name] = &Service{
+func createServiceIndex(name string) {
+	if !existsService(name) {
+		services[name] = &service{
 			PollNext: 0,
 			Nodes:    []string{},
 		}
 	}
 }
 
-func ExistsService(name string) bool {
-	_, ok := Services[name]
+func existsService(name string) bool {
+	_, ok := services[name]
 	return ok
 }
 
-func GetServiceRpcAddr(name string, index int) (string, error) {
-	if index > len(Services[name].Nodes)-1 {
+func getServiceRpcAddr(name string, index int) (string, error) {
+	if index > len(services[name].Nodes)-1 {
 		return "", errors.New("Service not found")
 	}
-	arr := strings.Split(Services[name].Nodes[index], "_")
+	arr := strings.Split(services[name].Nodes[index], "_")
 	return arr[0], nil
 }
 
-func GetServiceHttpAddr(name string, index int) (string, error) {
-	if index > len(Services[name].Nodes)-1 {
+func getServiceHttpAddr(name string, index int) (string, error) {
+	if index > len(services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(Services[name].Nodes[index], "_")
+	arr := strings.Split(services[name].Nodes[index], "_")
 	return arr[1], nil
 }
 
-func ServiceManageWatch(ch chan ServiceManager) {
+func serviceManageWatch(ch chan serviceManager) {
 	for {
 		select {
 		case sm := <-ch:
 			switch sm.Operate {
 
 			case "addNode":
-				CreateServiceIndex(sm.ServiceName)
-				Services[sm.ServiceName].Nodes = append(Services[sm.ServiceName].Nodes, sm.ServiceAddr)
+				createServiceIndex(sm.ServiceName)
+				services[sm.ServiceName].Nodes = append(services[sm.ServiceName].Nodes, sm.ServiceAddr)
 				break
 
 			case "delNode":
-				if ExistsService(sm.ServiceName) {
-					for i := 0; i < len(Services[sm.ServiceName].Nodes); i++ {
-						if Services[sm.ServiceName].Nodes[i] == sm.ServiceAddr {
-							Services[sm.ServiceName].Nodes = append(Services[sm.ServiceName].Nodes[:i], Services[sm.ServiceName].Nodes[i+1:]...)
+				if existsService(sm.ServiceName) {
+					for i := 0; i < len(services[sm.ServiceName].Nodes); i++ {
+						if services[sm.ServiceName].Nodes[i] == sm.ServiceAddr {
+							services[sm.ServiceName].Nodes = append(services[sm.ServiceName].Nodes[:i], services[sm.ServiceName].Nodes[i+1:]...)
 							i--
 						}
 					}
@@ -215,13 +217,13 @@ func ServiceManageWatch(ch chan ServiceManager) {
 				break
 
 			case "pullNext":
-				if ExistsService(sm.ServiceName) {
-					serviceNum := len(Services[sm.ServiceName].Nodes)
-					index := Services[sm.ServiceName].PollNext
+				if existsService(sm.ServiceName) {
+					serviceNum := len(services[sm.ServiceName].Nodes)
+					index := services[sm.ServiceName].PollNext
 					if index >= serviceNum-1 {
-						Services[sm.ServiceName].PollNext = 0
+						services[sm.ServiceName].PollNext = 0
 					} else {
-						Services[sm.ServiceName].PollNext = index + 1
+						services[sm.ServiceName].PollNext = index + 1
 					}
 				}
 				break
@@ -230,54 +232,55 @@ func ServiceManageWatch(ch chan ServiceManager) {
 	}
 }
 
-func SelectServiceHttpAddr(name string) (string, error) {
-	if _, ok := Services[name]; !ok {
+func selectServiceHttpAddr(name string) (string, error) {
+	if _, ok := services[name]; !ok {
 		return "", errors.New("service index not found")
 	}
-	serviceHttpAddr, err := GetServiceHttpAddr(name, Services[name].PollNext)
+	serviceHttpAddr, err := getServiceHttpAddr(name, services[name].PollNext)
 	if err != nil {
 		return "", err
 	}
 
-	sm := ServiceManager{
+	sm := serviceManager{
 		Operate:     "pullNext",
 		ServiceName: name,
 	}
-	ServiceManagerChan <- sm
+	serviceManagerChan <- sm
 
 	return serviceHttpAddr, nil
 }
 
 // SyncRoutes sync routes.yml to other each service
-func SyncRoutes() {
+func syncRoutes() {
 	fileData, err := utils.ReadFile("configs/routes.yml")
 	if err != nil {
-		Logger.Errorf("[%s] %s", "SyncRoutes", err)
+		Log(ErrorLevel, "SyncRoutes", err)
 		return
 	}
 
-	if bytes.Compare(SyncCache, fileData) == 0 {
+	if bytes.Compare(syncCache, fileData) == 0 {
 		return
 	}
 
-	SyncCache = fileData
+	syncCache = fileData
 
-	for k, v := range Services {
+	for k, v := range services {
 		for i := 0; i < len(v.Nodes); i++ {
-			serviceRpcAddress, err := GetServiceRpcAddr(k, i)
+			serviceRpcAddress, err := getServiceRpcAddr(k, i)
 			if err != nil {
-				Logger.Errorf("[%s] %s", "GetServiceRpcAddr", err)
+				Log(ErrorLevel, "GetServiceRpcAddr", err)
 				continue
 			}
-			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", ServiceIp, Config.RpcPort)) != 0 {
+			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", serviceIp, Config.RpcPort)) != 0 {
 				result, err := sync.SendSyncRoutes(serviceRpcAddress, fileData)
 				if err != nil {
-					Logger.Errorf("[%s] %s", "SendSyncRoutes", err)
+					Log(ErrorLevel, "SendSyncRoutes", err)
 					continue
 				}
 				if result != true {
-					Logger.Errorf("[%s] %s", "SendSyncRoutesResult", errors.New("false"))
+					Log(ErrorLevel, "SendSyncRoutesResult", "false")
 				}
+				Log(InfoLevel, "SendSyncRoutesResult", "true")
 			}
 		}
 	}

@@ -25,7 +25,7 @@ func Login(c *gin.Context) {
 	span, err := garden.GetSpan(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Logger.Errorf("[%s] %s", "GetSpan", err)
+		garden.Log(garden.ErrorLevel, "GetSpan", err)
 		return
 	}
 
@@ -38,7 +38,7 @@ func Login(c *gin.Context) {
 	username := c.DefaultPostForm("username", "")
 	if err := redis.Client().Set(context.Background(), "user."+username, 0, 0).Err(); err != nil {
 		c.JSON(http.StatusInternalServerError, nil)
-		garden.Logger.Errorf("[%s] %s", "RedisSet", err)
+		garden.Log(garden.ErrorLevel, "RedisSet", err)
 		span.SetTag("RedisSet", err)
 		return
 	}
@@ -58,7 +58,7 @@ func Exists(c *gin.Context) {
 	if err != nil {
 		exists = false
 	}
-	c.JSON(http.StatusOK, garden.ApiResponse(0, "", garden.Any{
+	c.JSON(http.StatusOK, garden.ApiResponse(0, "", garden.MapData{
 		"exists": exists,
 	}))
 }

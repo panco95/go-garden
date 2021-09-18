@@ -2,14 +2,14 @@ package garden
 
 import (
 	"encoding/json"
-	"github.com/panco95/go-garden/drives/zipkin"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/drives/zipkin"
 	"net/http"
 	"reflect"
 )
 
-func InitOpenTracing(service, addr, address string) error {
+func initOpenTracing(service, addr, address string) error {
 	trace, err := zipkin.Connect(service, addr, address)
 	if err != nil {
 		return err
@@ -18,9 +18,9 @@ func InitOpenTracing(service, addr, address string) error {
 	return nil
 }
 
-// StartSpanFromHeader Get the opentracing span from the request header
+// startSpanFromHeader Get the opentracing span from the request header
 // If no span, in header creates new root span, if any, new child span
-func StartSpanFromHeader(header http.Header, operateName string) opentracing.Span {
+func startSpanFromHeader(header http.Header, operateName string) opentracing.Span {
 	var span opentracing.Span
 	wireContext, _ := opentracing.GlobalTracer().Extract(
 		opentracing.HTTPHeaders,
@@ -33,7 +33,7 @@ func StartSpanFromHeader(header http.Header, operateName string) opentracing.Spa
 	return span
 }
 
-func RequestTracing(ctx interface{}, span opentracing.Span) {
+func requestTracing(ctx interface{}, span opentracing.Span) {
 	t := reflect.TypeOf(ctx)
 	switch t.String() {
 	case "*gin.Context":
@@ -47,12 +47,12 @@ func RequestTracing(ctx interface{}, span opentracing.Span) {
 
 func requestTracingGin(c *gin.Context, span opentracing.Span) {
 	request := Request{
-		GetMethod(c),
-		GetUrl(c),
-		GetUrlParam(c),
-		GetClientIp(c),
-		GetHeaders(c),
-		GetBody(c)}
+		getMethod(c),
+		getUrl(c),
+		getUrlParam(c),
+		getClientIp(c),
+		getHeaders(c),
+		getBody(c)}
 	s, _ := json.Marshal(&request)
 	span.SetTag("Request", string(s))
 
