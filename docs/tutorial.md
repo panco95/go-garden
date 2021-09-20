@@ -9,13 +9,13 @@ Go Garden基于Etcd实现服务注册发现，基于Zipkin实现服务链路追�
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 准备好一个Linux系统虚拟机，且安装好Docker
+* Docker启动的默认参数可能在高并发压力测试时会崩，建议自行调整参数或者搭建服务环境
 
-
-* 启动Etcd：
+启动Etcd：
 ```
 docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
 ```
-* 启动Zipkin：
+启动Zipkin：
 ```
 docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```
@@ -199,7 +199,7 @@ func Exists(c *gin.Context) {
 
 Docker启动redis：
 
-`docker run --rm -it -d --name redis -p 6379:6379 redis`
+`docker run -it -d --name redis -p 6379:6379 redis`
 
 修改config.yml：
 ```yml
@@ -256,7 +256,9 @@ PS D:\go-garden\examples\user2> go run .\main.go
 
 现在`user`服务右两个节点，我么可以称之为`user`服务集群，那么`gateway`调用`user`服务的时候会是什么一个情况呢？
 
-我们再次使用Postman给`gateway`发送两次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印一次请求日志，这是`gateway`服务控制的下游服务集群的负载均衡；如果是`gateway`服务集群呢，上游可能并没有服务，那么我们建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡。
+我们再次使用Postman给`gateway`发送多次请求：`http://127.0.0.1:8080/api/user/login` ，会发现`user`服务节点1和节点2都会打印请求日志，这是`gateway`服务控制的下游服务集群的负载均衡，Go Garden默认使用最小连接数算法进行选取下游服务节点，在负载非常低时使用随机算法选取下游服务节点；
+
+如果`gateway`也是集群怎么给`gateway`负载均衡呢，建议是增加一层较稳定的`webserver`例如`nginx`，在`nginx`层增加对`gateway`网关的负载均衡。
 
 
 ### 5. 服务之间调用
@@ -407,6 +409,46 @@ Go Garden封装了规范的日志函数，用如下代码进行调用：
 ```
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，建议传入`error`或`string`变量。
 
-### 9. 性能监控pprof
+### 9. 服务监控
 
-每个服务都默认开启pprof，访问路径 `/debug/pprof`
+* 每个服务都默认开启pprof，访问路径 `/debug/pprof`
+* 网关服务可以通过接口查询当前所有服务节点的状态，访问路径为`/healthy`，waiting为节点当前连接数，finish为处理完成计数，可使用ab压力测试工具测试观察负载均衡是否均衡：
+
+```json
+{
+    "services": {
+        "gateway": {
+            "Nodes": [
+                {
+                    "Addr": "192.168.8.98:8180_192.168.8.98:8080",
+                    "Waiting": 0,
+                    "Finish": 0
+                }
+            ]
+        },
+        "pay": {
+            "Nodes": [
+                {
+                    "Addr": "192.168.8.98:8182_192.168.8.98:8082",
+                    "Waiting": 0,
+                    "Finish": 0
+                }
+            ]
+        },
+        "user": {
+            "Nodes": [
+                {
+                    "Addr": "192.168.8.98:8181_192.168.8.98:8081",
+                    "Waiting": 14,
+                    "Finish": 3114
+                },
+                {
+                    "Addr": "192.168.8.98:8281_192.168.8.98:8280",
+                    "Waiting": 19,
+                    "Finish": 2915
+                }
+            ]
+        }
+    }
+}
+```

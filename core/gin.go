@@ -54,6 +54,11 @@ func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
 		g.gateway(c)
 	})
+	r.Any("healthy", func(c *gin.Context) {
+		c.JSON(http.StatusOK, MapData{
+			"services": g.services,
+		})
+	})
 }
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {

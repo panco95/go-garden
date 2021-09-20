@@ -3,7 +3,7 @@ package core
 import "go.uber.org/zap"
 
 type (
-	Level   int8
+	logLevel   int8
 	MapData map[string]interface{}
 	Garden  struct {
 		Cfg            Cfg
@@ -18,7 +18,7 @@ type (
 )
 
 const (
-	DebugLevel Level = iota - 1
+	DebugLevel logLevel = iota - 1
 	InfoLevel
 	WarnLevel
 	ErrorLevel

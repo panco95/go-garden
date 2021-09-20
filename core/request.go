@@ -25,16 +25,23 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 	if len(route) == 0 {
 		return "", errors.New("service route config not found")
 	}
-	serviceAddr, err := g.selectServiceHttpAddr(service)
+	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
 	if err != nil {
 		return "", err
 	}
 
 	var result string
-	// 服务重试3次
+	url := "http://" + serviceAddr + route + result
 	for retry := 1; retry <= 3; retry++ {
-		url := "http://" + serviceAddr + route + result
+		sm := serviceOperate{
+			operate: "incWaiting",
+			serviceName: service,
+			nodeIndex: nodeIndex,
+		}
+		g.serviceManager <- sm
 		result, err = g.requestService(span, url, request)
+		sm.operate = "decWaiting"
+		g.serviceManager <- sm
 		if err != nil {
 			if retry >= 3 {
 				return "", err

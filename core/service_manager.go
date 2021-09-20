@@ -9,19 +9,26 @@ import (
 	"github.com/panco95/go-garden/core/sync"
 	"github.com/panco95/go-garden/core/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
+	"math/rand"
 	"strings"
 	"time"
 )
 
+type node struct {
+	Addr    string
+	Waiting int
+	Finish  int64
+}
+
 type service struct {
-	PollNext int
-	Nodes    []string
+	Nodes    []node
 }
 
 type serviceOperate struct {
-	Operate     string
-	ServiceName string
-	ServiceAddr string
+	operate     string
+	serviceName string
+	serviceAddr string
+	nodeIndex   int
 }
 
 func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
@@ -141,18 +148,18 @@ func (g *Garden) getServicesByName(serviceName string) []string {
 
 func (g *Garden) addServiceNode(name, addr string) {
 	sm := serviceOperate{
-		Operate:     "addNode",
-		ServiceName: name,
-		ServiceAddr: addr,
+		operate:     "addNode",
+		serviceName: name,
+		serviceAddr: addr,
 	}
 	g.serviceManager <- sm
 }
 
 func (g *Garden) delServiceNode(name, addr string) {
 	sm := serviceOperate{
-		Operate:     "delNode",
-		ServiceName: name,
-		ServiceAddr: addr,
+		operate:     "delNode",
+		serviceName: name,
+		serviceAddr: addr,
 	}
 	g.serviceManager <- sm
 }
@@ -160,8 +167,7 @@ func (g *Garden) delServiceNode(name, addr string) {
 func (g *Garden) createServiceIndex(name string) {
 	if !g.existsService(name) {
 		g.services[name] = &service{
-			PollNext: 0,
-			Nodes:    []string{},
+			Nodes:    []node{},
 		}
 	}
 }
@@ -175,7 +181,7 @@ func (g *Garden) getServiceRpcAddr(name string, index int) (string, error) {
 	if index > len(g.services[name].Nodes)-1 {
 		return "", errors.New("Service not found")
 	}
-	arr := strings.Split(g.services[name].Nodes[index], "_")
+	arr := strings.Split(g.services[name].Nodes[index].Addr, "_")
 	return arr[0], nil
 }
 
@@ -183,7 +189,7 @@ func (g *Garden) getServiceHttpAddr(name string, index int) (string, error) {
 	if index > len(g.services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(g.services[name].Nodes[index], "_")
+	arr := strings.Split(g.services[name].Nodes[index].Addr, "_")
 	return arr[1], nil
 }
 
@@ -191,33 +197,34 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 	for {
 		select {
 		case sm := <-ch:
-			switch sm.Operate {
+			switch sm.operate {
 
 			case "addNode":
-				g.createServiceIndex(sm.ServiceName)
-				g.services[sm.ServiceName].Nodes = append(g.services[sm.ServiceName].Nodes, sm.ServiceAddr)
+				g.createServiceIndex(sm.serviceName)
+				g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes, node{Addr: sm.serviceAddr})
 				break
 
 			case "delNode":
-				if g.existsService(sm.ServiceName) {
-					for i := 0; i < len(g.services[sm.ServiceName].Nodes); i++ {
-						if g.services[sm.ServiceName].Nodes[i] == sm.ServiceAddr {
-							g.services[sm.ServiceName].Nodes = append(g.services[sm.ServiceName].Nodes[:i], g.services[sm.ServiceName].Nodes[i+1:]...)
+				if g.existsService(sm.serviceName) {
+					for i := 0; i < len(g.services[sm.serviceName].Nodes); i++ {
+						if g.services[sm.serviceName].Nodes[i].Addr == sm.serviceAddr {
+							g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes[:i], g.services[sm.serviceName].Nodes[i+1:]...)
 							i--
 						}
 					}
 				}
 				break
 
-			case "pullNext":
-				if g.existsService(sm.ServiceName) {
-					serviceNum := len(g.services[sm.ServiceName].Nodes)
-					index := g.services[sm.ServiceName].PollNext
-					if index >= serviceNum-1 {
-						g.services[sm.ServiceName].PollNext = 0
-					} else {
-						g.services[sm.ServiceName].PollNext = index + 1
-					}
+			case "incWaiting":
+				if g.existsService(sm.serviceName) {
+					g.services[sm.serviceName].Nodes[sm.nodeIndex].Waiting++
+				}
+				break
+
+			case "decWaiting":
+				if g.existsService(sm.serviceName) {
+					g.services[sm.serviceName].Nodes[sm.nodeIndex].Waiting--
+					g.services[sm.serviceName].Nodes[sm.nodeIndex].Finish++
 				}
 				break
 			}
@@ -225,22 +232,40 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 	}
 }
 
-func (g *Garden) selectServiceHttpAddr(name string) (string, error) {
+func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
 	if _, ok := g.services[name]; !ok {
-		return "", errors.New("service index not found")
+		return "", 0, errors.New("service index not found")
 	}
-	serviceHttpAddr, err := g.getServiceHttpAddr(name, g.services[name].PollNext)
+
+	waitingMin := 0
+	nodeIndex := 0
+	nodeLen := len(g.services[name].Nodes)
+	if nodeLen < 1 {
+		return "", 0, errors.New("service node not found")
+	} else if nodeLen > 1 {
+		// get the min waiting service node
+		for k, v := range g.services[name].Nodes {
+			if k == 0 {
+				waitingMin = v.Waiting
+				continue
+			}
+			if v.Waiting < waitingMin {
+				nodeIndex = k
+				waitingMin = v.Waiting
+			}
+		}
+		// if all zero, use rand
+		if waitingMin == 0 {
+			nodeIndex = rand.Intn(nodeLen)
+		}
+	}
+
+	serviceHttpAddr, err := g.getServiceHttpAddr(name, nodeIndex)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	sm := serviceOperate{
-		Operate:     "pullNext",
-		ServiceName: name,
-	}
-	g.serviceManager <- sm
-
-	return serviceHttpAddr, nil
+	return serviceHttpAddr, nodeIndex, nil
 }
 
 // SyncRoutes sync routes.yml to other each service

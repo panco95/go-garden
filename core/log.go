@@ -30,7 +30,7 @@ func (g *Garden) initLog() {
 	g.log = logger.Sugar()
 }
 
-func (g *Garden) Log(level Level, label string, data interface{}) {
+func (g *Garden) Log(level logLevel, label string, data interface{}) {
 	format := logFormat(label, data)
 	switch level {
 	case DebugLevel:
