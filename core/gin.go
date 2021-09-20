@@ -79,7 +79,7 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.checkCallSafe(c.GetHeader("Call-Service-Key")) {
-			c.JSON(http.StatusForbidden, gatewayFail())
+			c.JSON(403, gatewayFail(NoAuth))
 			c.Abort()
 		}
 	}

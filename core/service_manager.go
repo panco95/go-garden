@@ -234,7 +234,7 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 
 func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
 	if _, ok := g.services[name]; !ok {
-		return "", 0, errors.New("service index not found")
+		return "", 0, errors.New("service not found")
 	}
 
 	waitingMin := 0

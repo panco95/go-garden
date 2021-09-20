@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+type route struct {
+	Path    string
+	Limiter string
+	Fusing  string
+}
+
 type Cfg struct {
 	Debug                bool
 	ServiceName          string
@@ -18,7 +24,7 @@ type Cfg struct {
 	RedisAddress         string
 	ElasticsearchAddress string
 	AmqpAddress          string
-	Routes               map[string]map[string]string
+	Routes               map[string]map[string]route
 }
 
 func (g *Garden) initConfig(path, fileType string) {

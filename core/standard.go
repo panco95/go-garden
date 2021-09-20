@@ -3,9 +3,9 @@ package core
 import "go.uber.org/zap"
 
 type (
-	logLevel   int8
-	MapData map[string]interface{}
-	Garden  struct {
+	logLevel int8
+	MapData  map[string]interface{}
+	Garden   struct {
 		Cfg            Cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate
@@ -25,4 +25,11 @@ const (
 	DPanicLevel
 	PanicLevel
 	FatalLevel
+)
+
+const (
+	ServerError   = "Server Error"
+	ServerLimiter = "Service limit flow"
+	NoAuth        = "No access permission"
+	NotFound      = "The resource could not be found"
 )

@@ -6,7 +6,6 @@ import (
 	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/core/utils"
-	"net/http"
 )
 
 var service core.Garden
@@ -24,27 +23,27 @@ func Route(r *gin.Engine) {
 func Order(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, nil)
+		c.JSON(500, nil)
 		service.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
 	var Validate VOrder
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(http.StatusOK, ApiResponse(1000, "非法参数", nil))
+		c.JSON(200, ApiResponse(1000, "非法参数", nil))
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 
 	// call [user] service example
-	result, err := service.CallService(span, "user", "exists", &core.Request{
+	code, result, err := service.CallService(span, "user", "exists", &core.Request{
 		Method: "POST",
 		Body: core.MapData{
 			"username": username,
 		},
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, nil)
+		c.JSON(code, nil)
 		service.Log(core.ErrorLevel, "CallService", err)
 		span.SetTag("CallService", err)
 		return
@@ -53,7 +52,7 @@ func Order(c *gin.Context) {
 	var res core.MapData
 	err = json.Unmarshal([]byte(result), &res)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, nil)
+		c.JSON(500, nil)
 		service.Log(core.ErrorLevel, "JsonUnmarshall", err)
 		span.SetTag("JsonUnmarshall", err)
 	}
@@ -62,11 +61,11 @@ func Order(c *gin.Context) {
 	data := res["data"].(map[string]interface{})
 	exists := data["exists"].(bool)
 	if !exists {
-		c.JSON(http.StatusOK, ApiResponse(1000, "下单失败", nil))
+		c.JSON(code, ApiResponse(1000, "下单失败", nil))
 		return
 	}
 	orderId := utils.NewUuid()
-	c.JSON(http.StatusOK, ApiResponse(0, "下单成功", core.MapData{
+	c.JSON(code, ApiResponse(0, "下单成功", core.MapData{
 		"orderId": orderId,
 	}))
 }

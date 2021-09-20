@@ -20,43 +20,61 @@ type Request struct {
 	Body     MapData `json:"body"`
 }
 
-func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (string, error) {
-	route := g.Cfg.Routes[service][action]
-	if len(route) == 0 {
-		return "", errors.New("service route config not found")
+func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (int, string, error) {
+	s := g.Cfg.Routes[service]
+	if len(s) == 0 {
+		return 404, NotFound, errors.New("service not found")
 	}
+	route := s[action]
+	if len(route.Path) == 0 {
+		return 404, NotFound, errors.New("service route not found")
+	}
+
+	// service limiter
+	if route.Limiter != "" {
+		second, quantity, err := limiterAnalyze(route.Limiter)
+		if err != nil {
+			g.Log(DebugLevel, "Limiter", err)
+		} else if !limiterInspect(service+"/"+action, second, quantity) {
+			return 403, ServerLimiter, errors.New("request limiter")
+		}
+	}
+
 	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
 	if err != nil {
-		return "", err
+		return 404, ServerError, err
 	}
 
 	var result string
-	url := "http://" + serviceAddr + route + result
+	var code int
+	url := "http://" + serviceAddr + route.Path
 	for retry := 1; retry <= 3; retry++ {
 		sm := serviceOperate{
-			operate: "incWaiting",
+			operate:     "incWaiting",
 			serviceName: service,
-			nodeIndex: nodeIndex,
+			nodeIndex:   nodeIndex,
 		}
 		g.serviceManager <- sm
-		result, err = g.requestService(span, url, request)
+		code, result, err = g.requestService(span, url, request)
 		sm.operate = "decWaiting"
 		g.serviceManager <- sm
+
 		if err != nil {
-			if retry >= 3 {
-				return "", err
+			if code == 404 && retry >= 3 {
+				return code, ServerError, err
 			} else {
 				time.Sleep(time.Millisecond * time.Duration(retry*100))
 				continue
 			}
 		}
+
 		break
 	}
 
-	return result, nil
+	return code, result, nil
 }
 
-func (g *Garden) requestService(span opentracing.Span, url string, request *Request) (string, error) {
+func (g *Garden) requestService(span opentracing.Span, url string, request *Request) (int, string, error) {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -69,7 +87,7 @@ func (g *Garden) requestService(span opentracing.Span, url string, request *Requ
 	s = strings.Trim(s, "&")
 	r, err := http.NewRequest(request.Method, url, strings.NewReader(s))
 	if err != nil {
-		return "", err
+		return 500, "", err
 	}
 
 	// New request request
@@ -89,16 +107,16 @@ func (g *Garden) requestService(span opentracing.Span, url string, request *Requ
 
 	res, err := client.Do(r)
 	if err != nil {
-		return "", err
+		return 500, "", err
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return "", errors.New("http status " + strconv.Itoa(res.StatusCode))
+	if res.StatusCode != 200 {
+		return res.StatusCode, "", errors.New("http status " + strconv.Itoa(res.StatusCode))
 	}
 	body2, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return 500, "", err
 	}
-	return string(body2), nil
+	return 200, string(body2), nil
 }

@@ -1,6 +1,12 @@
 routes:
   user:
-    login: /login
-    exists: /exists
+    login:
+      path: /login
+      limiter: 5/1000
+    exists:
+      path: /exists
+      limit: 5/1000
   pay:
-    order: /order
+    order:
+      pather: /order
+      limiter: 5/1000
