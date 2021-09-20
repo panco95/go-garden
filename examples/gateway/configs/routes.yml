@@ -5,8 +5,8 @@ routes:
       limiter: 5/1000
     exists:
       path: /exists
-      limit: 5/1000
+      limiter: 1000/5
   pay:
     order:
-      pather: /order
+      path: /order
       limiter: 5/1000
