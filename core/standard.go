@@ -4,8 +4,10 @@ import "go.uber.org/zap"
 
 type (
 	logLevel int8
-	MapData  map[string]interface{} //any type map
-	Garden   struct {               //go garden class
+	// MapData map like any value datatype
+	MapData map[string]interface{}
+	// Garden go garden framework class
+	Garden struct {
 		cfg            cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate
