@@ -1,12 +1,14 @@
-Debug: true
-ServiceName: user
-HttpPort: 8280
-RpcPort: 8281
-CallServiceKey: garden
-EtcdAddress:
-  - 192.168.125.185:2379
-ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+service:
+  Debug: true
+  ServiceName: user
+  HttpPort: 8083
+  RpcPort: 8183
+  CallServiceKey: garden
+  EtcdAddress:
+    - 192.168.125.185:2379
+  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
-RedisAddress: 192.168.125.185:6379
-#ElasticsearchAddress: http://192.168.125.185:9200
-#AmqpAddress: amqp://guest:guest@192.168.125.185:5672
+config:
+  redisAddr: 192.168.125.185:6379
+  redisPass:
+  redisDb: 0

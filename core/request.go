@@ -21,7 +21,7 @@ type Request struct {
 }
 
 func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (int, string, error) {
-	s := g.Cfg.Routes[service]
+	s := g.cfg.Routes[service]
 	if len(s) == 0 {
 		return 404, NotFound, errors.New("service not found")
 	}
@@ -97,7 +97,7 @@ func (g *Garden) requestService(span opentracing.Span, url string, request *Requ
 	// Add the body format header
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// Increase calls to the downstream service security validation key
-	r.Header.Set("Call-Service-Key", g.Cfg.CallServiceKey)
+	r.Header.Set("Call-Service-Key", g.cfg.Service.CallServiceKey)
 
 	// add request opentracing span header
 	opentracing.GlobalTracer().Inject(

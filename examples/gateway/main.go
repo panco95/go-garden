@@ -2,14 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
 )
 
-var service core.Garden
+var service *core.Garden
 
 func main() {
-	service = garden.NewService()
+	service = core.New()
 	service.Run(service.GatewayRoute, Auth)
 }
 

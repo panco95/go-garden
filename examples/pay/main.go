@@ -3,15 +3,14 @@ package main
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
-	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/core/utils"
 )
 
-var service core.Garden
+var service *core.Garden
 
 func main() {
-	service = garden.NewService()
+	service = core.New()
 	service.Run(Route, nil)
 }
 

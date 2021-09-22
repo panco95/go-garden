@@ -289,7 +289,7 @@ func (g *Garden) syncRoutes() {
 				g.Log(ErrorLevel, "GetServiceRpcAddr", err)
 				continue
 			}
-			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", g.serviceIp, g.Cfg.RpcPort)) != 0 {
+			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", g.serviceIp, g.cfg.Service.RpcPort)) != 0 {
 				result, err := sync.SendSyncRoutes(serviceRpcAddress, fileData)
 				if err != nil {
 					g.Log(ErrorLevel, "SendSyncRoutes", err)

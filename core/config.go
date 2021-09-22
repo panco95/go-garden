@@ -13,7 +13,7 @@ type route struct {
 	Fusing  string
 }
 
-type Cfg struct {
+type Service struct {
 	Debug                bool
 	ServiceName          string
 	HttpPort             string
@@ -24,7 +24,12 @@ type Cfg struct {
 	RedisAddress         string
 	ElasticsearchAddress string
 	AmqpAddress          string
-	Routes               map[string]map[string]route
+}
+
+type cfg struct {
+	Service Service
+	Routes  map[string]map[string]route
+	Config  map[string]interface{}
 }
 
 func (g *Garden) initConfig(path, fileType string) {
@@ -55,7 +60,52 @@ func (g *Garden) initConfig(path, fileType string) {
 }
 
 func (g *Garden) unmarshalConfig() {
-	if err := viper.Unmarshal(&g.Cfg); err != nil {
+	if err := viper.Unmarshal(&g.cfg); err != nil {
 		g.Log(ErrorLevel, "Config", err)
+	}
+}
+
+func (g *Garden) GetConfigValue(key string) interface{} {
+	config := g.cfg.Config
+	return config[key]
+}
+
+func (g *Garden) GetConfigValueString(key string) string {
+	config := g.cfg.Config
+	val, ok := config[strings.ToLower(key)]
+	if ok {
+		return val.(string)
+	} else {
+		return ""
+	}
+}
+
+func (g *Garden) GetConfigValueStringSlice(key string) []string {
+	config := g.cfg.Config
+	val, ok := config[strings.ToLower(key)]
+	if ok {
+		return val.([]string)
+	} else {
+		return []string{}
+	}
+}
+
+func (g *Garden) GetConfigValueInt(key string) int {
+	config := g.cfg.Config
+	val, ok := config[strings.ToLower(key)]
+	if ok {
+		return val.(int)
+	} else {
+		return 0
+	}
+}
+
+func (g *Garden) GetConfigValueIntSlice(key string) []int {
+	config := g.cfg.Config
+	val, ok := config[strings.ToLower(key)]
+	if ok {
+		return val.([]int)
+	} else {
+		return []int{}
 	}
 }

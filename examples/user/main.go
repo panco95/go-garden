@@ -3,15 +3,23 @@ package main
 import (
 	"context"
 	"github.com/gin-gonic/gin"
-	"github.com/panco95/go-garden"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/core/drives/redis"
 )
 
-var service core.Garden
+var service *core.Garden
 
 func main() {
-	service = garden.NewService()
+	service = core.New()
+
+	if err := redis.Connect(
+		service.GetConfigValueString("redisAddr"),
+		service.GetConfigValueString("redisPass"),
+		service.GetConfigValueInt("redisDb"),
+	); err != nil {
+		service.Log(core.FatalLevel, "redis", err)
+	}
+
 	service.Run(Route, nil)
 }
 

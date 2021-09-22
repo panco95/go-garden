@@ -12,11 +12,11 @@ func Client() *redis.Client {
 	return client
 }
 
-func Connect(address string) error {
+func Connect(address, password string, db int) error {
 	client = redis.NewClient(&redis.Options{
 		Addr:     address,
-		Password: "",
-		DB:       0,
+		Password: password,
+		DB:       db,
 	})
 	if client.Ping(context.Background()).Err() != nil {
 		return errors.New("connect error")

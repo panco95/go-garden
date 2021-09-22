@@ -6,7 +6,7 @@ type (
 	logLevel int8
 	MapData  map[string]interface{}
 	Garden   struct {
-		Cfg            Cfg
+		cfg            cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate
 		syncCache      []byte

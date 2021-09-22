@@ -18,7 +18,7 @@ func (g *Garden) initLog() {
 	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 	cores = append(cores, fileCore)
 
-	if g.Cfg.Debug {
+	if g.cfg.Service.Debug {
 		consoleDebug := zapcore.Lock(os.Stdout)
 		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.DebugLevel)
 		cores = append(cores, consoleCore)
@@ -38,16 +38,16 @@ func (g *Garden) Log(level logLevel, label string, data interface{}) {
 	case InfoLevel:
 		g.log.Info(format)
 	case WarnLevel:
-		g.log.Debug(format)
+		g.log.Warn(format)
 	case ErrorLevel:
-		g.log.Debug(format)
+		g.log.Errorf(format)
 	case DPanicLevel:
-		g.log.Debug(format)
+		g.log.DPanic(format)
 	case PanicLevel:
-		g.log.Debug(format)
+		g.log.Panic(format)
 	case FatalLevel:
 		if g.isBootstrap == 1 {
-			g.log.Debug(format)
+			g.log.Fatal(format)
 		} else {
 			log.Fatal(format)
 		}
