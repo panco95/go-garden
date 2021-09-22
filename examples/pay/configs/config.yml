@@ -1,11 +1,11 @@
 service:
-  Debug: true
-  ServiceName: pay
-  HttpPort: 8082
-  RpcPort: 8182
-  CallServiceKey: garden
-  EtcdAddress:
+  debug: true
+  serviceName: pay
+  httpPort: 8082
+  rpcPort: 8182
+  callServiceKey: garden
+  etcdAddress:
     - 192.168.125.185:2379
-  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:

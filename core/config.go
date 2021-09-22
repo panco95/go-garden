@@ -70,6 +70,16 @@ func (g *Garden) GetConfigValue(key string) interface{} {
 	return config[key]
 }
 
+func (g *Garden) GetConfigValueMap(key string) map[string]interface{} {
+	config := g.cfg.Config
+	val, ok := config[strings.ToLower(key)]
+	if ok {
+		return val.(map[string]interface{})
+	} else {
+		return nil
+	}
+}
+
 func (g *Garden) GetConfigValueString(key string) string {
 	config := g.cfg.Config
 	val, ok := config[strings.ToLower(key)]

@@ -1,12 +1,12 @@
 service:
-  Debug: true
-  ServiceName: user
-  HttpPort: 8083
-  RpcPort: 8183
-  CallServiceKey: garden
-  EtcdAddress:
+  debug: true
+  serviceName: user
+  httpPort: 8083
+  rpcPort: 8183
+  callServiceKey: garden
+  etcdAddress:
     - 192.168.125.185:2379
-  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
   redisAddr: 192.168.125.185:6379

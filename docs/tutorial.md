@@ -73,14 +73,14 @@ exit status 1
 
 ```yml
 service:
-  Debug: true
-  ServiceName: gateway
-  HttpPort: 8080
-  RpcPort: 8180
-  CallServiceKey: garden
-  EtcdAddress:
+  debug: true
+  serviceName: gateway
+  httpPort: 8080
+  rpcPort: 8180
+  callServiceKey: garden
+  etcdAddress:
     - 192.168.125.185:2379
-  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
 ```
@@ -93,13 +93,13 @@ config:
 
 |        配置项         |                                         说明                                         |
 | -------------------- | ------------------------------------------------------------------------------------ |
-| Debug                | 调试模式开关（true：日志打印和文件存储；false：日志仅文件存储不打印）                       |
-| ServiceName          | 服务名称                                                                              |
-| HttpPort             | http监听端口                                                                          |
-| RpcPort              | rpc监听端口                                                                           |
-| CallServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
-| EtcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写对应地址                       |
-| ZipkinAddress        | zipkin服务的api地址                                         
+| debug                | 调试模式开关（true：日志打印和文件存储；false：日志仅文件存储不打印）                       |
+| serviceName          | 服务名称                                                                              |
+| httpPort             | http监听端口                                                                          |
+| rpcPort              | rpc监听端口                                                                           |
+| callServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
+| etcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写对应地址                       |
+| zipkinAddress        | zipkin服务的api地址                                         
 
 好了，配置文件创建好了，那么现在再来启动一下程序 `go run main.go` 看看吧！
 
@@ -182,14 +182,14 @@ status是一个bool格式，false说明请求出错了，查看日志信息：
 
 ```
 service:
-  Debug: true
-  ServiceName: user
-  HttpPort: 8081
-  RpcPort: 8181
-  CallServiceKey: garden
-  EtcdAddress:
+  debug: true
+  serviceName: user
+  httpPort: 8081
+  rpcPort: 8181
+  callServiceKey: garden
+  etcdAddress:
     - 192.168.125.185:2379
-  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
   redisAddr: 192.168.125.185:6379
@@ -450,7 +450,31 @@ Go Garden实现了所有服务之间的`routes.yml`配置文件实时同步，�
 
 3、动态配置与同步仅支持`routes.yml`，`config.yml`配置项是服务必备配置项所以不建议动态修改；
 
-4、业务中可使用service.GetConfigString()等方法获取服务自定义配置项。
+4、业务中可使用下面方法获取服务自定义配置项：
+* service.GetConfigValue()
+* service.GetConfigValueString()
+* service.GetConfigValueStringSlice()
+* service.GetConfigValueInt()
+* service.GetConfigValueIntString()
+* service.GetConfigValueMap()
+
+自定义配置示例：
+
+```yml
+config:
+  map:
+    a: 1
+    b: 2
+  int: 1
+  intSlice:
+    - 1
+    - 2
+    - 3
+  string: hello
+  stringSlice:
+    - a
+    - b
+```
 
 ### 8. 日志
 

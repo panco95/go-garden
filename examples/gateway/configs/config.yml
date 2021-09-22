@@ -1,11 +1,11 @@
 service:
-  Debug: true
-  ServiceName: gateway
-  HttpPort: 8080
-  RpcPort: 8180
-  CallServiceKey: garden
-  EtcdAddress:
+  debug: true
+  serviceName: gateway
+  httpPort: 8080
+  rpcPort: 8180
+  callServiceKey: garden
+  etcdAddress:
     - 192.168.125.185:2379
-  ZipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
