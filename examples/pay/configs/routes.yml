@@ -9,4 +9,4 @@ routes:
   pay:
     order:
       path: /order
-      limiter: 5/1
+      limiter: 5/1000

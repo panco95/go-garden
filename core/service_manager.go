@@ -276,6 +276,10 @@ func (g *Garden) syncRoutes() {
 		return
 	}
 
+	if len(fileData) == 0 {
+		return
+	}
+
 	if bytes.Compare(g.syncCache, fileData) == 0 {
 		return
 	}
@@ -292,13 +296,13 @@ func (g *Garden) syncRoutes() {
 			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", g.serviceIp, g.cfg.Service.RpcPort)) != 0 {
 				result, err := sync.SendSyncRoutes(serviceRpcAddress, fileData)
 				if err != nil {
-					g.Log(ErrorLevel, "SendSyncRoutes", err)
+					g.Log(ErrorLevel, "SendSyncRoutesFail", err)
 					continue
 				}
 				if result != true {
-					g.Log(ErrorLevel, "SendSyncRoutesResult", "false")
+					g.Log(ErrorLevel, "SendSyncRoutesFail", serviceRpcAddress)
 				}
-				g.Log(InfoLevel, "SendSyncRoutesResult", "true")
+				g.Log(InfoLevel, "SendSyncRoutesSuccess", serviceRpcAddress)
 			}
 		}
 	}
