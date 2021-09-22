@@ -93,4 +93,3 @@ func ConsumeExample(msg amqp.Delivery) {
 	}
 	log.Print("consume success!")
 }
-

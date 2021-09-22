@@ -21,7 +21,7 @@ type node struct {
 }
 
 type service struct {
-	Nodes    []node
+	Nodes []node
 }
 
 type serviceOperate struct {
@@ -167,7 +167,7 @@ func (g *Garden) delServiceNode(name, addr string) {
 func (g *Garden) createServiceIndex(name string) {
 	if !g.existsService(name) {
 		g.services[name] = &service{
-			Nodes:    []node{},
+			Nodes: []node{},
 		}
 	}
 }

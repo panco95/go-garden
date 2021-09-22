@@ -14,13 +14,13 @@ type routeCfg struct {
 }
 
 type serviceCfg struct {
-	Debug                bool
-	ServiceName          string
-	HttpPort             string
-	RpcPort              string
-	CallServiceKey       string
-	EtcdAddress          []string
-	ZipkinAddress        string
+	Debug          bool
+	ServiceName    string
+	HttpPort       string
+	RpcPort        string
+	CallServiceKey string
+	EtcdAddress    []string
+	ZipkinAddress  string
 }
 
 type cfg struct {
