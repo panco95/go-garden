@@ -38,10 +38,12 @@ Go Garden考虑到开发者的使用门槛，并没有自行造轮子实现Http�
 ## 快速开始
 
 ```golang
-import "github.com/panco95/go-garden"
+import "github.com/panco95/go-garden/core"
+
+var service *core.Garden
 
 func main() {
-    service := garden.NewService()
+    service = core.New()
     service.Run(nil, nil)
 }
 ```
