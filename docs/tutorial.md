@@ -197,8 +197,8 @@ service:
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
-  redisAddr: 192.168.125.185:6379
-  redisPass:
+  redisAddress: 192.168.125.185:6379
+  redisPassword:
   redisDb: 0
 ```
 
@@ -217,8 +217,8 @@ func main() {
 	service = core.New()
 
 	if err := redis.Connect(
-		service.GetConfigValueString("redisAddr"),
-		service.GetConfigValueString("redisPass"),
+		service.GetConfigValueString("redisAddress"),
+		service.GetConfigValueString("redisPassword"),
 		service.GetConfigValueInt("redisDb"),
 	); err != nil {
 		service.Log(core.FatalLevel, "redis", err)

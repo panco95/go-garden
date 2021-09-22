@@ -13,8 +13,8 @@ func main() {
 	service = core.New()
 
 	if err := redis.Connect(
-		service.GetConfigValueString("redisAddr"),
-		service.GetConfigValueString("redisPass"),
+		service.GetConfigValueString("redisAddress"),
+		service.GetConfigValueString("redisPassword"),
 		service.GetConfigValueInt("redisDb"),
 	); err != nil {
 		service.Log(core.FatalLevel, "redis", err)

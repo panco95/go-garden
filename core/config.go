@@ -7,13 +7,13 @@ import (
 	"strings"
 )
 
-type route struct {
+type routeCfg struct {
 	Path    string
 	Limiter string
 	Fusing  string
 }
 
-type Service struct {
+type serviceCfg struct {
 	Debug                bool
 	ServiceName          string
 	HttpPort             string
@@ -21,14 +21,11 @@ type Service struct {
 	CallServiceKey       string
 	EtcdAddress          []string
 	ZipkinAddress        string
-	RedisAddress         string
-	ElasticsearchAddress string
-	AmqpAddress          string
 }
 
 type cfg struct {
-	Service Service
-	Routes  map[string]map[string]route
+	Service serviceCfg
+	Routes  map[string]map[string]routeCfg
 	Config  map[string]interface{}
 }
 
