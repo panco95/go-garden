@@ -15,13 +15,8 @@ type limiterData struct {
 }
 
 var (
-	limiterMap     map[string]*limiterData
-	limiterMapLock sync.Mutex
+	limiterMap sync.Map
 )
-
-func init() {
-	limiterMap = make(map[string]*limiterData)
-}
 
 func limiterAnalyze(limiter string) (int, int, error) {
 	arr := strings.Split(limiter, "/")
@@ -40,10 +35,11 @@ func limiterAnalyze(limiter string) (int, int, error) {
 }
 
 func limiterInspect(path string, second, quantity int) bool {
-	ld, ok := limiterMap[path]
+	l, ok := limiterMap.Load(path)
 	if !ok {
-		ld = resetLimiterIndex(path)
+		l = resetLimiterIndex(path)
 	}
+	ld := l.(*limiterData)
 
 	now := time.Now().Unix()
 	lost := int(now) - int(ld.StartTimestamp)
@@ -63,11 +59,10 @@ func limiterInspect(path string, second, quantity int) bool {
 }
 
 func resetLimiterIndex(index string) *limiterData {
-	limiterMapLock.Lock()
-	limiterMap[index] = &limiterData{
+	ld := limiterData{
 		StartTimestamp: time.Now().Unix(),
 		Quantity:       0,
 	}
-	limiterMapLock.Unlock()
-	return limiterMap[index]
+	limiterMap.Store(index, &ld)
+	return &ld
 }
