@@ -62,61 +62,56 @@ func (g *Garden) unmarshalConfig() {
 	}
 }
 
+// GetConfigValue in config.yml: configs key
 func (g *Garden) GetConfigValue(key string) interface{} {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if !ok {
-		return nil
+	if val, ok := config[strings.ToLower(key)]; ok {
+		return val
 	}
-	return val
+	return nil
 }
 
+// GetConfigValueMap in config.yml: configs key
 func (g *Garden) GetConfigValueMap(key string) map[string]interface{} {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if ok {
+	if val, ok := config[strings.ToLower(key)]; ok {
 		return val.(map[string]interface{})
-	} else {
-		return nil
 	}
+	return nil
 }
 
+// GetConfigValueString in config.yml: configs key
 func (g *Garden) GetConfigValueString(key string) string {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if ok {
+	if val, ok := config[strings.ToLower(key)]; ok {
 		return val.(string)
-	} else {
-		return ""
 	}
+	return ""
 }
 
+// GetConfigValueStringSlice in config.yml: configs key
 func (g *Garden) GetConfigValueStringSlice(key string) []string {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if ok {
+	if val, ok := config[strings.ToLower(key)]; ok {
 		return val.([]string)
-	} else {
-		return []string{}
 	}
+	return []string{}
 }
 
+// GetConfigValueInt in config.yml: configs key
 func (g *Garden) GetConfigValueInt(key string) int {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if ok {
+	if val, ok := config[strings.ToLower(key)]; ok {
 		return val.(int)
-	} else {
-		return 0
 	}
+	return 0
 }
 
+// GetConfigValueIntSlice in config.yml: configs key
 func (g *Garden) GetConfigValueIntSlice(key string) []int {
 	config := g.cfg.Config
-	val, ok := config[strings.ToLower(key)]
-	if ok {
+	if val, ok := config[strings.ToLower(key)]; ok {
 		return val.([]int)
-	} else {
-		return []int{}
 	}
+	return []int{}
 }

@@ -50,6 +50,7 @@ func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.
 	return server.Run(":" + port)
 }
 
+// GatewayRoute create gateway service, use this gin route
 func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
 		g.gateway(c)
@@ -76,6 +77,7 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	}
 }
 
+// CheckCallSafeMiddleware create service use this middleware
 func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.checkCallSafe(c.GetHeader("Call-Service-Key")) {
@@ -102,6 +104,7 @@ func getRequest(c *gin.Context) (*Request, error) {
 	return r, nil
 }
 
+// GetSpan service get opentracing span at gin context
 func GetSpan(c *gin.Context) (opentracing.Span, error) {
 	t, err := getContext(c, "span")
 	if err != nil {

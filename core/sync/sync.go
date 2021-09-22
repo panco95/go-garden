@@ -8,8 +8,10 @@ import (
 
 type server struct{}
 
+// Server grpc server
 var Server = server{}
 
+// SyncRoutes receive routes.yml and write file
 func (s server) SyncRoutes(ctx context.Context, in *SyncRoutesRequest) (*SyncRoutesResponse, error) {
 	resp := new(SyncRoutesResponse)
 	resp.Result = true
@@ -21,6 +23,7 @@ func (s server) SyncRoutes(ctx context.Context, in *SyncRoutesRequest) (*SyncRou
 	return resp, nil
 }
 
+// SendSyncRoutes routes.yml to each other service
 func SendSyncRoutes(address string, data []byte) (bool, error) {
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {

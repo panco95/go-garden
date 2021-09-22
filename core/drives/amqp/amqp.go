@@ -7,10 +7,12 @@ import (
 
 var client *amqp.Connection
 
+// Client get class
 func Client() *amqp.Connection {
 	return client
 }
 
+// Connect amqp server like rabbitmq
 func Connect(address string) error {
 	var err error
 	client, err = amqp.Dial(address)
@@ -84,6 +86,7 @@ func Consumer(queue, exchange, routingKey string, consumeFunc func(msg amqp.Deli
 	return nil
 }
 
+// ConsumeExample test
 func ConsumeExample(msg amqp.Delivery) {
 	body := string(msg.Body)
 	log.Print(body)

@@ -30,6 +30,7 @@ func (g *Garden) initLog() {
 	g.log = logger.Sugar()
 }
 
+// Log write log file and print if debug is true
 func (g *Garden) Log(level logLevel, label string, data interface{}) {
 	format := logFormat(label, data)
 	switch level {

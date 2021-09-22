@@ -4,8 +4,8 @@ import "go.uber.org/zap"
 
 type (
 	logLevel int8
-	MapData  map[string]interface{}
-	Garden   struct {
+	MapData  map[string]interface{} //any type map
+	Garden   struct {               //go garden class
 		cfg            cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate
@@ -17,6 +17,7 @@ type (
 	}
 )
 
+// log level
 const (
 	DebugLevel logLevel = iota - 1
 	InfoLevel
@@ -27,6 +28,7 @@ const (
 	FatalLevel
 )
 
+// error message
 const (
 	ServerError   = "Server Error"
 	ServerLimiter = "Server limit flow"

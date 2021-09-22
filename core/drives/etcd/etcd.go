@@ -9,10 +9,12 @@ import (
 
 var client *clientV3.Client
 
+// Client get
 func Client() *clientV3.Client {
 	return client
 }
 
+// Connect to etcd server, support etcd cluster
 func Connect(etcdAddr []string) error {
 	var err error
 	client, err = clientV3.New(clientV3.Config{
@@ -34,6 +36,7 @@ func Connect(etcdAddr []string) error {
 	return nil
 }
 
+// GetKV etcd key value get
 func GetKV(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	getResp, err := client.Get(ctx, key)

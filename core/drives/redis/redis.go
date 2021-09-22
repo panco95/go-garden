@@ -8,10 +8,12 @@ import (
 
 var client *redis.Client
 
+// Client get
 func Client() *redis.Client {
 	return client
 }
 
+// Connect redis server
 func Connect(address, password string, db int) error {
 	client = redis.NewClient(&redis.Options{
 		Addr:     address,

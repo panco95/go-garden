@@ -23,12 +23,14 @@ func main() {
 	service.Run(Route, nil)
 }
 
+// Route user service gin route
 func Route(r *gin.Engine) {
 	r.Use(service.CheckCallSafeMiddleware()) // 调用接口安全验证
 	r.POST("login", Login)
 	r.POST("exists", Exists)
 }
 
+// Login user service login api: login
 func Login(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
@@ -53,7 +55,7 @@ func Login(c *gin.Context) {
 	c.JSON(200, ApiResponse(0, "登录成功", nil))
 }
 
-// Exists Query if the user exists
+// Exists user service exists api: Query if the user exists
 func Exists(c *gin.Context) {
 	var Validate VExists
 	if err := c.ShouldBind(&Validate); err != nil {
@@ -81,6 +83,7 @@ type VExists struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
 }
 
+// ApiResponse format response
 func ApiResponse(code int, msg string, data interface{}) core.MapData {
 	return core.MapData{
 		"code": code,

@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// Request struct
 type Request struct {
 	Method   string  `json:"method"`
 	Url      string  `json:"url"`
@@ -20,6 +21,7 @@ type Request struct {
 	Body     MapData `json:"body"`
 }
 
+// CallService call the service api
 func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (int, string, error) {
 	s := g.cfg.Routes[service]
 	if len(s) == 0 {
@@ -78,10 +80,9 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 			}
 			if retry >= 3 {
 				return code, ServerError, err
-			} else {
-				time.Sleep(time.Millisecond * time.Duration(retry*100))
-				continue
 			}
+			time.Sleep(time.Millisecond * time.Duration(retry*100))
+			continue
 		}
 
 		break

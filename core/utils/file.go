@@ -5,6 +5,7 @@ import (
 	"os"
 )
 
+// CreateDir if not exists
 func CreateDir(path string) error {
 	exists, err := PathExists(path)
 	if err != nil {
@@ -19,6 +20,7 @@ func CreateDir(path string) error {
 	return nil
 }
 
+// PathExists check path exists
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -30,6 +32,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
+// ReadFile return bytes
 func ReadFile(filepath string) ([]byte, error) {
 	f, err := os.Open(filepath)
 	if err != nil {
@@ -43,6 +46,7 @@ func ReadFile(filepath string) ([]byte, error) {
 	return b, nil
 }
 
+// WriteFile use string
 func WriteFile(filepath string, data []byte) error {
 	if err := ioutil.WriteFile(filepath, data, 0777); err != nil {
 		return nil

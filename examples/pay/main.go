@@ -14,11 +14,13 @@ func main() {
 	service.Run(Route, nil)
 }
 
+// Route pay service gin route
 func Route(r *gin.Engine) {
 	r.Use(service.CheckCallSafeMiddleware())
 	r.POST("order", Order)
 }
 
+// Order pay service order api
 func Order(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
@@ -74,6 +76,7 @@ type VOrder struct {
 	Username string `form:"username" binding:"required,max=20,min=1" `
 }
 
+// ApiResponse format response
 func ApiResponse(code int, msg string, data interface{}) core.MapData {
 	return core.MapData{
 		"code": code,
