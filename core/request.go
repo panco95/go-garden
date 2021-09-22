@@ -36,7 +36,19 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		if err != nil {
 			g.Log(DebugLevel, "Limiter", err)
 		} else if !limiterInspect(service+"/"+action, second, quantity) {
-			return 403, ServerLimiter, errors.New("request limiter")
+			span.SetTag("break", "service limiter")
+			return 403, ServerLimiter, errors.New("server limiter")
+		}
+	}
+
+	// service fusing
+	if route.Fusing != "" {
+		second, quantity, err := fusingAnalyze(route.Fusing)
+		if err != nil {
+			g.Log(DebugLevel, "Fusing", err)
+		} else if !fusingInspect(service+"/"+action, second, quantity) {
+			span.SetTag("break", "service fusing")
+			return 403, ServerFusing, errors.New("server fusing")
 		}
 	}
 
@@ -60,7 +72,11 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		g.serviceManager <- sm
 
 		if err != nil {
-			if code == 404 && retry >= 3 {
+			// error response add fusing quantity
+			if retry == 3 {
+				addFusingQuantity(service + "/" + action)
+			}
+			if retry >= 3 {
 				return code, ServerError, err
 			} else {
 				time.Sleep(time.Millisecond * time.Duration(retry*100))

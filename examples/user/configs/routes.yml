@@ -3,10 +3,13 @@ routes:
     login:
       path: /login
       limiter: 5/1000
+      fusing: 5/100
     exists:
       path: /exists
       limiter: 5/1000
+      fusing: 5/100
   pay:
     order:
       path: /order
       limiter: 5/1000
+      fusing: 5/100

@@ -21,15 +21,15 @@ var (
 func limiterAnalyze(limiter string) (int, int, error) {
 	arr := strings.Split(limiter, "/")
 	if len(arr) != 2 {
-		return 0, 0, errors.New("route limit format error")
+		return 0, 0, errors.New("route limiter format error")
 	}
 	second, err := strconv.Atoi(arr[0])
 	if err != nil {
-		return 0, 0, errors.New("route limit format error")
+		return 0, 0, errors.New("route limiter format error")
 	}
 	quantity, err := strconv.Atoi(arr[1])
 	if err != nil {
-		return 0, 0, errors.New("route limit format error")
+		return 0, 0, errors.New("route limiter format error")
 	}
 	return second, quantity, nil
 }

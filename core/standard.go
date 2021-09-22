@@ -29,7 +29,8 @@ const (
 
 const (
 	ServerError   = "Server Error"
-	ServerLimiter = "Service limit flow"
+	ServerLimiter = "Server limit flow"
+	ServerFusing  = "Server fusing flow"
 	NoAuth        = "No access permission"
 	NotFound      = "The resource could not be found"
 )

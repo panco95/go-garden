@@ -67,7 +67,11 @@ func (g *Garden) unmarshalConfig() {
 
 func (g *Garden) GetConfigValue(key string) interface{} {
 	config := g.cfg.Config
-	return config[key]
+	val, ok := config[strings.ToLower(key)]
+	if !ok {
+		return nil
+	}
+	return val
 }
 
 func (g *Garden) GetConfigValueMap(key string) map[string]interface{} {
