@@ -12,4 +12,4 @@ routes:
     order:
       path: /order
       limiter: 5/1000
-      fusing: 5/100
+      fusing: 5/1000

@@ -183,25 +183,6 @@ status是一个bool格式，false说明请求出错了，查看日志信息：
 
 跟gateway服务步骤一样创建好项目`user`和配置文件`config.yml`、`routes.yml`：
 
-修改服务名称和监听端口，增加三个redis相关配置项：
-
-```
-service:
-  debug: true
-  serviceName: user
-  httpPort: 8081
-  rpcPort: 8181
-  callServiceKey: garden
-  etcdAddress:
-    - 192.168.125.185:2379
-  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
-
-config:
-  redisAddress: 192.168.125.185:6379
-  redisPassword:
-  redisDb: 0
-```
-
 创建main.go程序启动入口文件：
 
 ```golang
@@ -211,19 +192,10 @@ import (
 	...
 )
 
-var service *core.Garden
+~~var service *core.Garden~~
 
 func main() {
 	service = core.New()
-
-	if err := redis.Connect(
-		service.GetConfigValueString("redisAddress"),
-		service.GetConfigValueString("redisPassword"),
-		service.GetConfigValueInt("redisDb"),
-	); err != nil {
-		service.Log(core.FatalLevel, "redis", err)
-	}
-
 	service.Run(Route, nil)
 }
 
@@ -254,14 +226,7 @@ func Exists(c *gin.Context) {
 
 2、第二个参数是全局中间件，在`gateway`网关服务中需要实现全局鉴权，所以我们添加了一个`Auth`中间件，我们假设`user`不需要单独的鉴权，所里这里直接写`nil`。
 
-
-> 注意：示例代码逻辑实现用到了redis，所以我们需要启动redis服务以及在`config.yml`中填写连接地址。
-
-Docker启动redis：
-
-`docker run -it -d --name redis -p 6379:6379 redis`
-
-一切准备就绪，启动`user`服务：`go run main.go`，查看输出：
+启动`user`服务：`go run main.go`，查看输出：
 
 ```
 PS D:\go-garden\examples\user> go run .\main.go
@@ -367,7 +332,12 @@ func Order(c *gin.Context) {
 下单失败了，原因是`order`接口中间会调用`user`服务`exists`接口查询你传入的`username`是否在系统中存在，如果存在才会下单成功，我们观察调用`user`服务核心代码：
 
 ```golang
-    span, err := core.GetSpan(c)
+span, err := core.GetSpan(c)
+if err != nil {
+c.JSON(500, nil)
+service.Log(core.ErrorLevel, "GetSpan", err)
+return
+}
 
 ...
 
@@ -393,7 +363,7 @@ if !exists {
 c.JSON(http.StatusOK, ApiResponse(1000, "下单失败", nil))
 return
 }
-orderId := utils.NewUuid()
+orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
 c.JSON(http.StatusOK, ApiResponse(0, "下单成功", core.MapData{
 "orderId": orderId,
 }))

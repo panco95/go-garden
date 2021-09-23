@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"github.com/panco95/go-garden/core/drives/zipkin"
+	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go"
+	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
 	"net/http"
 )
 
 func (g *Garden) initOpenTracing(service, addr, address string) error {
-	trace, err := zipkin.Connect(service, addr, address)
+	trace, err := connZipkin(service, addr, address)
 	if err != nil {
 		return err
 	}
@@ -45,4 +47,17 @@ func requestTracing(c *gin.Context, span opentracing.Span) {
 
 	c.Set("span", span)
 	c.Set("request", &request)
+}
+
+func connZipkin(service, addr, address string) (opentracing.Tracer, error) {
+	reporter := zkHttp.NewReporter(addr)
+	endpoint, err := zipkin.NewEndpoint(service, address)
+	if err != nil {
+		return nil, err
+	}
+	trace, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint))
+	if err != nil {
+		return nil, err
+	}
+	return zkOt.Wrap(trace), nil
 }

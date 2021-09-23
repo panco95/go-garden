@@ -56,7 +56,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 
 	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
 	if err != nil {
-		return 404, ServerError, err
+		return 404, NotFound, err
 	}
 
 	var result string
@@ -72,6 +72,10 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		code, result, err = g.requestService(span, url, request)
 		sm.operate = "decWaiting"
 		g.serviceManager <- sm
+
+		if code == 404 {
+			return code, NotFound, err
+		}
 
 		if err != nil {
 			// error response add fusing quantity

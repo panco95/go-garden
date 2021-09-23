@@ -1,6 +1,9 @@
 package core
 
-import "go.uber.org/zap"
+import (
+	clientV3 "go.etcd.io/etcd/client/v3"
+	"go.uber.org/zap"
+)
 
 type (
 	logLevel int8
@@ -16,6 +19,8 @@ type (
 		serviceIp      string
 		log            *zap.SugaredLogger
 		isBootstrap    uint
+		etcd           *clientV3.Client
+		remoteServer   remoteServer
 	}
 )
 

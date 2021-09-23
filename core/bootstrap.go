@@ -2,12 +2,11 @@ package core
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/panco95/go-garden/core/drives/etcd"
 )
 
 // Run run grpc and gin http server
 func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
-	go g.runRpc(g.cfg.Service.RpcPort)
+	go g.runRemoteRpc(g.cfg.Service.RpcPort)
 	g.Log(FatalLevel, "Run", g.runGin(g.cfg.Service.HttpPort, route, auth).Error())
 }
 
@@ -20,7 +19,7 @@ func (g *Garden) bootstrap() {
 	g.checkConfig()
 	g.initLog()
 
-	if err := etcd.Connect(g.cfg.Service.EtcdAddress); err != nil {
+	if err := g.connEtcd(g.cfg.Service.EtcdAddress); err != nil {
 		g.Log(FatalLevel, "Etcd", err)
 	}
 

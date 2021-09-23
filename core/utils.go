@@ -1,13 +1,13 @@
-package utils
+package core
 
 import (
 	"io/ioutil"
+	"net"
 	"os"
 )
 
-// CreateDir if not exists
-func CreateDir(path string) error {
-	exists, err := PathExists(path)
+func createDir(path string) error {
+	exists, err := pathExists(path)
 	if err != nil {
 		return err
 	}
@@ -20,8 +20,7 @@ func CreateDir(path string) error {
 	return nil
 }
 
-// PathExists check path exists
-func PathExists(path string) (bool, error) {
+func pathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
@@ -32,8 +31,7 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-// ReadFile return bytes
-func ReadFile(filepath string) ([]byte, error) {
+func readFile(filepath string) ([]byte, error) {
 	f, err := os.Open(filepath)
 	if err != nil {
 		return nil, err
@@ -46,10 +44,21 @@ func ReadFile(filepath string) ([]byte, error) {
 	return b, nil
 }
 
-// WriteFile use string
-func WriteFile(filepath string, data []byte) error {
+func writeFile(filepath string, data []byte) error {
 	if err := ioutil.WriteFile(filepath, data, 0777); err != nil {
 		return nil
 	}
 	return nil
+}
+
+func getOutboundIP() (string, error) {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return "", err
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP.String(), nil
 }

@@ -1,90 +1,61 @@
 package main
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/core/drives/redis"
+	"sync"
 )
 
 var service *core.Garden
+var users sync.Map
 
 func main() {
 	service = core.New()
-
-	if err := redis.Connect(
-		service.GetConfigValueString("redisAddress"),
-		service.GetConfigValueString("redisPassword"),
-		service.GetConfigValueInt("redisDb"),
-	); err != nil {
-		service.Log(core.FatalLevel, "redis", err)
-	}
-
-	service.Run(Route, nil)
+	service.Run(route, nil)
 }
 
-// Route user service gin route
-func Route(r *gin.Engine) {
+func route(r *gin.Engine) {
 	r.Use(service.CheckCallSafeMiddleware()) // 调用接口安全验证
-	r.POST("login", Login)
-	r.POST("exists", Exists)
+	r.POST("login", login)
+	r.POST("exists", exists)
 }
 
-// Login user service login api: login
-func Login(c *gin.Context) {
-	span, err := core.GetSpan(c)
-	if err != nil {
-		c.JSON(500, nil)
-		service.Log(core.ErrorLevel, "GetSpan", err)
-		return
-	}
-
-	var Validate VLogin
+func login(c *gin.Context) {
+	var Validate vLogin
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(200, ApiResponse(1000, "参数非法", nil))
+		c.JSON(200, apiResponse(1000, "参数非法", nil))
 		return
 	}
-
 	username := c.DefaultPostForm("username", "")
-	if err := redis.Client().Set(context.Background(), "user."+username, 0, 0).Err(); err != nil {
-		c.JSON(500, nil)
-		service.Log(core.ErrorLevel, "RedisSet", err)
-		span.SetTag("RedisSet", err)
-		return
-	}
-	c.JSON(200, ApiResponse(0, "登录成功", nil))
+	users.Store(username, 1)
+	c.JSON(200, apiResponse(0, "登录成功", nil))
 }
 
-// Exists user service exists api: Query if the user exists
-func Exists(c *gin.Context) {
-	var Validate VExists
+func exists(c *gin.Context) {
+	var Validate vExists
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(200, ApiResponse(1000, "参数非法", nil))
+		c.JSON(200, apiResponse(1000, "参数非法", nil))
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 	exists := true
-	_, err := redis.Client().Get(context.Background(), "user."+username).Result()
-	if err != nil {
+	if _,ok := users.Load(username);!ok {
 		exists = false
 	}
-	c.JSON(200, ApiResponse(0, "", core.MapData{
+	c.JSON(200, apiResponse(0, "", core.MapData{
 		"exists": exists,
 	}))
 }
 
-// VLogin The login api validator
-type VLogin struct {
+type vLogin struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
 }
 
-// VExists The exists interface validator
-type VExists struct {
+type vExists struct {
 	Username string `form:"username" binding:"required,max=20,min=1"`
 }
 
-// ApiResponse format response
-func ApiResponse(code int, msg string, data interface{}) core.MapData {
+func apiResponse(code int, msg string, data interface{}) core.MapData {
 	return core.MapData{
 		"code": code,
 		"msg":  msg,

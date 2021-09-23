@@ -5,9 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/panco95/go-garden/core/drives/etcd"
-	"github.com/panco95/go-garden/core/sync"
-	"github.com/panco95/go-garden/core/utils"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"math/rand"
 	"strings"
@@ -34,7 +31,7 @@ type serviceOperate struct {
 func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
 	g.services = map[string]*service{}
 	var err error
-	g.serviceIp, err = utils.GetOutboundIP()
+	g.serviceIp, err = getOutboundIP()
 	if err != nil {
 		return err
 	}
@@ -50,7 +47,7 @@ func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
 
 func (g *Garden) serviceRegister() error {
 	// New lease
-	resp, err := etcd.Client().Grant(context.TODO(), 2)
+	resp, err := g.etcd.Grant(context.TODO(), 2)
 	if err != nil {
 		return err
 	}
@@ -58,12 +55,12 @@ func (g *Garden) serviceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = etcd.Client().Put(context.TODO(), g.serviceId, "0", clientV3.WithLease(resp.ID))
+	_, err = g.etcd.Put(context.TODO(), g.serviceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
 	// keep alive
-	ch, err := etcd.Client().KeepAlive(context.TODO(), resp.ID)
+	ch, err := g.etcd.KeepAlive(context.TODO(), resp.ID)
 	if err != nil {
 		return err
 	}
@@ -92,7 +89,14 @@ func (g *Garden) serviceRegister() error {
 }
 
 func (g *Garden) serviceWatcher() {
-	rch := etcd.Client().Watch(context.Background(), "garden_", clientV3.WithPrefix())
+	defer func() {
+		if err := recover(); err != nil {
+			g.Log(DebugLevel, "serviceWatcherReboot", err)
+			g.serviceWatcher()
+		}
+	}()
+
+	rch := g.etcd.Watch(context.Background(), "garden_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -114,7 +118,7 @@ func (g *Garden) serviceWatcher() {
 
 func (g *Garden) getAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := etcd.Client().Get(ctx, "garden_", clientV3.WithPrefix())
+	resp, err := g.etcd.Get(ctx, "garden_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetAllServices", err)
@@ -131,7 +135,7 @@ func (g *Garden) getAllServices() []string {
 
 func (g *Garden) getServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := etcd.Client().Get(ctx, "garden_"+serviceName, clientV3.WithPrefix())
+	resp, err := g.etcd.Get(ctx, "garden_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetServicesByName", err)
@@ -194,6 +198,13 @@ func (g *Garden) getServiceHttpAddr(name string, index int) (string, error) {
 }
 
 func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
+	defer func() {
+		if err := recover(); err != nil {
+			g.Log(DebugLevel, "serviceManageWatchReboot", err)
+			g.serviceManageWatch(ch)
+		}
+	}()
+
 	for {
 		select {
 		case sm := <-ch:
@@ -270,7 +281,7 @@ func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
 
 // SyncRoutes sync routes.yml to other each service
 func (g *Garden) syncRoutes() {
-	fileData, err := utils.ReadFile("configs/routes.yml")
+	fileData, err := readFile("configs/routes.yml")
 	if err != nil {
 		g.Log(ErrorLevel, "SyncRoutes", err)
 		return
@@ -294,7 +305,7 @@ func (g *Garden) syncRoutes() {
 				continue
 			}
 			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", g.serviceIp, g.cfg.Service.RpcPort)) != 0 {
-				result, err := sync.SendSyncRoutes(serviceRpcAddress, fileData)
+				result, err := sendSyncRoute(serviceRpcAddress, fileData)
 				if err != nil {
 					g.Log(ErrorLevel, "SendSyncRoutesFail", err)
 					continue

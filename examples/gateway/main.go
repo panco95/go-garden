@@ -9,11 +9,11 @@ var service *core.Garden
 
 func main() {
 	service = core.New()
-	service.Run(service.GatewayRoute, Auth)
+	service.Run(service.GatewayRoute, auth)
 }
 
-// Auth Customize the global middleware
-func Auth() gin.HandlerFunc {
+// Customize the auth middleware
+func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// before logic
 		c.Next()

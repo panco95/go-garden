@@ -6,7 +6,6 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"github.com/panco95/go-garden/core/utils"
 	"net/http"
 	"os"
 	"strings"
@@ -17,7 +16,7 @@ func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
-	if err := utils.CreateDir(path + "/runtime"); err != nil {
+	if err := createDir(path + "/runtime"); err != nil {
 		return err
 	}
 	file, err := os.Create(fmt.Sprintf("%s/runtime/gin.log", path))

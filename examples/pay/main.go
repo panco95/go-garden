@@ -2,26 +2,26 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/core/utils"
+	"math/rand"
+	"time"
 )
 
 var service *core.Garden
 
 func main() {
 	service = core.New()
-	service.Run(Route, nil)
+	service.Run(route, nil)
 }
 
-// Route pay service gin route
-func Route(r *gin.Engine) {
+func route(r *gin.Engine) {
 	r.Use(service.CheckCallSafeMiddleware())
-	r.POST("order", Order)
+	r.POST("order", order)
 }
 
-// Order pay service order api
-func Order(c *gin.Context) {
+func order(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
 		c.JSON(500, nil)
@@ -29,9 +29,9 @@ func Order(c *gin.Context) {
 		return
 	}
 
-	var Validate VOrder
+	var Validate vOrder
 	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(200, ApiResponse(1000, "非法参数", nil))
+		c.JSON(200, apiResponse(1000, "非法参数", nil))
 		return
 	}
 	username := c.DefaultPostForm("username", "")
@@ -62,22 +62,21 @@ func Order(c *gin.Context) {
 	data := res["data"].(map[string]interface{})
 	exists := data["exists"].(bool)
 	if !exists {
-		c.JSON(code, ApiResponse(1000, "下单失败", nil))
+		c.JSON(code, apiResponse(1000, "下单失败", nil))
 		return
 	}
-	orderId := utils.NewUuid()
-	c.JSON(code, ApiResponse(0, "下单成功", core.MapData{
+	orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
+	c.JSON(code, apiResponse(0, "下单成功", core.MapData{
 		"orderId": orderId,
 	}))
 }
 
-// VOrder order api parameter validator
-type VOrder struct {
+type vOrder struct {
 	Username string `form:"username" binding:"required,max=20,min=1" `
 }
 
-// ApiResponse format response
-func ApiResponse(code int, msg string, data interface{}) core.MapData {
+// apiResponse format response
+func apiResponse(code int, msg string, data interface{}) core.MapData {
 	return core.MapData{
 		"code": code,
 		"msg":  msg,
