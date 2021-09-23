@@ -39,7 +39,7 @@ func exists(c *gin.Context) {
 	}
 	username := c.DefaultPostForm("username", "")
 	exists := true
-	if _,ok := users.Load(username);!ok {
+	if _, ok := users.Load(username); !ok {
 		exists = false
 	}
 	c.JSON(200, apiResponse(0, "", core.MapData{

@@ -9,6 +9,3 @@ service:
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
 
 config:
-  redisAddress: 192.168.125.185:6379
-  redisPassword:
-  redisDb: 0
