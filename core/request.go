@@ -32,6 +32,15 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		return 404, NotFound, errors.New("service route not found")
 	}
 
+	// just gateway can request api route
+	if strings.ToLower(route.Type) == "api" && strings.Compare(g.cfg.Service.ServiceName, "gateway") != 0 {
+		return 404, NotFound, errors.New("just gateway can request api route")
+	}
+	// gateway can't call rpc route
+	if strings.ToLower(route.Type) == "rpc" && strings.Compare(g.cfg.Service.ServiceName, "gateway") == 0 {
+		return 404, NotFound, errors.New("gateway can't call rpc route")
+	}
+
 	// service limiter
 	if route.Limiter != "" {
 		second, quantity, err := limiterAnalyze(route.Limiter)

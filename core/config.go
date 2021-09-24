@@ -8,6 +8,7 @@ import (
 )
 
 type routeCfg struct {
+	Type    string
 	Path    string
 	Limiter string
 	Fusing  string

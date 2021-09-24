@@ -123,15 +123,18 @@ exit status 1
 routes:
   user:
     login:
+      type: api
       path: /login
       limiter: 5/1000
       fusing: 5/100
     exists:
+      type: rpc
       path: /exists
       limiter: 5/1000
       fusing: 5/100
   pay:
     order:
+      type: api
       pather: /order
       limiter: 5/1000
       fusing: 5/100
@@ -141,7 +144,11 @@ routes:
 
 `user`下面有两项，分别是 `login` 和 `exists` ，它们表示的是user服务有两个接口，名称分别为 login 和 exists；
 
-每个接口下面包含`path`和`limiter`参数：
+每个接口下面包含以下参数：
+
+1、`type`表示接口类型：`api`类型表示面向客户端的接口，只能由`gateway`网关进行调用，其他服务无法调用；`rpc`表示远程调用接口，只能由非`gateway`网关服务调用；
+
+例如示例中的`user/exists`是提供给`pay`服务进行调用的接口，我们无法在客户端请求`gateway`网关的`api/user/exists`接口。
 
 1、`path`表示请求接口路由：如果服务 `login` 接口路径是 `/api/v1/login` ，那么就要在这里要在这里修改它，`user`
 服务监听login接口应该是这样子的： `    r.POST("login", func(c *gin.Context) {...})` ，那么依次类推下面的 `exists` 接口和下面的 `pay` 服务的 `order`

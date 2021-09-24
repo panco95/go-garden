@@ -37,14 +37,14 @@ func order(c *gin.Context) {
 	username := c.DefaultPostForm("username", "")
 
 	// call [user] service example
-	code, result, err := service.CallService(span, "user", "exists", &core.Request{
+	code, result, err := service.CallService(span, "user", "login", &core.Request{
 		Method: "POST",
 		Body: core.MapData{
 			"username": username,
 		},
 	})
 	if err != nil {
-		c.JSON(code, nil)
+		c.JSON(500, nil)
 		service.Log(core.ErrorLevel, "CallService", err)
 		span.SetTag("CallService", err)
 		return
