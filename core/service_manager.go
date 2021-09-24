@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -277,44 +276,4 @@ func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
 	}
 
 	return serviceHttpAddr, nodeIndex, nil
-}
-
-// SyncRoutes sync routes.yml to other each service
-func (g *Garden) syncRoutes() {
-	fileData, err := readFile("configs/routes.yml")
-	if err != nil {
-		g.Log(ErrorLevel, "SyncRoutes", err)
-		return
-	}
-
-	if len(fileData) == 0 {
-		return
-	}
-
-	if bytes.Compare(g.syncCache, fileData) == 0 {
-		return
-	}
-
-	g.syncCache = fileData
-
-	for k, v := range g.services {
-		for i := 0; i < len(v.Nodes); i++ {
-			serviceRpcAddress, err := g.getServiceRpcAddr(k, i)
-			if err != nil {
-				g.Log(ErrorLevel, "GetServiceRpcAddr", err)
-				continue
-			}
-			if strings.Compare(serviceRpcAddress, fmt.Sprintf("%s:%s", g.serviceIp, g.cfg.Service.RpcPort)) != 0 {
-				result, err := sendSyncRoute(serviceRpcAddress, fileData)
-				if err != nil {
-					g.Log(ErrorLevel, "SendSyncRoutesFail", err)
-					continue
-				}
-				if result != true {
-					g.Log(ErrorLevel, "SendSyncRoutesFail", serviceRpcAddress)
-				}
-				g.Log(InfoLevel, "SendSyncRoutesSuccess", serviceRpcAddress)
-			}
-		}
-	}
 }

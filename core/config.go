@@ -22,6 +22,7 @@ type serviceCfg struct {
 	CallServiceKey string
 	EtcdAddress    []string
 	ZipkinAddress  string
+	AmqpAddress    string
 }
 
 type cfg struct {
@@ -52,7 +53,7 @@ func (g *Garden) initConfig(path, fileType string) {
 		filename := filepath.Base(e.Name)
 		if strings.Compare(filename, "routes.yml") == 0 {
 			g.unmarshalConfig()
-			g.syncRoutes()
+			g.sendRoutes()
 		}
 	})
 }

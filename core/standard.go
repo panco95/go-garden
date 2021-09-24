@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/streadway/amqp"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
 )
@@ -11,6 +12,7 @@ type (
 	MapData map[string]interface{}
 	// Garden go garden framework class
 	Garden struct {
+		isBootstrap    uint
 		cfg            cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate
@@ -18,9 +20,8 @@ type (
 		serviceId      string
 		serviceIp      string
 		log            *zap.SugaredLogger
-		isBootstrap    uint
+		amqp           *amqp.Connection
 		etcd           *clientV3.Client
-		remoteServer   remoteServer
 	}
 )
 

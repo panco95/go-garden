@@ -7,5 +7,6 @@ service:
   etcdAddress:
     - 192.168.125.185:2379
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  amqpAddress: amqp://guest:guest@192.168.125.185:5672
 
 config:

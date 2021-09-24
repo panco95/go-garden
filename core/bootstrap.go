@@ -4,9 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Run run grpc and gin http server
+// Run amqp and gin http server
 func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
-	go g.runRemoteRpc(g.cfg.Service.RpcPort)
+	go func() {
+		if err := g.amqpConsumer("fanout", "sync", "", "", g.syncAmqp); err != nil {
+			g.Log(FatalLevel, "amqpConsumeRun", err)
+		}
+	}()
 	g.Log(FatalLevel, "Run", g.runGin(g.cfg.Service.HttpPort, route, auth).Error())
 }
 
@@ -21,6 +25,10 @@ func (g *Garden) bootstrap() {
 
 	if err := g.connEtcd(g.cfg.Service.EtcdAddress); err != nil {
 		g.Log(FatalLevel, "Etcd", err)
+	}
+
+	if err := g.connAmqp(g.cfg.Service.AmqpAddress); err != nil {
+		g.Log(FatalLevel, "Amqp", err)
 	}
 
 	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort); err != nil {
