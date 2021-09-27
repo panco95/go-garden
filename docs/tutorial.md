@@ -4,11 +4,11 @@
 
 ### 1. 准备工作
 
-Go Garden基于Etcd实现服务注册发现，基于Zipkin实现服务链路追踪，所以需要成功启动必须安装好Etcd和Zipkin
+Go Garden基于Etcd实现服务注册发现，基于Zipkin实现服务链路追踪，基于消息队列实现路由同步，所以需要成功启动必须安装好Etcd、Zipkin、Rabbitmq
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 准备好一个Linux系统虚拟机，且安装好Docker
-* Docker启动的默认参数可能在高并发压力测试时会崩，建议自行调整参数或者搭建服务环境
+* Docker示例环境仅作为测试使用
 
 启动Etcd：
 
@@ -20,6 +20,12 @@ docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e
 
 ```
 docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
+```
+
+启动Rabbitmq：
+
+```
+docker run -it -d --name rabbitmq --hostname rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 ```
 
 ### 2. Gateway网关服务
@@ -75,12 +81,13 @@ exit status 1
 service:
   debug: true
   serviceName: gateway
-  httpPort: 8080
-  rpcPort: 8180
+  listenOut: 1
+  listenPort: 8080
   callServiceKey: garden
   etcdAddress:
     - 192.168.125.185:2379
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
+  amqpAddress: amqp://guest:guest@192.168.125.185:5672
 
 config:
 ```
@@ -95,10 +102,10 @@ config:
 | -------------------- | ------------------------------------------------------------------------------------ |
 | debug                | 调试模式开关（true：日志打印和文件存储；false：日志仅文件存储不打印）                       |
 | serviceName          | 服务名称                                                                              |
-| httpPort             | http监听端口                                                                          |
-| rpcPort              | rpc监听端口                                                                           |
+| listenOut             | 是否监听外网访问：1允许，0不允许                                                                          |
+| listenPort              | 监听Http访问端口                                                                           |
 | callServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
-| etcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写对应地址                       |
+| etcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写                       |
 | zipkinAddress        | zipkin服务的api地址                                         
 
 好了，配置文件创建好了，那么现在再来启动一下程序 `go run main.go` 看看吧！
@@ -123,18 +130,18 @@ exit status 1
 routes:
   user:
     login:
-      type: api
+      type: out
       path: /login
       limiter: 5/1000
       fusing: 5/100
     exists:
-      type: rpc
+      type: in
       path: /exists
       limiter: 5/1000
       fusing: 5/100
   pay:
     order:
-      type: api
+      type: out
       pather: /order
       limiter: 5/1000
       fusing: 5/100
@@ -146,7 +153,7 @@ routes:
 
 每个接口下面包含以下参数：
 
-1、`type`表示接口类型：`api`类型表示面向客户端的接口，只能由`gateway`网关进行调用，其他服务无法调用；`rpc`表示远程调用接口，只能由非`gateway`网关服务调用；
+1、`type`表示接口类型：`out`类型表示面向客户端的接口，只能由`gateway`网关进行调用，其他服务无法调用；`in`表示内部远程调用接口，只能由非`gateway`的其他服务调用；
 
 例如示例中的`user/exists`是提供给`pay`服务进行调用的接口，我们无法在客户端请求`gateway`网关的`api/user/exists`接口。
 
@@ -164,10 +171,9 @@ routes:
 ```
 PS D:\go-garden\examples\gateway> go run .\main.go
 2021-09-18T14:06:12.665+0800    INFO    core/gin.go:46  [gateway] Http listen on port: 8080
-2021-09-18T14:06:12.665+0800    INFO    core/rpc.go:20  [gateway] Rpc listen on port: 8180
 ```
 
-gateway网关服务启动成功啦！根据打印信息，可以看到服务监听了 http和rpc两个端口。 现在可以用postman访问网关服务了，地址： `http://127.0.0.1:8080`
+gateway网关服务启动成功啦！根据打印信息，可以看到服务监听http地址。 现在可以用postman访问网关服务了，地址： `http://127.0.0.1:8080`
 ，会返回404状态码，因为没有带上路由所以网关找不到怎么请求下游服务的路由配置，带上配置好的路由试试：`http://127.0.0.1:8080/api/user/login`，可以发现网关通过路由配置访问下游服务的格式为 `
 /api/服务名称/接口名称`，api前缀是固定的，访问这个地址不会返回404了，而是返回500状态码且带上了一个json格式数据：
 
@@ -238,10 +244,9 @@ func Exists(c *gin.Context) {
 ```
 PS D:\go-garden\examples\user> go run .\main.go
 2021-09-18T14:10:00.049+0800    INFO    core/gin.go:46  [user] Http listen on port: 8081
-2021-09-18T14:10:00.050+0800    INFO    core/rpc.go:20  [user] Rpc listen on port: 8181
 ```
 
-跟`gateway`一样，监听了Http、Rpc两个端口，同时启动服务的时候还做了一件事情，就是`发现`了上面启动的的`gateway`服务；
+跟`gateway`一样，监听了Http端口，同时启动服务的时候还做了一件事情，就是`发现`了上面启动的的`gateway`服务；
 
 接着我们切换到`gateway`服务的窗口，也输出了两行打印信息：
 
@@ -276,7 +281,6 @@ Go Garden基于`服务自动注册发现`特性，支持大规模的服务集群
 ```
 PS D:\go-garden\examples\user2> go run .\main.go
 2021-09-18T14:28:16.811+0800    INFO    core/gin.go:46  [user] Http listen on port: 8280
-2021-09-18T14:28:16.812+0800    INFO    core/rpc.go:20  [user] Rpc listen on port: 8281
 ```
 
 这是启动的第二个`user`服务节点，`gateway`节点和第一个`user`节点都会`发现`它，切换到`gateway`和`user`节点1窗口，都会输出：
@@ -296,9 +300,9 @@ PS D:\go-garden\examples\user2> go run .\main.go
 
 现在解决了`gateay`网关到下游服务的路由分发，那么现在来解决服务到服务之间的调用，上面`user`服务的`exists`接口就是提供给其他服务调用（查询某用户是否存在）；
 
-* 提示：服务之间调用的路由类型为`rpc`，在`config.yml`中配置后无法通过客户端请求到接口路由！
+* 提示：服务之间调用的路由类型为`in`，在`config.yml`中配置后无法通过客户端请求到接口路由！
 
-现在来创建一个`pay`服务，`config.yml`中`ServiceName`改为`pay`，RpcPort和HttpPort修改为没有使用过的端口，然后创建main.go程序启动入口文件：
+现在来创建一个`pay`服务，`config.yml`中`ServiceName`改为`pay`，listenPort修改为没有使用过的端口，然后创建main.go程序启动入口文件：
 
 ```golang
 package main
@@ -421,20 +425,16 @@ span.SetTag("key", "value")   //存储数据
 
 在写业务接口的适合，不仅可以使用`garden.Logger`输出日志，还可以使用`span`输出链路追踪日志，大家可以根绝业务情况同时使用。
 
-### 7. 动态配置与同步
+### 7. 动态路由、自动同步
 
 1、不管是`gateway`路由分发还是其他服务之间调用，Go Garden都是读取`routes.yml`配置文件来做相关操作的，假设需要修改/增加/删除一个路由配置，Go Garden会监听到`routes.yml`
-配置文件的变化从而更新路由配置，这是单机服务动态配置；
+路由配置文件的变化从而更新路由，这是单机服务动态配置；
 
-2、Go Garden是分布式的微服务框架，并不是一个单机的服务，有各种服务集群在线上运行。那么问题来了，如何保证所有服务集群配置统一呢？
-
-Go Garden实现了所有服务之间的`routes.yml`配置文件实时同步，并不需要开发者关心同步逻辑；开发者只需要更新整个架构中任意一个服务的配置文件，就会自动同步到其他服务；
+2、Go Garden是分布式的微服务框架，并不是一个单机的服务，有各种服务集群在线上运行。那么问题来了，如何保证所有服务集群配置统一呢？ Go Garden实现了所有服务之间的`routes.yml`配置文件实时同步，并不需要开发者关心同步逻辑；开发者只需要更新整个架构中任意一个服务的配置文件，就会自动同步到其他服务；
 
 试着修改`gateway`服务的`routes.yml`后保存，然后打开其他服务的配置文件看看，会发现已经同步好了。
 
-3、动态配置与同步仅支持`routes.yml`，`config.yml`配置项是服务必备配置项所以不建议动态修改；
-
-4、业务中可使用下面方法获取服务自定义配置项：
+3、业务中可使用下面方法获取服务自定义配置项：
 * service.GetConfigValue()
 * service.GetConfigValueString()
 * service.GetConfigValueStringSlice()
@@ -442,7 +442,7 @@ Go Garden实现了所有服务之间的`routes.yml`配置文件实时同步，�
 * service.GetConfigValueIntString()
 * service.GetConfigValueMap()
 
-自定义配置示例：
+4、自定义配置示例：
 
 ```yml
 config:
