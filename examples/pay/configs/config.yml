@@ -1,8 +1,8 @@
 service:
   debug: true
   serviceName: pay
-  httpPort: 8082
-  rpcPort: 8182
+  listenOut: 0
+  listenPort: 8082
   callServiceKey: garden
   etcdAddress:
     - 192.168.125.185:2379

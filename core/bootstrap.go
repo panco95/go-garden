@@ -11,7 +11,13 @@ func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
 			g.Log(FatalLevel, "amqpConsumeRun", err)
 		}
 	}()
-	g.Log(FatalLevel, "Run", g.runGin(g.cfg.Service.HttpPort, route, auth).Error())
+
+	address := g.serviceIp
+	if g.cfg.Service.ListenOut == 1 {
+		address = "0.0.0.0"
+	}
+	listenAddress := address + ":" + g.cfg.Service.ListenPort
+	g.Log(FatalLevel, "Run", g.runGin(listenAddress, route, auth).Error())
 }
 
 func (g *Garden) bootstrap() {
@@ -31,11 +37,11 @@ func (g *Garden) bootstrap() {
 		g.Log(FatalLevel, "Amqp", err)
 	}
 
-	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort); err != nil {
+	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.ListenPort); err != nil {
 		g.Log(FatalLevel, "Init", err)
 	}
 
-	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.serviceIp+":"+g.cfg.Service.HttpPort); err != nil {
+	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.serviceIp+":"+g.cfg.Service.ListenPort); err != nil {
 		g.Log(FatalLevel, "OpenTracing", err)
 	}
 
@@ -46,11 +52,8 @@ func (g *Garden) checkConfig() {
 	if g.cfg.Service.ServiceName == "" {
 		g.Log(FatalLevel, "Config", "empty option ServiceName")
 	}
-	if g.cfg.Service.HttpPort == "" {
-		g.Log(FatalLevel, "Config", "empty option HttpPort")
-	}
-	if g.cfg.Service.RpcPort == "" {
-		g.Log(FatalLevel, "Config", "empty option RpcPort")
+	if g.cfg.Service.ListenPort == "" {
+		g.Log(FatalLevel, "Config", "empty option ListenPort")
 	}
 	if g.cfg.Service.CallServiceKey == "" {
 		g.Log(FatalLevel, "Config", "empty option CallServiceKey")

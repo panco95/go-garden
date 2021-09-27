@@ -77,7 +77,7 @@ func (g *Garden) amqpConsumer(kind, queue, exchange, routingKey string, consumeF
 		}
 	}()
 
-	g.Log(InfoLevel, "amqp", "consumer is running")
+	g.Log(InfoLevel, "amqp", queue+" consumer is running")
 
 	forever := make(chan bool)
 	<-forever

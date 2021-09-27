@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+func (g *Garden) runGin(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()
@@ -45,8 +45,8 @@ func (g *Garden) runGin(port string, route func(r *gin.Engine), auth func() gin.
 
 	pprof.Register(server)
 
-	g.Log(InfoLevel, g.cfg.Service.ServiceName, fmt.Sprintf("Http listen on port: %s", port))
-	return server.Run(":" + port)
+	g.Log(InfoLevel, g.cfg.Service.ServiceName, fmt.Sprintf("Http listen on: %s", listenAddress))
+	return server.Run(listenAddress)
 }
 
 // GatewayRoute create gateway service, use this gin route

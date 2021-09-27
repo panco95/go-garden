@@ -44,3 +44,14 @@ const (
 	NoAuth        = "No access permission"
 	NotFound      = "The resource could not be found"
 )
+
+// RebootFunc if func panic
+func (g *Garden) RebootFunc(label string, f func()) {
+	defer func() {
+		if err := recover(); err != nil {
+			g.Log(ErrorLevel, label, err)
+			f()
+		}
+	}()
+	f()
+}

@@ -1,18 +1,18 @@
 routes:
   user:
     login:
-      type: api
+      type: out
       path: /login
       limiter: 5/10000
       fusing: 5/1000
     exists:
-      type: rpc
+      type: in
       path: /exists
       limiter: 5/10000
       fusing: 5/1000
   pay:
     order:
-      type: api
+      type: out
       path: /order
       limiter: 5/10000
       fusing: 5/1000

@@ -17,8 +17,8 @@ type routeCfg struct {
 type serviceCfg struct {
 	Debug          bool
 	ServiceName    string
-	HttpPort       string
-	RpcPort        string
+	ListenOut      int
+	ListenPort     string
 	CallServiceKey string
 	EtcdAddress    []string
 	ZipkinAddress  string

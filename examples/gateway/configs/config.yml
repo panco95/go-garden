@@ -1,8 +1,8 @@
 service:
   debug: true
   serviceName: gateway
-  httpPort: 8080
-  rpcPort: 8180
+  listenOut: 1
+  listenPort: 8080
   callServiceKey: garden
   etcdAddress:
     - 192.168.125.185:2379
