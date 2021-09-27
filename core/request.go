@@ -41,12 +41,20 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		return 404, NotFound, errors.New("gateway can't call in type route")
 	}
 
+	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
+	if err != nil {
+		return 404, NotFound, err
+	}
+	var result string
+	var code int
+	url := "http://" + serviceAddr + route.Path
+
 	// service limiter
 	if route.Limiter != "" {
 		second, quantity, err := limiterAnalyze(route.Limiter)
 		if err != nil {
 			g.Log(DebugLevel, "Limiter", err)
-		} else if !limiterInspect(service+"/"+action, second, quantity) {
+		} else if !limiterInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service limiter")
 			return 403, ServerLimiter, errors.New("server limiter")
 		}
@@ -57,7 +65,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		second, quantity, err := fusingAnalyze(route.Fusing)
 		if err != nil {
 			g.Log(DebugLevel, "Fusing", err)
-		} else if !fusingInspect(service+"/"+action, second, quantity) {
+		} else if !fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service fusing")
 			return 403, ServerFusing, errors.New("server fusing")
 		}
@@ -69,14 +77,6 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		g.Log(DebugLevel, "Retry", err)
 		retry = []int{0}
 	}
-
-	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
-	if err != nil {
-		return 404, NotFound, err
-	}
-	var result string
-	var code int
-	url := "http://" + serviceAddr + route.Path
 
 	for i, r := range retry {
 		sm := serviceOperate{
