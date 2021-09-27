@@ -83,7 +83,8 @@ service:
   serviceName: gateway
   listenOut: 1
   listenPort: 8080
-  callServiceKey: garden
+  callKey: garden
+  callRetry: 100/200/300
   etcdAddress:
     - 192.168.125.185:2379
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
@@ -104,7 +105,8 @@ config:
 | serviceName          | 服务名称                                                                              |
 | listenOut             | 是否监听外网访问：1允许，0不允许                                                                          |
 | listenPort              | 监听Http访问端口                                                                           |
-| callServiceKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
+| callKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
+| callRetry       | 服务重试策略，格式`timer1/timer2/timer3/...`（单位毫秒）                                        |
 | etcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写                       |
 | zipkinAddress        | zipkin服务的api地址                                         
 
@@ -470,7 +472,7 @@ config:
 
 ### 10. 服务重试
 
-在调用下游服务时，下游服务可能会返回错误，Go Garden会采取自动重试机制，默认重试请求3次，第第次重试间隔0.1秒，第二次重试间隔0.2秒，第三次重试间隔0.3秒，如果第三次还是错误响应，会放弃请求下游服务，返回错误响应。
+在调用下游服务时，下游服务可能会返回错误，Go Garden支持重试机制，在config.yml中配置callRetry参数，格式 `timer1/timer2/timer3/...`，可无限制调整，重试次数使用`/`分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整充实策略配置。
 
 ### 11. 日志
 
