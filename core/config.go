@@ -12,6 +12,7 @@ type routeCfg struct {
 	Path    string
 	Limiter string
 	Fusing  string
+	Timeout int
 }
 
 type serviceCfg struct {

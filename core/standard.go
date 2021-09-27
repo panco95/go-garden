@@ -43,6 +43,7 @@ const (
 	ServerFusing  = "Server fusing flow"
 	NoAuth        = "No access permission"
 	NotFound      = "The resource could not be found"
+	Timeout       = "Request timeout"
 )
 
 // RebootFunc if func panic

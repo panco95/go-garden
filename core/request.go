@@ -86,18 +86,25 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		}
 		g.serviceManager <- sm
 
-		code, result, err = g.requestService(span, url, request)
+		code, result, err = g.requestService(span, url, request, route.Timeout)
 
 		sm.operate = "decWaiting"
 		g.serviceManager <- sm
 
-		if code == 404 {
-			return code, NotFound, err
-		}
-
 		if err != nil {
+			addFusingQuantity(service + "/" + action)
+
+			// call timeout don't retry
+			if strings.Contains(err.Error(), "Timeout") {
+				return code, Timeout, err
+			}
+
+			// call 404 don't retry
+			if code == 404 {
+				return code, NotFound, err
+			}
+
 			if i == len(retry)-1 {
-				addFusingQuantity(service + "/" + action)
 				return code, ServerError, err
 			}
 			time.Sleep(time.Millisecond * time.Duration(r))
@@ -110,9 +117,9 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 	return code, result, nil
 }
 
-func (g *Garden) requestService(span opentracing.Span, url string, request *Request) (int, string, error) {
+func (g *Garden) requestService(span opentracing.Span, url string, request *Request, timeout int) (int, string, error) {
 	client := &http.Client{
-		Timeout: time.Second * 10,
+		Timeout: time.Millisecond * time.Duration(timeout),
 	}
 
 	// encapsulation request body
