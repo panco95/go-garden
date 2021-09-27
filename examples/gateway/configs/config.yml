@@ -1,9 +1,10 @@
 service:
   debug: true
   serviceName: gateway
-  listenOut: 1
+  listenOut: true
   listenPort: 8080
-  callServiceKey: garden
+  callKey: garden
+  callRetry: 50/80/100
   etcdAddress:
     - 192.168.125.185:2379
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans

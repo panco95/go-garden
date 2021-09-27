@@ -15,14 +15,15 @@ type routeCfg struct {
 }
 
 type serviceCfg struct {
-	Debug          bool
-	ServiceName    string
-	ListenOut      int
-	ListenPort     string
-	CallServiceKey string
-	EtcdAddress    []string
-	ZipkinAddress  string
-	AmqpAddress    string
+	Debug         bool
+	ServiceName   string
+	ListenOut     bool
+	ListenPort    string
+	CallKey       string
+	CallRetry     string
+	EtcdAddress   []string
+	ZipkinAddress string
+	AmqpAddress   string
 }
 
 type cfg struct {

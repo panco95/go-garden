@@ -63,22 +63,31 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		}
 	}
 
+	// service call retry
+	retry, err := retryAnalyze(g.cfg.Service.CallRetry)
+	if err != nil {
+		g.Log(DebugLevel, "Retry", err)
+		retry = []int{0}
+	}
+
 	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
 	if err != nil {
 		return 404, NotFound, err
 	}
-
 	var result string
 	var code int
 	url := "http://" + serviceAddr + route.Path
-	for retry := 1; retry <= 3; retry++ {
+
+	for i, r := range retry {
 		sm := serviceOperate{
 			operate:     "incWaiting",
 			serviceName: service,
 			nodeIndex:   nodeIndex,
 		}
 		g.serviceManager <- sm
+
 		code, result, err = g.requestService(span, url, request)
+
 		sm.operate = "decWaiting"
 		g.serviceManager <- sm
 
@@ -87,14 +96,11 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		}
 
 		if err != nil {
-			// error response add fusing quantity
-			if retry == 3 {
+			if i == len(retry)-1 {
 				addFusingQuantity(service + "/" + action)
-			}
-			if retry >= 3 {
 				return code, ServerError, err
 			}
-			time.Sleep(time.Millisecond * time.Duration(retry*100))
+			time.Sleep(time.Millisecond * time.Duration(r))
 			continue
 		}
 
@@ -127,7 +133,7 @@ func (g *Garden) requestService(span opentracing.Span, url string, request *Requ
 	// Add the body format header
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// Increase calls to the downstream service security validation key
-	r.Header.Set("Call-Service-Key", g.cfg.Service.CallServiceKey)
+	r.Header.Set("Call-Key", g.cfg.Service.CallKey)
 
 	// add request opentracing span header
 	opentracing.GlobalTracer().Inject(

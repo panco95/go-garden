@@ -13,7 +13,7 @@ func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
 	}()
 
 	address := g.serviceIp
-	if g.cfg.Service.ListenOut == 1 {
+	if g.cfg.Service.ListenOut {
 		address = "0.0.0.0"
 	}
 	listenAddress := address + ":" + g.cfg.Service.ListenPort
@@ -55,8 +55,8 @@ func (g *Garden) checkConfig() {
 	if g.cfg.Service.ListenPort == "" {
 		g.Log(FatalLevel, "Config", "empty option ListenPort")
 	}
-	if g.cfg.Service.CallServiceKey == "" {
-		g.Log(FatalLevel, "Config", "empty option CallServiceKey")
+	if g.cfg.Service.CallKey == "" {
+		g.Log(FatalLevel, "Config", "empty option CallKey")
 	}
 	if len(g.cfg.Service.EtcdAddress) == 0 {
 		g.Log(FatalLevel, "Config", "empty option EtcdAddress")
