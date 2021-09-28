@@ -14,11 +14,7 @@ type fusingData struct {
 	Quantity       int
 }
 
-var (
-	fusingMap sync.Map
-)
-
-func fusingAnalyze(limiter string) (int, int, error) {
+func (g *Garden) fusingAnalyze(limiter string) (int, int, error) {
 	arr := strings.Split(limiter, "/")
 	if len(arr) != 2 {
 		return 0, 0, errors.New("route fusing format error")
@@ -34,17 +30,17 @@ func fusingAnalyze(limiter string) (int, int, error) {
 	return second, quantity, nil
 }
 
-func fusingInspect(path string, second, quantity int) bool {
-	f, ok := fusingMap.Load(path)
+func (g *Garden) fusingInspect(path string, second, quantity int) bool {
+	f, ok := g.fusingMap.Load(path)
 	if !ok {
-		f = resetFusingIndex(path)
+		f = g.resetFusingIndex(path)
 	}
 	fd := f.(*fusingData)
 
 	now := time.Now().Unix()
 	lost := int(now) - int(fd.StartTimestamp)
 	if lost >= second {
-		fd = resetFusingIndex(path)
+		fd = g.resetFusingIndex(path)
 	}
 
 	if fd.Quantity >= quantity {
@@ -54,19 +50,19 @@ func fusingInspect(path string, second, quantity int) bool {
 	return true
 }
 
-func resetFusingIndex(index string) *fusingData {
+func (g *Garden) resetFusingIndex(index string) *fusingData {
 	fd := fusingData{
 		StartTimestamp: time.Now().Unix(),
 		Quantity:       0,
 	}
-	fusingMap.Store(index, &fd)
+	g.fusingMap.Store(index, &fd)
 	return &fd
 }
 
-func addFusingQuantity(index string) {
-	f, ok := fusingMap.Load(index)
+func (g *Garden) addFusingQuantity(index string) {
+	f, ok := g.fusingMap.Load(index)
 	if !ok {
-		f = resetFusingIndex(index)
+		f = g.resetFusingIndex(index)
 	}
 	fd := f.(*fusingData)
 

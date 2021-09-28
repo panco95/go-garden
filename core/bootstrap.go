@@ -50,18 +50,24 @@ func (g *Garden) bootstrap() {
 
 func (g *Garden) checkConfig() {
 	if g.cfg.Service.ServiceName == "" {
-		g.Log(FatalLevel, "Config", "empty option ServiceName")
+		g.Log(FatalLevel, "Config", "empty option serviceName")
 	}
 	if g.cfg.Service.ListenPort == "" {
-		g.Log(FatalLevel, "Config", "empty option ListenPort")
+		g.Log(FatalLevel, "Config", "empty option listenPort")
 	}
 	if g.cfg.Service.CallKey == "" {
-		g.Log(FatalLevel, "Config", "empty option CallKey")
+		g.Log(FatalLevel, "Config", "empty option callKey")
+	}
+	if g.cfg.Service.CallRetry == "" {
+		g.Log(FatalLevel, "Config", "empty option callRetry")
 	}
 	if len(g.cfg.Service.EtcdAddress) == 0 {
-		g.Log(FatalLevel, "Config", "empty option EtcdAddress")
+		g.Log(FatalLevel, "Config", "empty option etcdAddress")
 	}
 	if g.cfg.Service.ZipkinAddress == "" {
-		g.Log(FatalLevel, "Config", "empty option ZipkinAddress")
+		g.Log(FatalLevel, "Config", "empty option zipkinAddress")
+	}
+	if g.cfg.Service.AmqpAddress == "" {
+		g.Log(FatalLevel, "Config", "empty option amqpAddress")
 	}
 }

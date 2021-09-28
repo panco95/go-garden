@@ -4,6 +4,7 @@ import (
 	"github.com/streadway/amqp"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
+	"sync"
 )
 
 type (
@@ -22,6 +23,8 @@ type (
 		log            *zap.SugaredLogger
 		amqp           *amqp.Connection
 		etcd           *clientV3.Client
+		fusingMap      sync.Map
+		limiterMap     sync.Map
 	}
 )
 

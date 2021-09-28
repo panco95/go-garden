@@ -6,7 +6,6 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
-	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -41,8 +40,9 @@ func (g *Garden) runGin(listenAddress string, route func(r *gin.Engine), auth fu
 	if auth != nil {
 		server.Use(auth())
 	}
-	route(server)
 
+	notFound(server)
+	route(server)
 	pprof.Register(server)
 
 	g.Log(InfoLevel, g.cfg.Service.ServiceName, fmt.Sprintf("Http listen on: %s", listenAddress))
@@ -54,10 +54,14 @@ func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
 		g.gateway(c)
 	})
-	r.Any("healthy", func(c *gin.Context) {
-		c.JSON(http.StatusOK, MapData{
-			"services": g.services,
-		})
+}
+
+func notFound(r *gin.Engine) {
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gatewayFail(NotFound))
+	})
+	r.NoMethod(func(c *gin.Context) {
+		c.JSON(404, gatewayFail(NotFound))
 	})
 }
 

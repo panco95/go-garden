@@ -54,7 +54,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		second, quantity, err := limiterAnalyze(route.Limiter)
 		if err != nil {
 			g.Log(DebugLevel, "Limiter", err)
-		} else if !limiterInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
+		} else if !g.limiterInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service limiter")
 			return 403, ServerLimiter, errors.New("server limiter")
 		}
@@ -62,10 +62,10 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 
 	// service fusing
 	if route.Fusing != "" {
-		second, quantity, err := fusingAnalyze(route.Fusing)
+		second, quantity, err := g.fusingAnalyze(route.Fusing)
 		if err != nil {
 			g.Log(DebugLevel, "Fusing", err)
-		} else if !fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
+		} else if !g.fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service fusing")
 			return 403, ServerFusing, errors.New("server fusing")
 		}
@@ -92,7 +92,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		g.serviceManager <- sm
 
 		if err != nil {
-			addFusingQuantity(service + "/" + action)
+			g.addFusingQuantity(service + "/" + action)
 
 			// call timeout don't retry
 			if strings.Contains(err.Error(), "Timeout") {

@@ -14,10 +14,6 @@ type limiterData struct {
 	Quantity       int
 }
 
-var (
-	limiterMap sync.Map
-)
-
 func limiterAnalyze(limiter string) (int, int, error) {
 	arr := strings.Split(limiter, "/")
 	if len(arr) != 2 {
@@ -34,17 +30,17 @@ func limiterAnalyze(limiter string) (int, int, error) {
 	return second, quantity, nil
 }
 
-func limiterInspect(path string, second, quantity int) bool {
-	l, ok := limiterMap.Load(path)
+func (g *Garden)limiterInspect(path string, second, quantity int) bool {
+	l, ok := g.limiterMap.Load(path)
 	if !ok {
-		l = resetLimiterIndex(path)
+		l = g.resetLimiterIndex(path)
 	}
 	ld := l.(*limiterData)
 
 	now := time.Now().Unix()
 	lost := int(now) - int(ld.StartTimestamp)
 	if lost >= second {
-		ld = resetLimiterIndex(path)
+		ld = g.resetLimiterIndex(path)
 	}
 
 	if ld.Quantity >= quantity {
@@ -58,11 +54,11 @@ func limiterInspect(path string, second, quantity int) bool {
 	return true
 }
 
-func resetLimiterIndex(index string) *limiterData {
+func (g *Garden)resetLimiterIndex(index string) *limiterData {
 	ld := limiterData{
 		StartTimestamp: time.Now().Unix(),
 		Quantity:       0,
 	}
-	limiterMap.Store(index, &ld)
+	g.limiterMap.Store(index, &ld)
 	return &ld
 }
