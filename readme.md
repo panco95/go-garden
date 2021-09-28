@@ -2,13 +2,15 @@
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Go.Dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/panco95/go-garden) [![Go Report Card](https://goreportcard.com/badge/github.com/panco95/go-garden)](https://goreportcard.com/report/github.com/panco95/go-garden) 
 
 
-Go Garden是一款面向分布式系统架构的微服务框架
+go-garden是一款面向分布式系统架构的微服务框架
 
 ## 概念
 
-Go Garden为分布式系统架构的开发提供了核心需求，包括微服务的基础架构支持，例如gateway网关路由分发、负载均衡、服务调用链路追踪、接口级粒度可配服务限流、熔断策略等。
+* go-garden为分布式系统架构的开发提供了核心需求，包括微服务的一些基础架构支持，减少开发者对微服务的基础开发，更着力于业务开发；
+* go-garden底层Http服务使用Gin，并非使用原生Http包或自己设计的包，考虑到稳定性和开发易用性，如果您没有使用过Gin，可以先去阅读一下Gin框架文档；
+* go-garden并没有集成数据库、缓存之类的扩展，这里考虑到使用者对服务的设计可能会使用到不同的包，建议开发者自己导入这类扩展包使用，且go-garden并不限制服务代购结构，只需要配置文件和几行代码就可以启动一个服务。
 
-## 结构图
+## 架构
 
 ![struct](docs/struct.png "struct")
 
@@ -37,11 +39,6 @@ Go Garden为分布式系统架构的开发提供了核心需求，包括微服�
 
 - **链路追踪**
 
-## 开发者必读
-
-Go Garden考虑到开发者的使用门槛，并没有自行造轮子实现Http框架，而是选择使用较为成熟的Gin作为底层Http服务，这样可以大大减少开发者的学习路径，如果你是Go初学者，请提前阅读Gin框架文档。
-
-
 ## 快速开始
 
 ```golang
@@ -56,11 +53,13 @@ func main() {
 ```
 
 ## 教程：基于Go Garden快速构建微服务
-访问 [基于Go Garden快速构建微服务](docs/tutorial.md) 学习如何使用Go
-Garden
+访问 [基于Go Garden快速构建微服务](docs/tutorial.md) 跟着一步一步学习如何使用go-garden
 
-## 示例代码
-访问 [examples](examples) 查看教程
+## 示例
+访问 [examples](examples) 查看教程代码
+
+## Demo
+访问 [demo](https://github.com/panco95/go-garden-demo) 查看Demo项目
 
 ## 许可证
 
