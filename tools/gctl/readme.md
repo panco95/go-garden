@@ -6,8 +6,8 @@
 
 ### 2. 参数
 
--name：服务名称
--class：服务类型，支持`gateway`和`service`，`gateway`表示网关服务，`service`表示业务服务
+* -name：服务名称
+* -class：服务类型，支持`gateway`和`service` (gateway表示网关服务，service表示业务服务)
 
 ### 3. 示例
 
