@@ -1,0 +1,25 @@
+service:
+  debug: true
+  serviceName: user
+  listenOut: true
+  listenPort: 8080
+  callKey: garden
+  callRetry: 50/80/100
+  etcdAddress:
+    - 127.0.0.1:2379
+  zipkinAddress: http://127.0.0.1:9411/api/v2/spans
+  amqpAddress: amqp://guest:guest@127.0.0.1:5672
+
+config:
+  map:
+    a: 1
+    b: 2
+  int: 1
+  intSlice:
+    - 1
+    - 2
+    - 3
+  string: hello
+  stringSlice:
+    - a
+    - b
