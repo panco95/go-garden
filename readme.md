@@ -55,8 +55,11 @@ func main() {
 ## 教程：基于Go Garden快速构建微服务
 访问 [基于Go Garden快速构建微服务](docs/tutorial.md) 跟着一步一步学习如何使用go-garden
 
-## 代码示例
+## 教程：代码示例
 访问 [examples](examples) 查看示例教程代码
+
+## 脚手架：快速创建项目工具
+访问 [gctl](tools/gctl) 查看工具使用
 
 ## 特别鸣谢
 感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
