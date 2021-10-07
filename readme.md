@@ -59,7 +59,7 @@ func main() {
 访问 [examples](examples) 查看示例教程代码
 
 ## 脚手架：快速创建项目工具
-访问 [gctl](tools/gctl) 查看工具使用
+访问 [gctl工具](tools/gctl) 查看使用说明
 
 ## 特别鸣谢
 感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
