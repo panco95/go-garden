@@ -14,6 +14,7 @@ type (
 	// Garden go garden framework class
 	Garden struct {
 		isBootstrap    uint
+		serviceType    uint //0:service 1:gateway
 		cfg            cfg
 		services       map[string]*service
 		serviceManager chan serviceOperate

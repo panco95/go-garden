@@ -33,11 +33,11 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 	}
 
 	// just gateway can request out route
-	if strings.ToLower(route.Type) == "out" && strings.Compare(g.cfg.Service.ServiceName, "gateway") != 0 {
+	if strings.ToLower(route.Type) == "out" && g.serviceType == 0 {
 		return 404, NotFound, errors.New("just gateway can request out type route")
 	}
 	// gateway can't call rpc route
-	if strings.ToLower(route.Type) == "in" && strings.Compare(g.cfg.Service.ServiceName, "gateway") == 0 {
+	if strings.ToLower(route.Type) == "in" && g.serviceType == 1 {
 		return 404, NotFound, errors.New("gateway can't call in type route")
 	}
 
