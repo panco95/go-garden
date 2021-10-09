@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -41,6 +42,11 @@ func main() {
 	createFile("./"+name+"/configs/config.yml", configYml)
 
 	createFile("./"+name+"/configs/routes.yml", RoutesYml)
+
+	cmdRun(name, "go", "mod", "init", name)
+	cmdRun(name, "go", "mod", "tidy")
+
+	log.Printf("Create service success, dir: ./" + name)
 }
 
 func createFile(path string, data string) {
@@ -71,6 +77,22 @@ func pathExists(path string) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+func cmdRun(name string, command string, param ...string) {
+	cmd := exec.Command(command, param...)
+	cmd.Dir = "./" + name
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := ioutil.ReadAll(stdout); err != nil {
+		log.Fatal(err)
+	}
 }
 
 const MainGoGateway = `package main
@@ -127,6 +149,7 @@ const ConfigYml = `service:
   listenPort: 8080
   callKey: garden
   callRetry: 50/80/100
+  etcdKey: garden
   etcdAddress:
     - 127.0.0.1:2379
   zipkinAddress: http://127.0.0.1:9411/api/v2/spans

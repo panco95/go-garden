@@ -1,6 +1,8 @@
 ## 基于go-garden快速构建微服务
 
 > go-garden的Http服务基于Gin开发，在教程中会涉及到Gin框架的一些内容，例如请求上下文、中间件等，如开发者不了解Gin，请先阅读Gin相关文档！
+> 
+> go-garden已经支持脚手架工具创建项目，访问 [gctl工具](../tools/gctl) 查看使用说明！
 
 ### 1. 环境准备
 
@@ -81,6 +83,7 @@ service:
   listenPort: 8080
   callKey: garden
   callRetry: 100/200/300
+  etcdKey: garden
   etcdAddress:
     - 192.168.125.185:2379
   zipkinAddress: http://192.168.125.185:9411/api/v2/spans
@@ -101,6 +104,7 @@ config:
 | listenPort              | 监听Http访问端口                                                                           |
 | callKey       | 服务之间调用的密钥，记住请保持每个服务这个配置相同                                         |
 | callRetry       | 服务重试策略，格式`timer1/timer2/timer3/...`（单位毫秒）                                        |
+| etcdKey          | Etcd关联值，一套服务使用同一个key才能发现到服务                       |
 | etcdAddress          | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写                       |
 | zipkinAddress        | zipkin地址，格式：http://192.168.125.185:9411/api/v2/spans
 | amqpAddress        | rabbitmq地址，格式：amqp://guest:guest@192.168.125.185:5672

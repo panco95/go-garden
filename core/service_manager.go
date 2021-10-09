@@ -88,7 +88,7 @@ func (g *Garden) serviceRegister() error {
 }
 
 func (g *Garden) serviceWatcher() {
-	rch := g.etcd.Watch(context.Background(), "garden_", clientV3.WithPrefix())
+	rch := g.etcd.Watch(context.Background(), g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -109,7 +109,7 @@ func (g *Garden) serviceWatcher() {
 
 func (g *Garden) getAllServices() []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := g.etcd.Get(ctx, "garden_", clientV3.WithPrefix())
+	resp, err := g.etcd.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetAllServices", err)
@@ -117,7 +117,7 @@ func (g *Garden) getAllServices() []string {
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), "garden_")
+		arr := strings.Split(string(ev.Key), g.cfg.Service.EtcdKey+"_")
 		service := arr[1]
 		services = append(services, service)
 	}
@@ -126,7 +126,7 @@ func (g *Garden) getAllServices() []string {
 
 func (g *Garden) getServicesByName(serviceName string) []string {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := g.etcd.Get(ctx, "garden_"+serviceName, clientV3.WithPrefix())
+	resp, err := g.etcd.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetServicesByName", err)
@@ -134,7 +134,7 @@ func (g *Garden) getServicesByName(serviceName string) []string {
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
-		arr := strings.Split(string(ev.Key), "garden_"+serviceName+"_")
+		arr := strings.Split(string(ev.Key), g.cfg.Service.EtcdKey+"_"+serviceName+"_")
 		serviceAddr := arr[1]
 		services = append(services, serviceAddr)
 	}

@@ -39,6 +39,8 @@ go-garden是一款面向分布式系统架构的微服务框架
 
 - **链路追踪**
 
+- **脚手架工具**
+
 ## 快速开始
 
 ```golang
@@ -64,6 +66,9 @@ func main() {
 ## 特别鸣谢
 感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
 
-## 许可证
+## 联系我们
+* 框架交流QQ群：967256601
+* 商业合作联系微信：freePan_1995
 
+## 许可证
 Go Garden 包含 Apache 2.0 许可证

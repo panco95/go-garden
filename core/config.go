@@ -22,6 +22,7 @@ type serviceCfg struct {
 	ListenPort    string
 	CallKey       string
 	CallRetry     string
+	EtcdKey       string
 	EtcdAddress   []string
 	ZipkinAddress string
 	AmqpAddress   string
