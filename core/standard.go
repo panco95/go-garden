@@ -16,11 +16,11 @@ type (
 		isBootstrap    uint
 		serviceType    uint //0:service 1:gateway
 		cfg            cfg
-		services       map[string]*service
+		Services       map[string]*service
 		serviceManager chan serviceOperate
 		syncCache      []byte
 		serviceId      string
-		serviceIp      string
+		ServiceIp      string
 		log            *zap.SugaredLogger
 		amqp           *amqp.Connection
 		etcd           *clientV3.Client

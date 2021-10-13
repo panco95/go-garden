@@ -28,13 +28,13 @@ type serviceOperate struct {
 }
 
 func (g *Garden) initService(serviceName, listenPort string) error {
-	g.services = map[string]*service{}
+	g.Services = map[string]*service{}
 	var err error
-	g.serviceIp, err = getOutboundIP()
+	g.ServiceIp, err = getOutboundIP()
 	if err != nil {
 		return err
 	}
-	intranetAddress := g.serviceIp + ":" + listenPort
+	intranetAddress := g.ServiceIp + ":" + listenPort
 	g.serviceId = "garden" + "_" + serviceName + "_" + intranetAddress
 
 	g.serviceManager = make(chan serviceOperate, 0)
@@ -161,22 +161,22 @@ func (g *Garden) delServiceNode(name, addr string) {
 
 func (g *Garden) createServiceIndex(name string) {
 	if !g.existsService(name) {
-		g.services[name] = &service{
+		g.Services[name] = &service{
 			Nodes: []node{},
 		}
 	}
 }
 
 func (g *Garden) existsService(name string) bool {
-	_, ok := g.services[name]
+	_, ok := g.Services[name]
 	return ok
 }
 
 func (g *Garden) getServiceHttpAddr(name string, index int) (string, error) {
-	if index > len(g.services[name].Nodes)-1 {
+	if index > len(g.Services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(g.services[name].Nodes[index].Addr, "_")
+	arr := strings.Split(g.Services[name].Nodes[index].Addr, "_")
 	return arr[0], nil
 }
 
@@ -188,14 +188,14 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 
 			case "addNode":
 				g.createServiceIndex(sm.serviceName)
-				g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes, node{Addr: sm.serviceAddr})
+				g.Services[sm.serviceName].Nodes = append(g.Services[sm.serviceName].Nodes, node{Addr: sm.serviceAddr})
 				break
 
 			case "delNode":
 				if g.existsService(sm.serviceName) {
-					for i := 0; i < len(g.services[sm.serviceName].Nodes); i++ {
-						if g.services[sm.serviceName].Nodes[i].Addr == sm.serviceAddr {
-							g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes[:i], g.services[sm.serviceName].Nodes[i+1:]...)
+					for i := 0; i < len(g.Services[sm.serviceName].Nodes); i++ {
+						if g.Services[sm.serviceName].Nodes[i].Addr == sm.serviceAddr {
+							g.Services[sm.serviceName].Nodes = append(g.Services[sm.serviceName].Nodes[:i], g.Services[sm.serviceName].Nodes[i+1:]...)
 							i--
 						}
 					}
@@ -204,14 +204,14 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 
 			case "incWaiting":
 				if g.existsService(sm.serviceName) {
-					g.services[sm.serviceName].Nodes[sm.nodeIndex].Waiting++
+					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Waiting++
 				}
 				break
 
 			case "decWaiting":
 				if g.existsService(sm.serviceName) {
-					g.services[sm.serviceName].Nodes[sm.nodeIndex].Waiting--
-					g.services[sm.serviceName].Nodes[sm.nodeIndex].Finish++
+					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Waiting--
+					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Finish++
 				}
 				break
 			}
@@ -220,18 +220,18 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 }
 
 func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
-	if _, ok := g.services[name]; !ok {
+	if _, ok := g.Services[name]; !ok {
 		return "", 0, errors.New("service not found")
 	}
 
 	waitingMin := 0
 	nodeIndex := 0
-	nodeLen := len(g.services[name].Nodes)
+	nodeLen := len(g.Services[name].Nodes)
 	if nodeLen < 1 {
 		return "", 0, errors.New("service node not found")
 	} else if nodeLen > 1 {
 		// get the min waiting service node
-		for k, v := range g.services[name].Nodes {
+		for k, v := range g.Services[name].Nodes {
 			if k == 0 {
 				waitingMin = v.Waiting
 				continue

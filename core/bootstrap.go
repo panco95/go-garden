@@ -12,7 +12,7 @@ func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
 		}
 	}()
 
-	address := g.serviceIp
+	address := g.ServiceIp
 	if g.cfg.Service.ListenOut {
 		address = "0.0.0.0"
 	}
@@ -41,7 +41,7 @@ func (g *Garden) bootstrap() {
 		g.Log(FatalLevel, "Init", err)
 	}
 
-	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.serviceIp+":"+g.cfg.Service.ListenPort); err != nil {
+	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp+":"+g.cfg.Service.ListenPort); err != nil {
 		g.Log(FatalLevel, "OpenTracing", err)
 	}
 
