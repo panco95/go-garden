@@ -3,12 +3,14 @@ service:
   serviceName: gateway
   listenOut: true
   listenPort: 8080
+  rpcOut: false
+  rpcPort: 9001
   callKey: garden
   callRetry: 50/80/100
   etcdKey: garden
   etcdAddress:
-    - 192.168.125.185:2379
-  zipkinAddress: http://192.168.125.185:9411/api/v2/spans
-  amqpAddress: amqp://guest:guest@192.168.125.185:5672
+    - 192.168.125.186:2379
+  zipkinAddress: http://192.168.125.186:9411/api/v2/spans
+  amqpAddress: amqp://guest:guest@192.168.125.186:5672
 
 config:

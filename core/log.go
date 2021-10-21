@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
+	"time"
 )
 
 func (g *Garden) initLog() {
@@ -56,10 +57,18 @@ func (g *Garden) Log(level logLevel, label string, data interface{}) {
 }
 
 func getEncoder() zapcore.Encoder {
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	encoderConfig := zapcore.EncoderConfig{
+		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.Format("2006-01-02 15:04:05"))
+		},
+		TimeKey:     "time",
+		LevelKey:    "level",
+		NameKey:     "logger",
+		CallerKey:   "caller",
+		MessageKey:  "msg",
+		EncodeLevel: zapcore.LowercaseLevelEncoder,
+		EncodeCaller: zapcore.ShortCallerEncoder,
+	}
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 

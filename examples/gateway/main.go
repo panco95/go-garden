@@ -7,9 +7,13 @@ import (
 
 var service *core.Garden
 
+type Rpc struct {
+	core.Rpc
+}
+
 func main() {
 	service = core.New()
-	service.Run(service.GatewayRoute, auth)
+	service.Run(service.GatewayRoute, new(Rpc), auth)
 }
 
 // Customize the auth middleware

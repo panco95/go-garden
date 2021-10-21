@@ -5,19 +5,39 @@ import (
 )
 
 // Run amqp and gin http server
-func (g *Garden) Run(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
+func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
+	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
+
 	go func() {
 		if err := g.amqpConsumer("fanout", "sync", "", "", g.syncAmqp); err != nil {
 			g.Log(FatalLevel, "amqpConsumeRun", err)
 		}
 	}()
 
-	address := g.ServiceIp
-	if g.cfg.Service.ListenOut {
-		address = "0.0.0.0"
-	}
-	listenAddress := address + ":" + g.cfg.Service.ListenPort
-	g.Log(FatalLevel, "Run", g.runGin(listenAddress, route, auth).Error())
+	go func() {
+		address := g.ServiceIp
+		if g.cfg.Service.ListenOut {
+			address = "0.0.0.0"
+		}
+		listenAddress := address + ":" + g.cfg.Service.ListenPort
+		if err := g.runGin(listenAddress, route, auth); err != nil {
+			g.Log(FatalLevel, "ginRun", err)
+		}
+	}()
+
+	go func() {
+		address := g.ServiceIp
+		if g.cfg.Service.RpcOut {
+			address = "0.0.0.0"
+		}
+		rpcAddress := address + ":" + g.cfg.Service.RpcPort
+		if err := g.RpcListen(g.cfg.Service.ServiceName, "tcp", rpcAddress, rpc, ""); err != nil {
+			g.Log(FatalLevel, "rpcRun", err)
+		}
+	}()
+
+	forever := make(chan int, 0)
+	<-forever
 }
 
 func (g *Garden) bootstrap() {

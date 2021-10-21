@@ -20,6 +20,8 @@ type serviceCfg struct {
 	ServiceName   string
 	ListenOut     bool
 	ListenPort    string
+	RpcOut        bool
+	RpcPort       string
 	CallKey       string
 	CallRetry     string
 	EtcdKey       string

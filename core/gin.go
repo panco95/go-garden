@@ -45,7 +45,7 @@ func (g *Garden) runGin(listenAddress string, route func(r *gin.Engine), auth fu
 	route(server)
 	pprof.Register(server)
 
-	g.Log(InfoLevel, g.cfg.Service.ServiceName, fmt.Sprintf("Http listen on: %s", listenAddress))
+	g.Log(InfoLevel, "http", fmt.Sprintf("listen on: %s", listenAddress))
 	return server.Run(listenAddress)
 }
 
