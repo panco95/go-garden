@@ -18,8 +18,8 @@ type routeCfg struct {
 type serviceCfg struct {
 	Debug         bool
 	ServiceName   string
-	ListenOut     bool
-	ListenPort    string
+	HttpOut     bool
+	HttpPort    string
 	RpcOut        bool
 	RpcPort       string
 	CallKey       string

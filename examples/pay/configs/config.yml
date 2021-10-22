@@ -1,8 +1,10 @@
 service:
   debug: true
   serviceName: pay
-  listenOut: false
-  listenPort: 8082
+  httpOut: false
+  httpPort: 8082
+  rpcOut: false
+  rpcPort: 9002
   callKey: garden
   callRetry: 50/80/100
   etcdKey: garden

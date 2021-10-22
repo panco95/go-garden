@@ -11,9 +11,13 @@ import (
 
 var service *core.Garden
 
+type Rpc struct {
+	core.Rpc
+}
+
 func main() {
 	service = core.New()
-	service.Run(route, nil)
+	service.Run(route, new(Rpc), nil)
 }
 
 func route(r *gin.Engine) {

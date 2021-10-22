@@ -1,10 +1,10 @@
 service:
   debug: true
   serviceName: gateway
-  listenOut: true
-  listenPort: 8080
+  httpOut: true
+  httpPort: 8080
   rpcOut: false
-  rpcPort: 9001
+  rpcPort: 9000
   callKey: garden
   callRetry: 50/80/100
   etcdKey: garden

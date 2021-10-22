@@ -27,15 +27,14 @@ type serviceOperate struct {
 	nodeIndex   int
 }
 
-func (g *Garden) initService(serviceName, listenPort string) error {
+func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
 	g.Services = map[string]*service{}
 	var err error
 	g.ServiceIp, err = getOutboundIP()
 	if err != nil {
 		return err
 	}
-	intranetAddress := g.ServiceIp + ":" + listenPort
-	g.serviceId = "garden" + "_" + serviceName + "_" + intranetAddress
+	g.serviceId = "garden" + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
 
 	g.serviceManager = make(chan serviceOperate, 0)
 	go g.RebootFunc("serviceManageWatchReboot", func() {
@@ -176,8 +175,16 @@ func (g *Garden) getServiceHttpAddr(name string, index int) (string, error) {
 	if index > len(g.Services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(g.Services[name].Nodes[index].Addr, "_")
-	return arr[0], nil
+	arr := strings.Split(strings.Split(g.Services[name].Nodes[index].Addr, "_")[0], ":")
+	return arr[0] + ":" + arr[1], nil
+}
+
+func (g *Garden) getServiceRpcAddr(name string, index int) (string, error) {
+	if index > len(g.Services[name].Nodes)-1 {
+		return "", errors.New("service node not found")
+	}
+	arr := strings.Split(strings.Split(g.Services[name].Nodes[index].Addr, "_")[0], ":")
+	return arr[0] + ":" + arr[2], nil
 }
 
 func (g *Garden) serviceManageWatch(ch chan serviceOperate) {

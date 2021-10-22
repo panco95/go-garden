@@ -1,8 +1,10 @@
 service:
   debug: true
   serviceName: user
-  listenOut: false
-  listenPort: 8083
+  httpOut: false
+  httpPort: 8083
+  rpcOut: false
+  rpcPort: 9003
   callKey: garden
   callRetry: 50/80/100
   etcdKey: garden
