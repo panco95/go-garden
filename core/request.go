@@ -28,18 +28,9 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		return 404, NotFound, errors.New("service not found")
 	}
 	route := s[action]
-	if len(route.Path) == 0 {
+	if route.Type == "api" && len(route.Path) == 0 {
 		return 404, NotFound, errors.New("service route not found")
 	}
-
-	//// just gateway can request out route
-	//if strings.ToLower(route.Type) == "out" && g.serviceType == 0 {
-	//	return 404, NotFound, errors.New("just gateway can request out type route")
-	//}
-	//// gateway can't call rpc route
-	//if strings.ToLower(route.Type) == "in" && g.serviceType == 1 {
-	//	return 404, NotFound, errors.New("gateway can't call in type route")
-	//}
 
 	serviceAddr, nodeIndex, err := g.selectService(service)
 	if err != nil {
@@ -75,10 +66,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		retry = []int{0}
 	}
 
-	code := 200
-	result := ""
-	err = nil
-	code, result, err = g.retryGo(service, action, retry, nodeIndex, span, route, request, args, reply)
+	code, result, err := g.retryGo(service, action, retry, nodeIndex, span, route, request, args, reply)
 
 	return code, result, err
 }

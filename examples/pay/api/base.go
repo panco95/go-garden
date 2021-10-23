@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
-	"github.com/panco95/go-garden/examples/user/global"
+	"github.com/panco95/go-garden/examples/pay/global"
 )
 
 func Routes(r *gin.Engine) {

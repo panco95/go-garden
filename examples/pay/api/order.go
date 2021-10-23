@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/examples/pay/global"
+	"github.com/panco95/go-garden/examples/pay/rpc/user"
 	"math/rand"
 	"time"
 )
@@ -25,23 +26,17 @@ func Order(c *gin.Context) {
 	}
 	username := c.DefaultPostForm("username", "")
 
-	type ExistsArgs struct {
-		Username string
-	}
-	type ExistsReply struct {
-		Exists bool
-	}
-	args := ExistsArgs{
+	args := user.ExistsArgs{
 		Username: username,
 	}
-	reply := ExistsReply{}
-	global.Service.CallService(span, "user", "Exists", nil, &args, &reply)
-	err = global.Service.RpcCall("192.168.8.98:9001", "user", "Exists", &args, &reply)
+	reply := user.ExistsReply{}
+	_, _, err = global.Service.CallService(span, "user", "exists", nil, &args, &reply)
 	if err != nil {
 		global.Service.Log(core.ErrorLevel, "rpcCall", err)
 		c.JSON(500, nil)
 		span.SetTag("callRpc", err)
 	}
+	fmt.Print(reply)
 	if !reply.Exists {
 		c.JSON(500, Response(1000, "下单失败", nil))
 		return

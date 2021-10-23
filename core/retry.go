@@ -32,6 +32,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 	result := "success"
 	addr := ""
 	var err error
+
 	for i, r := range retry {
 		sm := serviceOperate{
 			operate:     "incWaiting",
@@ -51,9 +52,9 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		} else if route.Type == "rpc" {
 			addr, err = g.getServiceRpcAddr(service, nodeIndex)
 			if err != nil {
-				code = 500
 				break
 			}
+			action = Capitalize(action)
 			err = g.RpcCall(addr, service, action, rpcArgs, rpcReply)
 		}
 
@@ -61,6 +62,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		g.serviceManager <- sm
 
 		if err != nil {
+			g.Log(ErrorLevel, "callService", err)
 			g.addFusingQuantity(service + "/" + action)
 
 			// call timeout don't retry
@@ -79,6 +81,9 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 			time.Sleep(time.Millisecond * time.Duration(r))
 			continue
 		}
+
+		break
 	}
+
 	return code, result, err
 }
