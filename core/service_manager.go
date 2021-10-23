@@ -82,6 +82,12 @@ func (g *Garden) serviceRegister() error {
 	}
 
 	go g.RebootFunc("serviceWatcherReboot", g.serviceWatcher)
+	go func() {
+		for {
+			time.Sleep(15 * time.Second)
+			g.getAllServices()
+		}
+	}()
 
 	return nil
 }
