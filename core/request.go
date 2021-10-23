@@ -22,7 +22,7 @@ type Request struct {
 }
 
 // CallService call the service api
-func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request) (int, string, error) {
+func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request, args, reply interface{}) (int, string, error) {
 	s := g.cfg.Routes[service]
 	if len(s) == 0 {
 		return 404, NotFound, errors.New("service not found")
@@ -32,22 +32,19 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		return 404, NotFound, errors.New("service route not found")
 	}
 
-	// just gateway can request out route
-	if strings.ToLower(route.Type) == "out" && g.serviceType == 0 {
-		return 404, NotFound, errors.New("just gateway can request out type route")
-	}
-	// gateway can't call rpc route
-	if strings.ToLower(route.Type) == "in" && g.serviceType == 1 {
-		return 404, NotFound, errors.New("gateway can't call in type route")
-	}
+	//// just gateway can request out route
+	//if strings.ToLower(route.Type) == "out" && g.serviceType == 0 {
+	//	return 404, NotFound, errors.New("just gateway can request out type route")
+	//}
+	//// gateway can't call rpc route
+	//if strings.ToLower(route.Type) == "in" && g.serviceType == 1 {
+	//	return 404, NotFound, errors.New("gateway can't call in type route")
+	//}
 
-	serviceAddr, nodeIndex, err := g.selectServiceHttpAddr(service)
+	serviceAddr, nodeIndex, err := g.selectService(service)
 	if err != nil {
 		return 404, NotFound, err
 	}
-	var result string
-	var code int
-	url := "http://" + serviceAddr + route.Path
 
 	// service limiter
 	if route.Limiter != "" {
@@ -78,46 +75,15 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		retry = []int{0}
 	}
 
-	for i, r := range retry {
-		sm := serviceOperate{
-			operate:     "incWaiting",
-			serviceName: service,
-			nodeIndex:   nodeIndex,
-		}
-		g.serviceManager <- sm
+	code := 200
+	result := ""
+	err = nil
+	code, result, err = g.retryGo(service, action, retry, nodeIndex, span, route, request, args, reply)
 
-		code, result, err = g.requestService(span, url, request, route.Timeout)
-
-		sm.operate = "decWaiting"
-		g.serviceManager <- sm
-
-		if err != nil {
-			g.addFusingQuantity(service + "/" + action)
-
-			// call timeout don't retry
-			if strings.Contains(err.Error(), "Timeout") {
-				return code, Timeout, err
-			}
-
-			// call 404 don't retry
-			if code == 404 {
-				return code, NotFound, err
-			}
-
-			if i == len(retry)-1 {
-				return code, ServerError, err
-			}
-			time.Sleep(time.Millisecond * time.Duration(r))
-			continue
-		}
-
-		break
-	}
-
-	return code, result, nil
+	return code, result, err
 }
 
-func (g *Garden) requestService(span opentracing.Span, url string, request *Request, timeout int) (int, string, error) {
+func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *Request, timeout int) (int, string, error) {
 	client := &http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}

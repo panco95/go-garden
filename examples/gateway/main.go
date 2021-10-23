@@ -1,26 +1,13 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
+	"github.com/panco95/go-garden/examples/gateway/auth"
+	"github.com/panco95/go-garden/examples/gateway/global"
+	"github.com/panco95/go-garden/examples/gateway/rpc"
 )
 
-var service *core.Garden
-
-type Rpc struct {
-	core.Rpc
-}
-
 func main() {
-	service = core.New()
-	service.Run(service.GatewayRoute, new(Rpc), auth)
-}
-
-// Customize the auth middleware
-func auth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// before logic
-		c.Next()
-		// after logic
-	}
+	global.Service = core.New()
+	global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
 }

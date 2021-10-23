@@ -226,7 +226,7 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 	}
 }
 
-func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
+func (g *Garden) selectService(name string) (string, int, error) {
 	if _, ok := g.Services[name]; !ok {
 		return "", 0, errors.New("service not found")
 	}
@@ -254,10 +254,5 @@ func (g *Garden) selectServiceHttpAddr(name string) (string, int, error) {
 		}
 	}
 
-	serviceHttpAddr, err := g.getServiceHttpAddr(name, nodeIndex)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return serviceHttpAddr, nodeIndex, nil
+	return g.Services[name].Nodes[nodeIndex].Addr, nodeIndex, nil
 }
