@@ -1,25 +1,21 @@
-package core
+package amqp
 
 import (
 	"github.com/streadway/amqp"
 )
 
-type amqpMsg struct {
-	Cmd  string
-	Data MapData
-}
-
-func (g *Garden) connAmqp(address string) error {
-	var err error
-	g.amqp, err = amqp.Dial(address)
+// Conn address format: amqp://guest:guest@192.168.125.186:5672
+func Conn(address string) (*amqp.Connection, error) {
+	conn, err := amqp.Dial(address)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return conn, nil
 }
 
-func (g *Garden) amqpPublish(kind, queue, exchange, routingKey, body string) error {
-	ch, err := g.amqp.Channel()
+// Publish message
+func Publish(conn *amqp.Connection, kind, queue, exchange, routingKey, body string) error {
+	ch, err := conn.Channel()
 	if err != nil {
 		return err
 	}
@@ -43,8 +39,9 @@ func (g *Garden) amqpPublish(kind, queue, exchange, routingKey, body string) err
 	return nil
 }
 
-func (g *Garden) amqpConsumer(kind, queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
-	ch, err := g.amqp.Channel()
+// Consumer listener
+func Consumer(conn *amqp.Connection, kind, queue, exchange, routingKey string, consumeFunc func(msg amqp.Delivery)) error {
+	ch, err := conn.Channel()
 	if err != nil {
 		return err
 	}
@@ -76,8 +73,6 @@ func (g *Garden) amqpConsumer(kind, queue, exchange, routingKey string, consumeF
 			consumeFunc(msg)
 		}
 	}()
-
-	g.Log(InfoLevel, "amqp", queue+" consumer is running")
 
 	forever := make(chan bool)
 	<-forever

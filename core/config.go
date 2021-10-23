@@ -27,7 +27,6 @@ type serviceCfg struct {
 	EtcdKey       string
 	EtcdAddress   []string
 	ZipkinAddress string
-	AmqpAddress   string
 }
 
 type cfg struct {

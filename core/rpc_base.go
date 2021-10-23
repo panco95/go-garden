@@ -6,15 +6,18 @@ import (
 
 type Rpc int
 
-type PingArgs struct {
-	Msg string
+type SyncRoutesArgs struct {
+	Yml       []byte
 }
 
-type PingReply struct {
-	Result string
+type SyncRoutesReply struct {
+	Result bool
 }
 
-func (r *Rpc) Ping(ctx context.Context, args *PingArgs, reply *PingReply) error {
-	reply.Result = "pong"
+func (r *Rpc) SyncRoutes(ctx context.Context, args *SyncRoutesArgs, reply *SyncRoutesReply) error {
+	reply.Result = true
+	if err := writeFile("./configs/routes.yml", args.Yml); err != nil {
+		reply.Result = false
+	}
 	return nil
 }

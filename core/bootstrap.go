@@ -4,15 +4,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Run amqp and gin http server
+// Run  http(gin) && rpc(rpcx)
 func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
 	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
-
-	go func() {
-		if err := g.amqpConsumer("fanout", "sync", "", "", g.syncAmqp); err != nil {
-			g.Log(FatalLevel, "amqpConsumeRun", err)
-		}
-	}()
 
 	go func() {
 		address := g.ServiceIp
@@ -53,10 +47,6 @@ func (g *Garden) bootstrap() {
 		g.Log(FatalLevel, "Etcd", err)
 	}
 
-	if err := g.connAmqp(g.cfg.Service.AmqpAddress); err != nil {
-		g.Log(FatalLevel, "Amqp", err)
-	}
-
 	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort); err != nil {
 		g.Log(FatalLevel, "Init", err)
 	}
@@ -92,8 +82,5 @@ func (g *Garden) checkConfig() {
 	}
 	if g.cfg.Service.ZipkinAddress == "" {
 		g.Log(FatalLevel, "Config", "empty option zipkinAddress")
-	}
-	if g.cfg.Service.AmqpAddress == "" {
-		g.Log(FatalLevel, "Config", "empty option amqpAddress")
 	}
 }
