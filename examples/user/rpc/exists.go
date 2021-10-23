@@ -8,7 +8,7 @@ import (
 
 func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define.ExistsReply) error {
 	reply.Exists = false
-	if _, ok := global.Users.Load(args.Username); !ok {
+	if _, ok := global.Users.Load(args.Username); ok {
 		reply.Exists = true
 	}
 	return nil

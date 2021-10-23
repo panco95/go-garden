@@ -25,16 +25,18 @@ type Request struct {
 func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request, args, reply interface{}) (int, string, error) {
 	s := g.cfg.Routes[service]
 	if len(s) == 0 {
-		return 404, NotFound, errors.New("service not found")
+		return HttpNotFound, InfoNotFound, errors.New("service not found")
 	}
 	route := s[action]
-	if route.Type == "api" && len(route.Path) == 0 {
-		return 404, NotFound, errors.New("service route not found")
+	if (route.Type != "api" && route.Type != "rpc") ||
+		(route.Type == "api" && len(route.Path) == 0) ||
+		(route.Type == "rpc" && (args == nil || reply == nil)) {
+		return HttpNotFound, InfoNotFound, errors.New("service route not found")
 	}
 
 	serviceAddr, nodeIndex, err := g.selectService(service)
 	if err != nil {
-		return 404, NotFound, err
+		return HttpNotFound, InfoNotFound, err
 	}
 
 	// service limiter
@@ -44,7 +46,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 			g.Log(DebugLevel, "Limiter", err)
 		} else if !g.limiterInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service limiter")
-			return 403, ServerLimiter, errors.New("server limiter")
+			return HttpNotFound, InfoServerLimiter, errors.New("server limiter")
 		}
 	}
 
@@ -55,7 +57,7 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 			g.Log(DebugLevel, "Fusing", err)
 		} else if !g.fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service fusing")
-			return 403, ServerFusing, errors.New("server fusing")
+			return HttpNotFound, InfoServerFusing, errors.New("server fusing")
 		}
 	}
 
@@ -84,7 +86,7 @@ func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *
 	s = strings.Trim(s, "&")
 	r, err := http.NewRequest(request.Method, url, strings.NewReader(s))
 	if err != nil {
-		return 500, "", err
+		return HttpFail, "", err
 	}
 
 	// New request request
@@ -104,16 +106,16 @@ func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *
 
 	res, err := client.Do(r)
 	if err != nil {
-		return 500, "", err
+		return HttpFail, "", err
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
+	if res.StatusCode != HttpOk {
 		return res.StatusCode, "", errors.New("http status " + strconv.Itoa(res.StatusCode))
 	}
 	body2, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return 500, "", err
+		return HttpFail, "", err
 	}
-	return 200, string(body2), nil
+	return HttpOk, string(body2), nil
 }

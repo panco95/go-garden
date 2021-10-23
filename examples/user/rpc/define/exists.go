@@ -7,4 +7,3 @@ type ExistsArgs struct {
 type ExistsReply struct {
 	Exists bool
 }
-

@@ -11,20 +11,21 @@ import (
 )
 
 func Order(c *gin.Context) {
-	span, err := core.GetSpan(c)
-	if err != nil {
-		c.JSON(500, nil)
-		global.Service.Log(core.ErrorLevel, "GetSpan", err)
-		return
-	}
-	var Validate struct {
+	var validate struct {
 		Username string `form:"username" binding:"required,max=20,min=1" `
 	}
-	if err := c.ShouldBind(&Validate); err != nil {
-		c.JSON(200, Response(1000, "非法参数", nil))
+	if err := c.ShouldBind(&validate); err != nil {
+		core.Resp(c, core.HttpOk, core.CodeFail, core.InfoInvalidParam, nil)
 		return
 	}
 	username := c.DefaultPostForm("username", "")
+
+	span, err := core.GetSpan(c)
+	if err != nil {
+		core.Resp(c, core.HttpFail, core.CodeFail, core.InfoServerError, nil)
+		global.Service.Log(core.ErrorLevel, "GetSpan", err)
+		return
+	}
 
 	args := user.ExistsArgs{
 		Username: username,
@@ -32,18 +33,18 @@ func Order(c *gin.Context) {
 	reply := user.ExistsReply{}
 	_, _, err = global.Service.CallService(span, "user", "exists", nil, &args, &reply)
 	if err != nil {
+		core.Resp(c, core.HttpFail, core.CodeFail, core.InfoServerError, nil)
 		global.Service.Log(core.ErrorLevel, "rpcCall", err)
-		c.JSON(500, nil)
 		span.SetTag("callRpc", err)
+		return
 	}
-	fmt.Print(reply)
 	if !reply.Exists {
-		c.JSON(500, Response(1000, "下单失败", nil))
+		core.Resp(c, core.HttpOk, core.CodeFail, "下单失败", nil)
 		return
 	}
 
 	orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
-	c.JSON(200, Response(0, "下单成功", core.MapData{
+	core.Resp(c, core.HttpOk, core.CodeSuccess, "下单成功", core.MapData{
 		"orderId": orderId,
-	}))
+	})
 }

@@ -28,8 +28,8 @@ func retryAnalyze(retry string) ([]int, error) {
 }
 
 func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, span opentracing.Span, route routeCfg, request *Request, rpcArgs, rpcReply interface{}) (int, string, error) {
-	code := 200
-	result := "success"
+	code := HttpOk
+	result := InfoSuccess
 	addr := ""
 	var err error
 
@@ -44,7 +44,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		if route.Type == "api" {
 			addr, err = g.getServiceHttpAddr(service, nodeIndex)
 			if err != nil {
-				code = 500
+				code = HttpFail
 				break
 			}
 			addr = "http://" + addr + route.Path
@@ -52,10 +52,14 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		} else if route.Type == "rpc" {
 			addr, err = g.getServiceRpcAddr(service, nodeIndex)
 			if err != nil {
+				code = HttpFail
 				break
 			}
 			action = Capitalize(action)
 			err = g.RpcCall(addr, service, action, rpcArgs, rpcReply)
+			if err != nil {
+				code = HttpFail
+			}
 		}
 
 		sm.operate = "decWaiting"
@@ -67,16 +71,16 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 
 			// call timeout don't retry
 			if strings.Contains(err.Error(), "Timeout") {
-				return code, Timeout, err
+				return code, InfoTimeout, err
 			}
 
 			// call 404 don't retry
-			if code == 404 {
-				return code, NotFound, err
+			if code == HttpNotFound {
+				return code, InfoNotFound, err
 			}
 
 			if i == len(retry)-1 {
-				return code, ServerError, err
+				return code, InfoServerError, err
 			}
 			time.Sleep(time.Millisecond * time.Duration(r))
 			continue

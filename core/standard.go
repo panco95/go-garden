@@ -1,9 +1,11 @@
 package core
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/streadway/amqp"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
+	"net/http"
 	"sync"
 )
 
@@ -29,7 +31,6 @@ type (
 	}
 )
 
-// log level
 const (
 	DebugLevel logLevel = iota - 1
 	InfoLevel
@@ -40,15 +41,31 @@ const (
 	FatalLevel
 )
 
-// error message
 const (
-	ServerError   = "Server Error"
-	ServerLimiter = "Server limit flow"
-	ServerFusing  = "Server fusing flow"
-	NoAuth        = "No access permission"
-	NotFound      = "The resource could not be found"
-	Timeout       = "Request timeout"
+	HttpOk       = http.StatusOK
+	HttpFail     = http.StatusInternalServerError
+	HttpNotFound = http.StatusNotFound
+
+	CodeSuccess      = 0
+	CodeFail         = 10001
+
+	InfoSuccess       = "Success"
+	InfoInvalidParam  = "Invalid param"
+	InfoServerError   = "Server Error"
+	InfoServerLimiter = "Server limit flow"
+	InfoServerFusing  = "Server fusing flow"
+	InfoNoAuth        = "No access permission"
+	InfoNotFound      = "The resource could not be found"
+	InfoTimeout       = "Request timeout"
 )
+
+func Resp(c *gin.Context, code int, dataCode int, msg string, data interface{}) {
+	c.JSON(code, MapData{
+		"code": dataCode,
+		"msg":  msg,
+		"data": data,
+	})
+}
 
 // RebootFunc if func panic
 func (g *Garden) RebootFunc(label string, f func()) {

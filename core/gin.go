@@ -59,10 +59,10 @@ func (g *Garden) GatewayRoute(r *gin.Engine) {
 
 func notFound(r *gin.Engine) {
 	r.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gatewayFail(NotFound))
+		c.JSON(HttpNotFound, gatewayFail(InfoNotFound))
 	})
 	r.NoMethod(func(c *gin.Context) {
-		c.JSON(404, gatewayFail(NotFound))
+		c.JSON(HttpNotFound, gatewayFail(InfoNotFound))
 	})
 }
 
@@ -85,7 +85,7 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.checkCallSafe(c.GetHeader("Call-Key")) {
-			c.JSON(403, gatewayFail(NoAuth))
+			c.JSON(HttpNotFound, gatewayFail(InfoNoAuth))
 			c.Abort()
 		}
 	}

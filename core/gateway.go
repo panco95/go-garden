@@ -9,14 +9,14 @@ func (g *Garden) gateway(c *gin.Context) {
 	// openTracing span
 	span, err := GetSpan(c)
 	if err != nil {
-		c.JSON(500, gatewayFail(ServerError))
+		c.JSON(HttpFail, gatewayFail(InfoServerError))
 		g.Log(ErrorLevel, "GetSpan", err)
 		return
 	}
 	// request struct
 	request, err := getRequest(c)
 	if err != nil {
-		c.JSON(500, gatewayFail(ServerError))
+		c.JSON(HttpFail, gatewayFail(InfoServerError))
 		g.Log(ErrorLevel, "GetRequestContext", err)
 		span.SetTag("GetRequestContext", err)
 		return
@@ -35,7 +35,7 @@ func (g *Garden) gateway(c *gin.Context) {
 	}
 	var result MapData
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
-		c.JSON(500, gatewayFail(ServerError))
+		c.JSON(HttpFail, gatewayFail(InfoServerError))
 		g.Log(ErrorLevel, "ReturnInvalidFormat", err)
 		span.SetTag("ReturnInvalidFormat", err)
 		return
