@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (g *Garden) runGin(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
 	path, _ := os.Getwd()

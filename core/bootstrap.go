@@ -14,7 +14,7 @@ func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin
 			address = "0.0.0.0"
 		}
 		listenAddress := address + ":" + g.cfg.Service.HttpPort
-		if err := g.runGin(listenAddress, route, auth); err != nil {
+		if err := g.ginListen(listenAddress, route, auth); err != nil {
 			g.Log(FatalLevel, "ginRun", err)
 		}
 	}()
@@ -25,7 +25,7 @@ func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin
 			address = "0.0.0.0"
 		}
 		rpcAddress := address + ":" + g.cfg.Service.RpcPort
-		if err := g.RpcListen(g.cfg.Service.ServiceName, "tcp", rpcAddress, rpc, ""); err != nil {
+		if err := g.rpcListen(g.cfg.Service.ServiceName, "tcp", rpcAddress, rpc, ""); err != nil {
 			g.Log(FatalLevel, "rpcRun", err)
 		}
 	}()

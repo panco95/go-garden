@@ -56,7 +56,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 				break
 			}
 			action = capitalize(action)
-			err = g.RpcCall(span, addr, service, action, rpcArgs, rpcReply)
+			err = rpcCall(span, addr, service, action, rpcArgs, rpcReply)
 			if err != nil {
 				code = HttpFail
 			}
