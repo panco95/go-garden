@@ -41,9 +41,11 @@ go-garden是一款面向分布式系统架构的微服务框架
 
 - **分布式链路追踪**
 
+- **统一日志系统**
+
 - **项目脚手架工具**
 
-## 快速开始
+## 快速启动服务代码预览
 
 ```golang
 import "github.com/panco95/go-garden/core"
@@ -52,7 +54,7 @@ var service *core.Garden
 
 func main() {
     service = core.New()
-    service.Run(nil, nil)
+    service.Run(api.Routes, new(rpc.Rpc), auth.Auth)
 }
 ```
 
@@ -62,15 +64,11 @@ func main() {
 ## 教程：代码示例
 访问 [examples](examples) 查看示例教程代码
 
-## 脚手架：快速创建项目工具
-访问 [gctl工具](tools/gctl) 查看使用说明
-
 ## 特别鸣谢
 感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
 
 ## 联系我们
-* 框架交流QQ群：967256601
-* 商业合作联系微信：freePan_1995
+作者微信：freePan_1995
 
 ## 许可证
 Go Garden 包含 Apache 2.0 许可证
