@@ -45,7 +45,7 @@ go-garden是一款面向分布式系统架构的微服务框架
 
 - **项目脚手架工具**
 
-## 快速启动服务代码预览
+## 代码预览
 
 ```golang
 import "github.com/panco95/go-garden/core"
@@ -64,15 +64,6 @@ func main() {
 ## 教程：代码示例
 访问 [examples](examples) 查看示例教程代码
 
-<<<<<<< HEAD
-=======
-## 脚手架：快速创建项目工具
-访问 [gctl工具](tools/gctl) 查看使用说明
-
-## 管理系统：可视化服务管理
-访问 [admin](https://github.com/panco95/go-garden-admin) 查看
-
->>>>>>> 78864a992979af28702166a948d6d32736f3c1cd
 ## 特别鸣谢
 感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
 
