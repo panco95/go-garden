@@ -52,3 +52,10 @@ func (g *Garden) RpcCall(span opentracing.Span, addr, service, method string, ar
 	}
 	return nil
 }
+
+// StartSpanFormRpc start and get opentracing span fro rpc
+func (g *Garden) StartSpanFormRpc(ctx context.Context, operateName string) opentracing.Span {
+	reqMeta := ctx.Value(share.ReqMetaDataKey).(map[string]string)
+	span := StartSpanFromTextMap(reqMeta, operateName)
+	return span
+}

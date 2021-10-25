@@ -20,7 +20,7 @@ type (
 		Services       map[string]*service
 		serviceManager chan serviceOperate
 		syncCache      []byte
-		serviceId      string
+		ServiceId      string
 		ServiceIp      string
 		log            *zap.SugaredLogger
 		etcd           *clientV3.Client

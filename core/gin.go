@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-contrib/pprof"
@@ -71,9 +72,21 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
 		span.SetTag("CallType", "Http")
 		span.SetTag("ServiceIp", g.ServiceIp)
-		span.SetTag("ServiceId", g.serviceId)
+		span.SetTag("ServiceId", g.ServiceId)
 		span.SetTag("Result", "running")
-		requestTracing(c, span)
+
+		request := Request{
+			getMethod(c),
+			getUrl(c),
+			getUrlParam(c),
+			getClientIp(c),
+			getHeaders(c),
+			getBody(c)}
+		s, _ := json.Marshal(&request)
+		span.SetTag("Request", string(s))
+
+		c.Set("span", span)
+		c.Set("request", &request)
 
 		c.Next()
 

@@ -28,7 +28,7 @@ func (g *Garden) sendRoutes() {
 	reply := SyncRoutesReply{}
 	for k1, v1 := range g.Services {
 		for k2, v2 := range v1.Nodes {
-			if strings.Compare(v2.Addr, g.serviceId) == 0 {
+			if strings.Compare(v2.Addr, g.ServiceId) == 0 {
 				continue
 			}
 			addr, err := g.getServiceRpcAddr(k1, k2)

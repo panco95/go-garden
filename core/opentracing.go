@@ -1,14 +1,10 @@
 package core
 
 import (
-	"context"
-	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
-	"github.com/smallnest/rpcx/share"
 	"net/http"
 )
 
@@ -48,29 +44,6 @@ func StartSpanFromTextMap(textMap opentracing.TextMapCarrier, operateName string
 		opentracing.ChildOf(wireContext),
 	)
 	return span
-}
-
-// StartSpanFormRpc start and get opentracing span fro rpc
-func StartSpanFormRpc(ctx context.Context, operateName string) opentracing.Span {
-	reqMeta := ctx.Value(share.ReqMetaDataKey).(map[string]string)
-	span := StartSpanFromTextMap(reqMeta, operateName)
-	span.SetTag("CallType", "Rpc")
-	return span
-}
-
-func requestTracing(c *gin.Context, span opentracing.Span) {
-	request := Request{
-		getMethod(c),
-		getUrl(c),
-		getUrlParam(c),
-		getClientIp(c),
-		getHeaders(c),
-		getBody(c)}
-	s, _ := json.Marshal(&request)
-	span.SetTag("Request", string(s))
-
-	c.Set("span", span)
-	c.Set("request", &request)
 }
 
 func connZipkin(service, addr, address string) (opentracing.Tracer, error) {

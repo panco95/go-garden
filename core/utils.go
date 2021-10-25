@@ -63,7 +63,7 @@ func getOutboundIP() (string, error) {
 	return localAddr.IP.String(), nil
 }
 
-func Capitalize(str string) string {
+func capitalize(str string) string {
 	var upperStr string
 	vv := []rune(str)
 	for i := 0; i < len(vv); i++ {
