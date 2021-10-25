@@ -1,6 +1,8 @@
 package core
 
 import (
+	"context"
+	"encoding/json"
 	"github.com/opentracing/opentracing-go"
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
@@ -44,6 +46,24 @@ func StartSpanFromTextMap(textMap opentracing.TextMapCarrier, operateName string
 		opentracing.ChildOf(wireContext),
 	)
 	return span
+}
+
+// StartRpcTrace rpc method use this method first
+func (g *Garden) StartRpcTrace(ctx context.Context, args interface{}, method string) opentracing.Span {
+	span := StartSpanFormRpc(ctx, method)
+	span.SetTag("CallType", "Rpc")
+	span.SetTag("ServiceIp", g.ServiceIp)
+	span.SetTag("ServiceId", g.ServiceId)
+	span.SetTag("Status", "unfinished")
+	s, _ := json.Marshal(&args)
+	span.SetTag("Args", string(s))
+	return span
+}
+
+// FinishRpcTrace rpc method use this method last
+func (g *Garden) FinishRpcTrace(span opentracing.Span) {
+	span.SetTag("Status", "finished")
+	span.Finish()
 }
 
 func connZipkin(service, addr, address string) (opentracing.Tracer, error) {

@@ -73,7 +73,7 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 		span.SetTag("CallType", "Http")
 		span.SetTag("ServiceIp", g.ServiceIp)
 		span.SetTag("ServiceId", g.ServiceId)
-		span.SetTag("Result", "running")
+		span.SetTag("Status", "unfinished")
 
 		request := Request{
 			getMethod(c),
@@ -90,7 +90,7 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 
 		c.Next()
 
-		span.SetTag("Result", "success")
+		span.SetTag("Status", "finished")
 		span.Finish()
 	}
 }

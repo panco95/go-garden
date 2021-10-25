@@ -3,18 +3,18 @@ routes:
     login:
       type: http
       path: /login
-      limiter: 5/1000
-      fusing: 5/1000
+      limiter: 5/100
+      fusing: 5/100
       timeout: 2000
     exists:
       type: rpc
-      limiter: 5/1000
-      fusing: 5/1000
+      limiter: 5/100
+      fusing: 5/100
       timeout: 2000
   pay:
     order:
       type: http
       path: /order
-      limiter: 5/1000
-      fusing: 5/1000
+      limiter: 5/100
+      fusing: 5/100
       timeout: 2000

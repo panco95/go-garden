@@ -2,18 +2,18 @@ package rpc
 
 import (
 	"context"
-	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/examples/user2/global"
 	"github.com/panco95/go-garden/examples/user2/rpc/define"
 )
 
 func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define.ExistsReply) error {
-	span := core.StartSpanFormRpc(ctx, "exists")
-	span.Finish()
+	span := global.Service.StartRpcTrace(ctx, args, "Exists")
 
 	reply.Exists = false
 	if _, ok := global.Users.Load(args.Username); ok {
 		reply.Exists = true
 	}
+
+	global.Service.FinishRpcTrace(span)
 	return nil
 }
