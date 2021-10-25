@@ -68,7 +68,8 @@ func notFound(r *gin.Engine) {
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		span := startSpanFromHeader(c.Request.Header, c.Request.RequestURI)
+		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
+		span.SetTag("CallType", "Http")
 		span.SetTag("ServiceIp", g.ServiceIp)
 		span.SetTag("ServiceId", g.serviceId)
 		span.SetTag("Result", "running")

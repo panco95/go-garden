@@ -41,7 +41,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		}
 		g.serviceManager <- sm
 
-		if route.Type == "api" {
+		if route.Type == "http" {
 			addr, err = g.getServiceHttpAddr(service, nodeIndex)
 			if err != nil {
 				code = HttpFail
@@ -56,7 +56,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 				break
 			}
 			action = Capitalize(action)
-			err = g.RpcCall(addr, service, action, rpcArgs, rpcReply)
+			err = g.RpcCall(span, addr, service, action, rpcArgs, rpcReply)
 			if err != nil {
 				code = HttpFail
 			}

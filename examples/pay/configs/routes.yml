@@ -1,7 +1,7 @@
 routes:
   user:
     login:
-      type: api
+      type: http
       path: /login
       limiter: 5/1000
       fusing: 5/1000
@@ -13,7 +13,7 @@ routes:
       timeout: 2000
   pay:
     order:
-      type: api
+      type: http
       path: /order
       limiter: 5/1000
       fusing: 5/1000

@@ -28,7 +28,7 @@ func Order(c *gin.Context) {
 	}
 
 	args := user.ExistsArgs{
-		Username: username,
+ 		Username: username,
 	}
 	reply := user.ExistsReply{}
 	_, _, err = global.Service.CallService(span, "user", "exists", nil, &args, &reply)

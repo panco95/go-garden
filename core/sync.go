@@ -36,7 +36,7 @@ func (g *Garden) sendRoutes() {
 				g.Log(ErrorLevel, "getServiceRpcAddr", err)
 				continue
 			}
-			if err := g.RpcCall(addr, k1, "SyncRoutes", &args, &reply); err != nil {
+			if err := g.RpcCall(nil, addr, k1, "SyncRoutes", &args, &reply); err != nil {
 				g.Log(ErrorLevel, "SyncRoutes", err)
 				return
 			}

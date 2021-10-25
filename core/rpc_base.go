@@ -7,7 +7,7 @@ import (
 type Rpc int
 
 type SyncRoutesArgs struct {
-	Yml       []byte
+	Yml []byte
 }
 
 type SyncRoutesReply struct {

@@ -28,8 +28,8 @@ func (g *Garden) CallService(span opentracing.Span, service, action string, requ
 		return HttpNotFound, InfoNotFound, errors.New("service not found")
 	}
 	route := s[action]
-	if (route.Type != "api" && route.Type != "rpc") ||
-		(route.Type == "api" && len(route.Path) == 0) ||
+	if (route.Type != "http" && route.Type != "rpc") ||
+		(route.Type == "http" && len(route.Path) == 0) ||
 		(route.Type == "rpc" && (args == nil || reply == nil)) {
 		return HttpNotFound, InfoNotFound, errors.New("service route not found")
 	}
