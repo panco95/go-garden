@@ -2,7 +2,7 @@
 
 ## 安装
 
-`go install github.com/panco95/go-garden/tools/garden@latest`
+`go install github.com/panco95/go-garden/tools/garden@v1.1.3`
 
 
 ## 创建项目

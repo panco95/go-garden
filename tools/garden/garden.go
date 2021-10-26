@@ -131,7 +131,7 @@ func gatewayAuth() string {
 }
 
 func configsYml(serviceName string) string {
-	return strings.Replace("service:\n  debug: true\n  <serviceName>: <>\n  httpOut: true\n  httpPort: 8080\n  rpcOut: false\n  rpcPort: 9000\n  callKey: garden\n  callRetry: 20/30/50\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n  zipkinAddress: http:/127.0.0.1:9411/api/v2/spans\n\nconfig:\n", "<>", serviceName, 999)
+	return strings.Replace("service:\n  debug: true\n  serviceName: <>\n  httpOut: true\n  httpPort: 8080\n  rpcOut: false\n  rpcPort: 9000\n  callKey: garden\n  callRetry: 20/30/50\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n  zipkinAddress: http:/127.0.0.1:9411/api/v2/spans\n\nconfig:\n", "<>", serviceName, 999)
 }
 
 func serviceRoutesYml(serviceName string) string {
@@ -139,7 +139,7 @@ func serviceRoutesYml(serviceName string) string {
 }
 
 func gatewayRoutesYml() string {
-	return "routes:\n r xxx:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
+	return "routes:\n r <xxx>:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
 }
 
 func globalGo() string {

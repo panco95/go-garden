@@ -41,17 +41,24 @@ go-garden是一款面向分布式系统架构的分布式服务框架
 
 - **脚手架工具**
 
-## 代码预览
 
-```golang
-import "github.com/panco95/go-garden/core"
+## 快速开始
 
-var service *core.Garden
+```
+// 安装项目脚手架
+go install github.com/panco95/go-garden/tools/garden@v1.1.3
 
-func main() {
-    service = core.New()
-    service.Run(api.Routes, new(rpc.Rpc), auth.Auth)
-}
+// 创建项目
+garden new my-gateway gateway
+garden new my-service service
+
+// 修改服务配置和路由配置
+......
+
+// 启动网关
+go run my-gateway/main.go
+// 启动服务
+go run my-service/main.go
 ```
 
 ## 教程：基于Go Garden快速构建微服务
