@@ -25,6 +25,9 @@ garden new my-gateway gateway
 garden new my-service service
 ```
 
+### 特别注意
+生成代码后需要修改配置文件方可启动服务，请查阅框架相关文档
+
 ### 使用答疑
 
 脚手架创建项目后会自动安装依赖包`mod`，如果由于网络原因失败，请自行重试安装依赖包`mod`：
