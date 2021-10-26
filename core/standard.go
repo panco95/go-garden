@@ -44,9 +44,6 @@ const (
 	HttpFail     = http.StatusInternalServerError
 	HttpNotFound = http.StatusNotFound
 
-	CodeSuccess      = 0
-	CodeFail         = 10001
-
 	InfoSuccess       = "Success"
 	InfoInvalidParam  = "Invalid param"
 	InfoServerError   = "Server Error"

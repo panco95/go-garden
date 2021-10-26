@@ -11,10 +11,10 @@ func Login(c *gin.Context) {
 		Username string `form:"username" binding:"required,max=20,min=1"`
 	}
 	if err := c.ShouldBind(&validate); err != nil {
-		core.Resp(c, core.HttpOk, core.CodeFail, core.InfoInvalidParam, nil)
+		core.Resp(c, core.HttpOk, -1, core.InfoInvalidParam, nil)
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 	global.Users.Store(username, 1)
-	core.Resp(c, core.HttpOk, core.CodeSuccess, "登陆成功", nil)
+	core.Resp(c, core.HttpOk, 0, "登陆成功", nil)
 }
