@@ -57,6 +57,9 @@ func main() {
 ## 教程：基于Go Garden快速构建微服务
 访问 [基于Go Garden快速构建微服务](docs/tutorial.md) 跟着一步一步学习如何使用go-garden
 
+## 脚手架：快速创建按项目
+访问 [tools](tools/garden) 查看示例教程代码
+
 ## 教程：代码示例
 访问 [examples](examples) 查看示例教程代码
 
