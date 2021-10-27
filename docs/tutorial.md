@@ -324,7 +324,7 @@ func Order(c *gin.Context) {
 	}
 	reply := user.ExistsReply{}
 	// 调用rpc服务
-	_, _, err = global.Service.CallService(span, "my-user", "exists", nil, &args, &reply)
+	err = global.Service.CallRpc(span, "my-user", "exists", &args, &reply)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
 		global.Service.Log(core.ErrorLevel, "rpcCall", err)

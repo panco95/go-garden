@@ -21,8 +21,7 @@ type Request struct {
 	Body     MapData `json:"body"`
 }
 
-// CallService call the service api
-func (g *Garden) CallService(span opentracing.Span, service, action string, request *Request, args, reply interface{}) (int, string, error) {
+func (g *Garden) callService(span opentracing.Span, service, action string, request *Request, args, reply interface{}) (int, string, error) {
 	s := g.cfg.Routes[service]
 	if len(s) == 0 {
 		return HttpNotFound, InfoNotFound, errors.New("service not found")
@@ -118,4 +117,13 @@ func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *
 		return HttpFail, "", err
 	}
 	return HttpOk, string(body2), nil
+}
+
+// CallRpc call service rpc method
+func (g *Garden) CallRpc(span opentracing.Span, service, action string, args, reply interface{}) error {
+	_, _, err := g.callService(span, service, action, nil, &args, &reply)
+	if err != nil {
+		return err
+	}
+	return nil
 }

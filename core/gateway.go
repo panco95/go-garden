@@ -26,7 +26,7 @@ func (g *Garden) gateway(c *gin.Context) {
 	action := c.Param("action")
 
 	// request service
-	code, data, err := g.CallService(span, service, action, request, nil, nil)
+	code, data, err := g.callService(span, service, action, request, nil, nil)
 	if err != nil {
 		c.JSON(code, gatewayFail(data))
 		g.Log(ErrorLevel, "CallService", err)

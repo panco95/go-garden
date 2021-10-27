@@ -31,7 +31,7 @@ func Order(c *gin.Context) {
 		Username: username,
 	}
 	reply := user.ExistsReply{}
-	_, _, err = global.Service.CallService(span, "user", "exists", nil, &args, &reply)
+	err = global.Service.CallRpc(span, "user", "exists", &args, &reply)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
 		global.Service.Log(core.ErrorLevel, "rpcCall", err)
