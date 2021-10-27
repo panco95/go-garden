@@ -13,3 +13,10 @@ service:
   zipkinAddress: http://192.168.125.186:9411/api/v2/spans
 
 config:
+  mysql:
+    addr: "127.0.0.1"
+    user: "root"
+    pass: "123456"
+    db:   "test"
+  number: 32
+  str: "hello"

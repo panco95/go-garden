@@ -18,3 +18,9 @@ routes:
       limiter: 5/100
       fusing: 5/100
       timeout: 2000
+    test:
+      type: http
+      path: /test
+      limiter: 1/1
+      fusing: 1/1
+      timeout: 2000

@@ -8,4 +8,5 @@ import (
 func Routes(r *gin.Engine) {
 	r.Use(global.Service.CheckCallSafeMiddleware())
 	r.POST("order", Order)
+	r.POST("test", Test)
 }
