@@ -46,7 +46,7 @@ go-garden是一款面向分布式系统架构的分布式服务框架
 
 ```
 // 安装项目脚手架
-go install github.com/panco95/go-garden/tools/garden@v1.1.3
+go install github.com/panco95/go-garden/tools/garden@v1.1.4
 
 // 创建项目
 garden new my-gateway gateway
