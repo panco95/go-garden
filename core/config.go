@@ -95,15 +95,6 @@ func (g *Garden) GetConfigValueString(key string) string {
 	return ""
 }
 
-// GetConfigValueStringSlice in config.yml: configs key
-func (g *Garden) GetConfigValueStringSlice(key string) []string {
-	config := g.cfg.Config
-	if val, ok := config[strings.ToLower(key)]; ok {
-		return val.([]string)
-	}
-	return []string{}
-}
-
 // GetConfigValueInt in config.yml: configs key
 func (g *Garden) GetConfigValueInt(key string) int {
 	config := g.cfg.Config
@@ -111,13 +102,4 @@ func (g *Garden) GetConfigValueInt(key string) int {
 		return val.(int)
 	}
 	return 0
-}
-
-// GetConfigValueIntSlice in config.yml: configs key
-func (g *Garden) GetConfigValueIntSlice(key string) []int {
-	config := g.cfg.Config
-	if val, ok := config[strings.ToLower(key)]; ok {
-		return val.([]int)
-	}
-	return []int{}
 }
