@@ -3,9 +3,12 @@
 > 提示：go-garden的http服务基于Gin开发，在教程中会涉及到Gin框架的一些内容，例如请求上下文、中间件等，如开发者不了解Gin，请先阅读Gin相关文档！
 
 我们在本教程中会创建一个微服务，包括如下服务：
+
 1、gateway服务，俗称api网关，接收所有接口的客户端请求，然后转发给其他业务服务；
+
 2、user服务，提供login接口保存username，提供exists rpc方法供其他服务查询username用户是否存在；
-3、pau服务，提供order接口下单，参数为用户名username，在接口中会rpc调用user的exists方法查询username是否存在，存在下单成功，不存在下单失败。
+
+3、pay服务，提供order接口下单，参数为用户名username，在接口中会rpc调用user的exists方法查询username是否存在，存在下单成功，不存在下单失败。
 
 访问 [examples](../examples) 查看当前教程完整代码
 
@@ -116,6 +119,7 @@ routes:
 
 ### 五. 编写user服务api接口
 上面我们定义了user服务的login接口，现在我们来实现它；
+
 创建全局变量Users（简单代替mysql数据库存储），用于保存用户信息，`global/global.go`：
 ```go
 package global
@@ -167,12 +171,18 @@ func Routes(r *gin.Engine) {
 	r.POST("login", Login)
 }
 ```
-#### 六：访问api接口
+### 六：访问api接口
+
 实现了user服务的login接口后，现在通过客户端来请求它；
+
 重启user服务，打开`postman`或其他接口测试工具；
+
 请求地址格式：http://[gateway地址]:[gateway http端口]/api/[服务名称]/[服务接口]/[接口path] ；
+
 所以login接口完整的请求地址为：`http://127.0.0.1:8080/api/my-user/login`；
+
 修改请求类型为post，增加请求参数username，发出请求：
+
 ```json
 {
     "code": 0,
@@ -182,6 +192,7 @@ func Routes(r *gin.Engine) {
 }
 ```
 gateway服务会通过请求路径，把对应的请求转发给my-user服务，然后my-user返回响应给gateway，gateway接收到my-user的响应内容，返回给客户端；
+
 gateway会把收到的请求结果增加一个status字段，如果请求my-user服务失败会返回false，成功既true。
 
 ### 七：编写user服务rpc方法
@@ -372,6 +383,7 @@ func Routes(r *gin.Engine) {
 `client->gateway->pay->user`
 
 如果接口突然响应异常，我们如何定位报错位置呢？
+
 第一个方法可以日志排查，在所有调用链的服务的runtime日志找出错误，逐一排查，这种方法在只有2-3个服务的时候勉强行得通，但是也非常的低效；
 
 go-garden内部集成了分布式链路追踪系统，调用链每一层我们都可以记录信息，然后在非常清晰的ui界面上查看，我们访问zipkin所在服务器网址：`http://127.0.0.1:9411/zipkin/`，可以查询到刚刚的请求链路追踪记录，如下图所示：
@@ -379,6 +391,7 @@ go-garden内部集成了分布式链路追踪系统，调用链每一层我们�
 
 
 ### 十. 自定义配置
+
 我们在业务中可能会连接数据库、缓存，这些需要自定义配置项，`configs/config.yml`：
 ```yml
 service:
@@ -394,13 +407,15 @@ config:
 ```
 
 业务中使用下面方法获取服务自定义配置项：
-获取map类型配置：GetConfigValueMap("mysql")
-获取int类型配置：GetConfigValueInt("number")
-获取string类型配置：GetConfigValueString("str")
+
+* 获取map类型配置：GetConfigValueMap("mysql")
+* 获取int类型配置：GetConfigValueInt("number")
+* 获取string类型配置：GetConfigValueString("str")
 
 ### 十一、负载均衡
 上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群；
 复制一份user服务代码修改监听端口，启动；
+
 现在user服务就是两个节点在运行，这时候我们调用user服务接口或者rpc方法的时候，go-garden内部会通过最小连接数以及轮询策略来选择服务器节点进行请求，开发者无需关心内部逻辑。
 
 ### 十二. 服务限流
