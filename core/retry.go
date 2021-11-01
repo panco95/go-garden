@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"github.com/opentracing/opentracing-go"
 	"strconv"
 	"strings"
@@ -56,7 +57,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 				break
 			}
 			action = capitalize(action)
-			err = rpcCall(span, addr, service, action, rpcArgs, rpcReply)
+			err = rpcCall(span, addr, service, action, rpcArgs, rpcReply, route.Timeout)
 			if err != nil {
 				code = HttpFail
 			}
@@ -70,7 +71,8 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 			g.addFusingQuantity(service + "/" + action)
 
 			// call timeout don't retry
-			if strings.Contains(err.Error(), "Timeout") {
+			if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
+				err = errors.New(fmt.Sprintf("Call %s %s %s timeout", route.Type, service, action))
 				return code, InfoTimeout, err
 			}
 
