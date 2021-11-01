@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -38,6 +39,10 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	}))
 	server.Use(gin.Recovery())
 	server.Use(g.openTracingMiddleware())
+
+	if g.cfg.Service.AllowCors {
+		server.Use(g.cors)
+	}
 	if auth != nil {
 		server.Use(auth())
 	}
@@ -65,6 +70,18 @@ func notFound(r *gin.Engine) {
 	r.NoMethod(func(c *gin.Context) {
 		c.JSON(HttpNotFound, gatewayFail(InfoNotFound))
 	})
+}
+
+func (g *Garden)cors(ctx *gin.Context) {
+	method := ctx.Request.Method
+	ctx.Header("Access-Control-Allow-Origin", "*")
+	ctx.Header("Access-Control-Allow-Headers", "*")
+	ctx.Header("Access-Control-Allow-Methods", "*")
+	ctx.Header("Access-Control-Expose-Headers", "*")
+	ctx.Header("Access-Control-Allow-Credentials", "true")
+	if method == "OPTIONS" {
+		ctx.AbortWithStatus(http.StatusNoContent)
+	}
 }
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {

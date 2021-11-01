@@ -3,6 +3,7 @@ service:
   serviceName: user
   httpOut: false
   httpPort: 8081
+  allowCors: false
   rpcOut: false
   rpcPort: 9001
   callKey: garden

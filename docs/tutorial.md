@@ -37,6 +37,7 @@ garden new my-gateway gateway
 | service->serviceName   | 服务名称                                                         |
 | service->httpOut       | http端口是否允许外网访问：true允许，false不允许                     |
 | service->httpPort      | http监听端口                                                     |
+| service->allowCors      | http是否允许跨域                                                    |
 | service->rpcOut        | rpc端口是否允许外网访问：true允许，false不允许                     |
 | service->rpcPort       | rpc监听端口                                                     |
 | service->callKey       | 服务之间调用的密钥，请保持每个服务一致                              |

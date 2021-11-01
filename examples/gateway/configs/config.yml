@@ -3,6 +3,7 @@ service:
   serviceName: gateway
   httpOut: true
   httpPort: 8080
+  allowCors: true
   rpcOut: false
   rpcPort: 9000
   callKey: garden

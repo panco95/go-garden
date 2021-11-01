@@ -3,6 +3,7 @@ service:
   serviceName: pay
   httpOut: false
   httpPort: 8082
+  allowCors: false
   rpcOut: false
   rpcPort: 9002
   callKey: garden
