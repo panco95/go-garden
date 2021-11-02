@@ -45,7 +45,7 @@ garden new my-gateway gateway
 | service->etcdKey       | Etcd关联密钥，一套服务使用同一个key才能实现服务注册发现              |
 | service->etcdAddress   | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写         |
 | service->zipkinAddress | zipkin地址，格式：http://192.168.125.185:9411/api/v2/spans       |
-| config->*              | 自定义配置项，后面有说明                                          |
+| config->*              | 自定义配置项，框架默认定义好redis和数据库配置                                           |
 
 修改好对应的配置后，启动服务：
 
@@ -393,49 +393,150 @@ go-garden内部集成了分布式链路追踪系统，调用链每一层我们�
 
 ### 十. 自定义配置
 
-我们在业务中可能会连接数据库、缓存，这些需要自定义配置项，`configs/config.yml`：
+我们在业务中会自定义一些配置，如框架集成的数据库、redis，开发者可在此处自行添加配置项，`configs/config.yml`：
 ```yml
 service:
 
 config:
-  mysql:
-    addr: "127.0.0.1"
-    user: "root"
-    pass: "123456"
-    db:   "test"
-  number: 32
-  str: "hello"
+  mysql_open: false
+  mysql_addr: "127.0.0.1:3306"
+  mysql_user: "root"
+  mysql_pass: ""
+  mysql_dbname: "test"
+  mysql_charset: "utf8mb4"
+  mysql_parseTime: true
+  mysql_connPool: 10
+
+  redis_open: false
+  redis_addr: "127.0.0.1:6379"
+  redis_pass: ""
+  redis_db: 0
+
+  a: 1.13
+  b: 1
+  c: "hello"
+  d: true
+  e:
+    e1: "aa"
+    e2: 1
 ```
 
 业务中使用下面方法获取服务自定义配置项：
 
-* 获取map类型配置：GetConfigValueMap("mysql")
-* 获取int类型配置：GetConfigValueInt("number")
-* 获取string类型配置：GetConfigValueString("str")
+* 获取map类型配置：GetConfigValueMap("e")
+* 获取int类型配置：GetConfigValueInt("b")
+* 获取float32类型配置：GetConfigValueFloat32("a")
+* 获取float64类型配置：GetConfigValueFloat64("a")
+* 获取string类型配置：GetConfigValueString("c")
+* 获取bool类型配置：GetConfigValueString("d")
+* 获取interface类型配置：GetConfigValueInterface("a").(float64)
 
-### 十一、负载均衡
+### 十一、数据库
+
+框架继承了数据库组件gorm，如需使用请在configs.yml增加如下配置：
+```yml
+service:
+  ---
+
+config:
+  mysql_open: true              #是否使用mysql
+  mysql_addr: "127.0.0.1:3306"  #mysql连接地址
+  mysql_user: "root"            #数据库用户名
+  mysql_pass: ""                #数据库密码
+  mysql_dbname: "test"          #数据库名称
+  mysql_charset: "utf8mb4"      #编码格式
+  mysql_parseTime: true         #是否解析时间格式(参考gorm文档)
+  mysql_connPool: 10            #连接池数量
+```
+
+如何使用：
+```go
+var result map[string]interface{}
+global.Service.Db.Raw("SELECT id, name, age FROM users WHERE name = ?", 3).Scan(&result)
+global.Service.Log(core.InfoLevel, "result", result)
+```
+具体使用请参考gorm文档：https://gorm.io
+
+
+### 十二、Redis缓存
+
+框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置：
+```yml
+service:
+  ---
+
+config:
+  redis_open: false              #是否使用redis
+  redis_addr: "127.0.0.1:6379"   #redis连接地址
+  redis_pass: ""                 #redis密码
+  redis_db: 0                    #数据库序号
+```
+
+如何使用：
+```go
+err := global.Service.Redis.Set(context.Background(), "key", "value", 0).Err()
+if err != nil {
+global.Service.Log(core.InfoLevel, "redis", err)
+}
+```
+具体使用请参考goredis文档：https://github.com/go-redis/redis
+
+### 十三、消息队列
+
+框架集成rabbitmq（amqp协议都可）消息队列，如何使用：
+
+```go
+import (
+    "github.com/panco95/go-garden/drives/amqp"
+    "amqp2 "github.com/streadway/amqp"
+)
+
+// 连接
+client, err := amqp.Conn("amqp://guest:guest@192.168.125.186:5672")
+if err != nil {
+    global.Service.Log(core.FatalLevel, "rabbitmq", err)
+}
+// 消费者
+go func() {
+    err := amqp.Consumer(client, "fanout", "test", "test", "test", func(msg amqp2.Delivery) {
+        global.Service.Log(core.InfoLevel, "msg", msg.Body)
+    }) 
+	if err != nil {
+        global.Service.Log(core.FatalLevel, "rabbitmq", err)
+    }
+}()
+// 生产者
+err = amqp.Publish(client, "fanout", "test", "test", "test", "test")
+if err != nil {
+    global.Service.Log(core.FatalLevel, "rabbitmq", err)
+}
+```
+
+试着学习mysql与redis的自定义配置项，在你的项目里把rabbitmq连接地址从配置文件获取吧！
+
+### 十四、负载均衡
 上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群；
 复制一份user服务代码修改监听端口，启动；
 
 现在user服务就是两个节点在运行，这时候我们调用user服务接口或者rpc方法的时候，go-garden内部会通过最小连接数以及轮询策略来选择服务器节点进行请求，开发者无需关心内部逻辑。
 
-### 十二. 服务限流
+### 十五. 服务限流
 
 在`config.yml`中我们可以给每个服务的每个接口配置单独的限流规则`limiter`参数，`5/1000`表示每5秒钟之内最多处理1000个请求，超出数量不会请求下游服务。
 
-### 十三. 服务熔断
+### 十六. 服务熔断
 
 在`config.yml`中我们可以给每个服务的每个接口配置单独的熔断规则`fusing`参数，`5/100`表示接口每5秒钟之内下游服务器返回了100次错误响应后，直接会对下游服务熔断，在当前5秒内不请求下游服务，直接会返回错误响应。
 
-### 十四. 服务重试
+### 十七. 服务重试
 
 在调用下游服务时，下游服务可能会返回错误，go-garden支持重试机制，在config.yml中配置`callRetry`参数，格式 `timer1/timer2/timer3/...`，可不限制调整，重试次数使用`/`分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整重试策略配置。
 
-### 十五. 超时控制
+### 十八. 超时控制
 
 在调用下游服务时，下游服务可能会超时，go-garden支持超时控制防止超时问题加重导致服务雪崩，在routes.yml中给每个路由配置`timeout`参数，单位为毫秒ms，当下游服务接口请求超时将会熔断计数+1且不进行服务重试。
 
-### 十六. 日志
+### 十九. 日志
 
 提示：配置文件的`Debug`参数为`true`时，代表调试模式开启，任何日志输出都会同时打印在屏幕上和日志文件中，如果改为`false`，不会在屏幕打印，只会存储在日志文件中
 
@@ -444,7 +545,13 @@ config:
 go-garden封装了规范的日志函数，用如下代码进行调用：
 
 ```golang
-    Log(core.ErrorLevel, "JsonUnmarshall", err)
+    global.Service.Log(core.DebugLevel, "error", err)
+    global.Service.Log(core.InfoLevel, "test", "info")
+    global.Service.Log(core.WarnLevel, "test", "info")
+    global.Service.Log(core.ErrorLevel, "test", "info")
+    global.Service.Log(core.DPanicLevel, "test", "info")
+    global.Service.Log(core.PanicLevel, "test", "info")
+    global.Service.Log(core.FatalLevel, "test", "info")
 ```
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
