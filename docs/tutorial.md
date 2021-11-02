@@ -433,7 +433,7 @@ config:
 
 ### 十一、数据库
 
-框架继承了数据库组件gorm，如需使用请在configs.yml增加如下配置：
+框架集成了数据库组件gorm，如需使用请在configs.yml增加如下配置：
 ```yml
 service:
   ---
@@ -476,7 +476,7 @@ config:
 ```go
 err := global.Service.Redis.Set(context.Background(), "key", "value", 0).Err()
 if err != nil {
-global.Service.Log(core.InfoLevel, "redis", err)
+    global.Service.Log(core.InfoLevel, "redis", err)
 }
 ```
 具体使用请参考goredis文档：https://github.com/go-redis/redis
