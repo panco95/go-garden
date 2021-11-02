@@ -393,7 +393,7 @@ go-garden内部集成了分布式链路追踪系统，调用链每一层我们�
 
 ### 十. 自定义配置
 
-我们在业务中会自定义一些配置，如框架集成的数据库、redis，开发者可在此处自行添加配置项，`configs/config.yml`：
+我们在业务中会自定义一些配置，如框架集成的数据库、redis，您自己需要封装memcached、elasticsearch等等，可在此处自行添加配置项，`configs/config.yml`：
 ```yml
 service:
 
@@ -433,7 +433,7 @@ config:
 
 ### 十一、数据库
 
-框架集成了数据库组件gorm，如需使用请在configs.yml增加如下配置：
+框架集成了数据库组件gorm，如需使用请在configs.yml增加如下配置，不使用要把mysql_open配置改为false：
 ```yml
 service:
   ---
@@ -457,16 +457,24 @@ global.Service.Log(core.InfoLevel, "result", result)
 ```
 具体使用请参考gorm文档：https://gorm.io
 
+提示：如果有多数据库需求或其他数据库需求或不想使用gorm，可以在global包添加全局变量，自己封装您需要的组件，其他类型的组件同理；建议在如下代码块进行初始化连接：
+```go
+global.Service = core.New()
+// ...
+// 在这里初始化
+// ...
+global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
+```
 
 ### 十二、Redis缓存
 
-框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置：
+框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置，不使用要把redis_open配置改为false：
 ```yml
 service:
   ---
 
 config:
-  redis_open: false              #是否使用redis
+  redis_open: true              #是否使用redis
   redis_addr: "127.0.0.1:6379"   #redis连接地址
   redis_pass: ""                 #redis密码
   redis_db: 0                    #数据库序号
@@ -480,6 +488,15 @@ if err != nil {
 }
 ```
 具体使用请参考goredis文档：https://github.com/go-redis/redis
+
+提示：如果有其他缓存中间件需求或不愿意使用框架集成的goredis，可以在global包添加全局变量，自己封装您需要的组件，其他类型的组件同理；建议在如下代码块进行初始化连接：
+```go
+global.Service = core.New()
+// ...
+// 在这里初始化
+// ...
+global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
+```
 
 ### 十三、消息队列
 
@@ -514,6 +531,8 @@ if err != nil {
 
 试着学习mysql与redis的自定义配置项，在你的项目里把rabbitmq连接地址从配置文件获取吧！
 
+提示：其他消息队列组件请自行封装，可参考框架drives/amqp源码！
+
 ### 十四、负载均衡
 上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群；
 复制一份user服务代码修改监听端口，启动；
@@ -544,14 +563,14 @@ if err != nil {
 
 go-garden封装了规范的日志函数，用如下代码进行调用：
 
-```golang
-    global.Service.Log(core.DebugLevel, "error", err)
-    global.Service.Log(core.InfoLevel, "test", "info")
-    global.Service.Log(core.WarnLevel, "test", "info")
-    global.Service.Log(core.ErrorLevel, "test", "info")
-    global.Service.Log(core.DPanicLevel, "test", "info")
-    global.Service.Log(core.PanicLevel, "test", "info")
-    global.Service.Log(core.FatalLevel, "test", "info")
+```go
+global.Service.Log(core.DebugLevel, "error", err)
+global.Service.Log(core.InfoLevel, "test", "info")
+global.Service.Log(core.WarnLevel, "test", "info")
+global.Service.Log(core.ErrorLevel, "test", "info")
+global.Service.Log(core.DPanicLevel, "test", "info")
+global.Service.Log(core.PanicLevel, "test", "info")
+global.Service.Log(core.FatalLevel, "test", "info")
 ```
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
