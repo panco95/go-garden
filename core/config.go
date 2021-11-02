@@ -69,8 +69,8 @@ func (g *Garden) unmarshalConfig() {
 	}
 }
 
-// GetConfigValue in config.yml: configs key
-func (g *Garden) GetConfigValue(key string) interface{} {
+// GetConfigValueInterface in config.yml: configs key
+func (g *Garden) GetConfigValueInterface(key string) interface{} {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
 		return val
@@ -103,4 +103,31 @@ func (g *Garden) GetConfigValueInt(key string) int {
 		return val.(int)
 	}
 	return 0
+}
+
+// GetConfigValueFloat32 in config.yml: configs key
+func (g *Garden) GetConfigValueFloat32(key string) float32 {
+	config := g.cfg.Config
+	if val, ok := config[strings.ToLower(key)]; ok {
+		return val.(float32)
+	}
+	return 0
+}
+
+// GetConfigValueFloat64 in config.yml: configs key
+func (g *Garden) GetConfigValueFloat64(key string) float64 {
+	config := g.cfg.Config
+	if val, ok := config[strings.ToLower(key)]; ok {
+		return val.(float64)
+	}
+	return 0
+}
+
+// GetConfigValueBool in config.yml: configs key
+func (g *Garden) GetConfigValueBool(key string) bool {
+	config := g.cfg.Config
+	if val, ok := config[strings.ToLower(key)]; ok {
+		return val.(bool)
+	}
+	return false
 }

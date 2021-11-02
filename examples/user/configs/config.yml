@@ -14,3 +14,17 @@ service:
   zipkinAddress: http://192.168.125.186:9411/api/v2/spans
 
 config:
+  mysql_open: true
+  mysql_addr: "127.0.0.1:3306"
+  mysql_user: "root"
+  mysql_pass: "0825"
+  mysql_dbname: "test"
+  mysql_charset: "utf8mb4"
+  mysql_parseTime: true
+  mysql_connPool: 10
+
+  redis_open: true
+  redis_addr: "127.0.0.1:6379"
+  redis_pass: "0825"
+  redis_db: 0
+

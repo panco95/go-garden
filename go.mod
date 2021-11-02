@@ -39,7 +39,7 @@ require (
 	github.com/smallnest/quick v0.0.0-20210406061658-4bf95e372fbd // indirect
 	github.com/smallnest/rpcx v1.6.11
 	github.com/soheilhy/cmux v0.1.5 // indirect
-	github.com/spf13/cobra v1.2.1 // indirect
+	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/tjfoc/gmsm v1.4.1 // indirect
@@ -54,4 +54,6 @@ require (
 	golang.org/x/tools v0.1.7 // indirect
 	google.golang.org/genproto v0.0.0-20210722135532-667f2b7c528f // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
+	gorm.io/driver/mysql v1.1.3
+	gorm.io/gorm v1.22.2
 )

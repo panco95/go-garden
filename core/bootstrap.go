@@ -2,12 +2,13 @@ package core
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden/drives/db"
+	"github.com/panco95/go-garden/drives/etcd"
+	"github.com/panco95/go-garden/drives/redis"
 )
 
 // Run  http(gin) && rpc(rpcx)
 func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
-	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
-
 	go func() {
 		address := g.ServiceIp
 		if g.cfg.Service.HttpOut {
@@ -43,16 +44,51 @@ func (g *Garden) bootstrap() {
 	g.checkConfig()
 	g.initLog()
 
-	if err := g.connEtcd(g.cfg.Service.EtcdAddress); err != nil {
-		g.Log(FatalLevel, "Etcd", err)
+	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
+
+	var err error
+
+	g.Etcd, err = etcd.Connect(g.cfg.Service.EtcdAddress)
+	if err != nil {
+		g.Log(FatalLevel, "etcd", err)
 	}
 
 	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort); err != nil {
-		g.Log(FatalLevel, "Init", err)
+		g.Log(FatalLevel, "init", err)
 	}
 
 	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp); err != nil {
-		g.Log(FatalLevel, "OpenTracing", err)
+		g.Log(FatalLevel, "openTracing", err)
+	}
+
+	if g.GetConfigValueBool("mysql_open") {
+		g.Db, err = db.Connect(
+			g.GetConfigValueString("mysql_user"),
+			g.GetConfigValueString("mysql_pass"),
+			g.GetConfigValueString("mysql_addr"),
+			g.GetConfigValueString("mysql_dbname"),
+			g.GetConfigValueString("mysql_charset"),
+			g.GetConfigValueBool("mysql_parseTime"),
+			g.GetConfigValueInt("mysql_connPool"),
+		)
+		if err != nil {
+			g.Log(FatalLevel, "mysql", err)
+		} else {
+			g.Log(InfoLevel, "mysql", "Connect success")
+		}
+	}
+
+	if g.GetConfigValueBool("redis_open") {
+		g.Redis, err = redis.Connect(
+			g.GetConfigValueString("redis_addr"),
+			g.GetConfigValueString("redis_pass"),
+			g.GetConfigValueInt("redis_db"),
+		)
+		if err != nil {
+			g.Log(FatalLevel, "redis", err)
+		} else {
+			g.Log(InfoLevel, "redis", "Connect success")
+		}
 	}
 
 	g.isBootstrap = 1

@@ -2,8 +2,10 @@ package core
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis/v8"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 	"net/http"
 	"sync"
 )
@@ -23,9 +25,11 @@ type (
 		ServiceId      string
 		ServiceIp      string
 		log            *zap.SugaredLogger
-		etcd           *clientV3.Client
 		fusingMap      sync.Map
 		limiterMap     sync.Map
+		Etcd           *clientV3.Client
+		Db             *gorm.DB
+		Redis          *redis.Client
 	}
 )
 
