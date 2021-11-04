@@ -421,7 +421,7 @@ config:
 
 框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置，不使用把open改为false：
 
-#####Mysql
+#### Mysql
 ```yml
 service:
   ---
@@ -440,7 +440,7 @@ config:
     connPool: 10
 ```
 
-#####PostgresSql
+#### PostgresSql
 ```yml
 service:
   ---
@@ -459,7 +459,7 @@ config:
     connPool: 10
 ```
 
-#####SqlServer
+#### SqlServer
 ```yml
 service:
   ---
