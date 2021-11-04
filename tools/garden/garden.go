@@ -139,7 +139,7 @@ func serviceRoutesYml(serviceName string) string {
 }
 
 func gatewayRoutesYml() string {
-	return "routes:\n [serviceName]:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
+	return "routes:\n serviceName:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
 }
 
 func globalGo() string {

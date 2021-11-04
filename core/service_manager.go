@@ -34,7 +34,7 @@ func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
 	if err != nil {
 		return err
 	}
-	g.ServiceId = "garden" + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
+	g.ServiceId = g.cfg.Service.EtcdKey + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
 
 	g.serviceManager = make(chan serviceOperate, 0)
 	go g.RebootFunc("serviceManageWatchReboot", func() {
