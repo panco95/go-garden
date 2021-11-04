@@ -7,6 +7,17 @@ import (
 )
 
 func Login(c *gin.Context) {
+	//db := global.Service.Db
+	//result := make(map[string]interface{})
+	//db.Raw("SELECT * FROM test").Scan(&result)
+	//global.Service.Log(core.InfoLevel, "result", result)
+
+	//redis := global.Service.Redis
+	//err := redis.Set(context.Background(), "key", "value", 0).Err()
+	//if err != nil {
+	//	global.Service.Log(core.InfoLevel, "redis", err)
+	//}
+
 	var validate struct {
 		Username string `form:"username" binding:"required,max=20,min=1"`
 	}

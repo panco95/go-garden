@@ -10,7 +10,24 @@ service:
   callRetry: 50/80/100
   etcdKey: garden
   etcdAddress:
-    - 192.168.125.186:2379
-  zipkinAddress: http://192.168.125.186:9411/api/v2/spans
+    - 192.168.125.187:2379
+  zipkinAddress: http://192.168.125.187:9411/api/v2/spans
 
 config:
+  db:
+    open: false
+    drive: mysql
+    host: "127.0.0.1"
+    port: "3306"
+    user: "root"
+    pass: ""
+    dbname: "test"
+    charset: "utf8mb4"
+    parseTime: true
+    connPool: 10
+  redis:
+    open: false
+    host: "127.0.0.1"
+    port: "6379"
+    pass: ""
+    db: 0

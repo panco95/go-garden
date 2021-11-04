@@ -393,25 +393,11 @@ go-garden内部集成了分布式链路追踪系统，调用链每一层我们�
 
 ### 十. 自定义配置
 
-我们在业务中会自定义一些配置，如框架集成的数据库、redis，您自己需要封装memcached、elasticsearch等等，可在此处自行添加配置项，`configs/config.yml`：
+我们在业务中会自定义一些配置，例如您需要在业务中连接memcached、elasticsearch等，可在此处自行添加配置项然后通过框架提供的函数获取配置值，`configs/config.yml`：
 ```yml
 service:
 
 config:
-  mysql_open: false
-  mysql_addr: "127.0.0.1:3306"
-  mysql_user: "root"
-  mysql_pass: ""
-  mysql_dbname: "test"
-  mysql_charset: "utf8mb4"
-  mysql_parseTime: true
-  mysql_connPool: 10
-
-  redis_open: false
-  redis_addr: "127.0.0.1:6379"
-  redis_pass: ""
-  redis_db: 0
-
   a: 1.13
   b: 1
   c: "hello"
@@ -433,31 +419,73 @@ config:
 
 ### 十一、数据库
 
-框架集成了数据库组件gorm，如需使用请在configs.yml增加如下配置，不使用要把mysql_open配置改为false：
+框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置，不使用把open改为false：
+
+#####Mysql
 ```yml
 service:
   ---
 
 config:
-  mysql_open: true              #是否使用mysql
-  mysql_addr: "127.0.0.1:3306"  #mysql连接地址
-  mysql_user: "root"            #数据库用户名
-  mysql_pass: ""                #数据库密码
-  mysql_dbname: "test"          #数据库名称
-  mysql_charset: "utf8mb4"      #编码格式
-  mysql_parseTime: true         #是否解析时间格式(参考gorm文档)
-  mysql_connPool: 10            #连接池数量
+  db:
+    open: true
+    drive: mysql
+    host: "127.0.0.1"
+    port: "3306"
+    user: "root"
+    pass: ""
+    dbname: "test"
+    charset: "utf8mb4"
+    parseTime: true
+    connPool: 10
+```
+
+#####PostgresSql
+```yml
+service:
+  ---
+
+config:
+  db:
+    open: true
+    drive: pgsql
+    host: "127.0.0.1"
+    port: "5432"
+    user: "postgres"
+    pass: ""
+    dbname: "postgres"
+    sslmode: "disable"
+    timezone: "Asia/Shanghai"
+    connPool: 10
+```
+
+#####SqlServer
+```yml
+service:
+  ---
+
+config:
+  db:
+    open: true
+    drive: mssql
+    host: "192.168.125.186"
+    port: "1433"
+    user: "sa"
+    pass: ""
+    dbname: "master"
+    connPool: 10
 ```
 
 如何使用：
 ```go
-var result map[string]interface{}
-global.Service.Db.Raw("SELECT id, name, age FROM users WHERE name = ?", 3).Scan(&result)
+db := global.Service.Db
+result := make(map[string]interface{})
+db.Raw("SELECT * FROM test").Scan(&result)
 global.Service.Log(core.InfoLevel, "result", result)
 ```
 具体使用请参考gorm文档：https://gorm.io
 
-提示：如果有多数据库需求或其他数据库需求或不想使用gorm，可以在global包添加全局变量，自己封装您需要的组件，其他类型的组件同理；建议在如下代码块进行初始化连接：
+提示：如果需要使用多数据库或其他数据库又或者不想使用gorm，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
 ```go
 global.Service = core.New()
 // ...
@@ -468,28 +496,31 @@ global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
 
 ### 十二、Redis缓存
 
-框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置，不使用要把redis_open配置改为false：
+框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置，不使用把open配置改为false：
 ```yml
 service:
   ---
 
 config:
-  redis_open: true              #是否使用redis
-  redis_addr: "127.0.0.1:6379"   #redis连接地址
-  redis_pass: ""                 #redis密码
-  redis_db: 0                    #数据库序号
+  redis:
+    open: true
+    host: "127.0.0.1"
+    port: "6379"
+    pass: ""
+    db: 0
 ```
 
 如何使用：
 ```go
-err := global.Service.Redis.Set(context.Background(), "key", "value", 0).Err()
+redis := global.Service.Redis
+err := redis.Set(context.Background(), "key", "value", 0).Err()
 if err != nil {
     global.Service.Log(core.InfoLevel, "redis", err)
 }
 ```
 具体使用请参考goredis文档：https://github.com/go-redis/redis
 
-提示：如果有其他缓存中间件需求或不愿意使用框架集成的goredis，可以在global包添加全局变量，自己封装您需要的组件，其他类型的组件同理；建议在如下代码块进行初始化连接：
+提示：如果需要其他中间件或不愿使用goredis，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
 ```go
 global.Service = core.New()
 // ...
@@ -500,7 +531,7 @@ global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
 
 ### 十三、消息队列
 
-框架集成rabbitmq（amqp协议都可）消息队列，如何使用：
+框架提供了rabbitmq（amqp协议都可）消息队列，如何使用：
 
 ```go
 import (
@@ -511,21 +542,21 @@ import (
 // 连接
 client, err := amqp.Conn("amqp://guest:guest@192.168.125.186:5672")
 if err != nil {
-    global.Service.Log(core.FatalLevel, "rabbitmq", err)
+	global.Service.Log(core.FatalLevel, "rabbitmq", err)
 }
+
 // 消费者
-go func() {
-    err := amqp.Consumer(client, "fanout", "test", "test", "test", func(msg amqp2.Delivery) {
-        global.Service.Log(core.InfoLevel, "msg", msg.Body)
-    }) 
-	if err != nil {
-        global.Service.Log(core.FatalLevel, "rabbitmq", err)
-    }
-}()
+err := amqp.Consumer(client, "fanout", "test", "test", "test", func(msg amqp2.Delivery) {
+	global.Service.Log(core.InfoLevel, "msg", msg.Body)
+}) 
+if err != nil {
+	global.Service.Log(core.FatalLevel, "rabbitmq", err)
+}
+
 // 生产者
 err = amqp.Publish(client, "fanout", "test", "test", "test", "test")
 if err != nil {
-    global.Service.Log(core.FatalLevel, "rabbitmq", err)
+	global.Service.Log(core.FatalLevel, "rabbitmq", err)
 }
 ```
 

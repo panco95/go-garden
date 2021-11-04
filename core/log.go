@@ -29,6 +29,8 @@ func (g *Garden) initLog() {
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
 	g.log = logger.Sugar()
+
+	g.isLogBootstrap = 1
 }
 
 // Log write log file and print if debug is true
@@ -48,7 +50,7 @@ func (g *Garden) Log(level logLevel, label string, data interface{}) {
 	case PanicLevel:
 		g.log.Panic(format)
 	case FatalLevel:
-		if g.isBootstrap == 1 {
+		if g.isLogBootstrap == 1 {
 			g.log.Fatal(format)
 		} else {
 			log.Fatal(format)

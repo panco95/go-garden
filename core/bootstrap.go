@@ -36,10 +36,6 @@ func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin
 }
 
 func (g *Garden) bootstrap() {
-	if g.isBootstrap == 1 {
-		return
-	}
-
 	g.initConfig("configs", "yml")
 	g.checkConfig()
 	g.initLog()
@@ -61,37 +57,27 @@ func (g *Garden) bootstrap() {
 		g.Log(FatalLevel, "openTracing", err)
 	}
 
-	if g.GetConfigValueBool("mysql_open") {
-		g.Db, err = db.Connect(
-			g.GetConfigValueString("mysql_user"),
-			g.GetConfigValueString("mysql_pass"),
-			g.GetConfigValueString("mysql_addr"),
-			g.GetConfigValueString("mysql_dbname"),
-			g.GetConfigValueString("mysql_charset"),
-			g.GetConfigValueBool("mysql_parseTime"),
-			g.GetConfigValueInt("mysql_connPool"),
-		)
+	dbConf := g.GetConfigValueMap("db")
+	if dbConf != nil && dbConf["open"].(bool) {
+		g.Db, err = db.Connect(dbConf, func(err interface{}) {
+			g.Log(FatalLevel, "db", err)
+		})
 		if err != nil {
-			g.Log(FatalLevel, "mysql", err)
-		} else {
-			g.Log(InfoLevel, "mysql", "Connect success")
+			g.Log(FatalLevel, "db", err)
 		}
+		g.Log(InfoLevel, "db", "Connect success")
 	}
 
-	if g.GetConfigValueBool("redis_open") {
-		g.Redis, err = redis.Connect(
-			g.GetConfigValueString("redis_addr"),
-			g.GetConfigValueString("redis_pass"),
-			g.GetConfigValueInt("redis_db"),
-		)
-		if err != nil {
+	redisConf := g.GetConfigValueMap("redis")
+	if redisConf != nil && redisConf["open"].(bool) {
+		g.Redis, err = redis.Connect(redisConf, func(err interface{}) {
 			g.Log(FatalLevel, "redis", err)
-		} else {
-			g.Log(InfoLevel, "redis", "Connect success")
+		})
+		if err != nil {
+			g.Log(FatalLevel, "database", err)
 		}
+		g.Log(InfoLevel, "redis", "Connect success")
 	}
-
-	g.isBootstrap = 1
 }
 
 func (g *Garden) checkConfig() {

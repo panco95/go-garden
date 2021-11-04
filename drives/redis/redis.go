@@ -5,11 +5,17 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-func Connect(addr, pass string, db int) (*redis.Client, error) {
+func Connect(redisConfig map[string]interface{}, f func(err interface{})) (*redis.Client, error) {
+	defer func() {
+		if err := recover(); err != nil {
+			f(err)
+		}
+	}()
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: pass,
-		DB:       db,
+		Addr:     redisConfig["host"].(string) + ":" + redisConfig["port"].(string),
+		Password: redisConfig["pass"].(string),
+		DB:       redisConfig["db"].(int),
 	})
 	_, err := rdb.Ping(context.Background()).Result()
 	if err != nil {

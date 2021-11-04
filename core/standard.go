@@ -16,7 +16,7 @@ type (
 	MapData map[string]interface{}
 	// Garden go garden framework class
 	Garden struct {
-		isBootstrap    uint
+		isLogBootstrap    uint
 		serviceType    uint //0:service 1:gateway
 		cfg            cfg
 		Services       map[string]*service
