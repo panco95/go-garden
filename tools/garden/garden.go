@@ -70,7 +70,7 @@ func newService(serviceName string) {
 	createDir("./" + serviceName + "/rpc/define")
 	createFile("./"+serviceName+"/rpc/define/test.go", rpcDefineTest())
 	createDir("./" + serviceName + "/api")
-	createFile("./"+serviceName+"/api/base.go", apiBase(serviceName))
+	createFile("./"+serviceName+"/api/routes.go", apiRoutes())
 	createFile("./"+serviceName+"/api/test.go", apiTest(serviceName))
 	sysCmd(serviceName, "go", "mod", "init", serviceName)
 	sysCmd(serviceName, "go", "mod", "tidy")
@@ -123,7 +123,7 @@ func sysCmd(name string, command string, param ...string) {
 }
 
 func gatewayMain(serviceName string) string {
-	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/auth\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Service = core.New()\n\tglobal.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/auth\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Garden = core.New()\n\tglobal.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)\n}\n", "<>", serviceName, 999)
 }
 
 func gatewayAuth() string {
@@ -139,11 +139,11 @@ func serviceRoutesYml(serviceName string) string {
 }
 
 func gatewayRoutesYml() string {
-	return "routes:\n r <xxx>:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
+	return "routes:\n [serviceName]:\n    test:\n      type: http\n      path: /test\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000\n    TestRpc:\n      type: rpc\n      limiter: 5/100\n      fusing: 5/100\n      timeout: 2000"
 }
 
 func globalGo() string {
-	return "package global\n\nimport \"github.com/panco95/go-garden/core\"\n\nvar (\n\tService *core.Garden\n)\n"
+	return "package global\n\nimport \"github.com/panco95/go-garden/core\"\n\nvar (\n\tGarden *core.Garden\n)\n"
 }
 
 func gatewayRpcBase() string {
@@ -151,7 +151,7 @@ func gatewayRpcBase() string {
 }
 
 func serviceMain(serviceName string) string {
-	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/api\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Service = core.New()\n\tglobal.Service.Run(api.Routes, new(rpc.Rpc), nil)\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/api\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Garden = core.New()\n\tglobal.Garden.Run(api.Routes, new(rpc.Rpc), global.Garden.CheckCallSafeMiddleware)\n}\n", "<>", serviceName, 999)
 }
 
 func rpcDefineTest() string {
@@ -163,13 +163,13 @@ func rpcBase() string {
 }
 
 func rpcTest(serviceName string) string {
-	return strings.Replace("package rpc\n\nimport (\n\t\"context\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc (r *Rpc) TestRpc(ctx context.Context, args *define.TestRpcArgs, reply *define.TestRpcReply) error {\n\tspan := global.Service.StartRpcTrace(ctx, args, \"TestRpc\")\n\n\tglobal.Service.Log(core.InfoLevel, \"Test\", \"Receive a rpc message\")\n\treply.Pong = \"pong\"\n\n\tglobal.Service.FinishRpcTrace(span)\n\treturn nil\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package rpc\n\nimport (\n\t\"context\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc (r *Rpc) TestRpc(ctx context.Context, args *define.TestRpcArgs, reply *define.TestRpcReply) error {\n\tspan := global.Garden.StartRpcTrace(ctx, args, \"TestRpc\")\n\n\tglobal.Garden.Log(core.InfoLevel, \"Test\", \"Receive a rpc message\")\n\treply.Pong = \"pong\"\n\n\tglobal.Garden.FinishRpcTrace(span)\n\treturn nil\n}\n", "<>", serviceName, 999)
 }
 
-func apiBase(serviceName string) string {
-	return strings.Replace("package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"<>/global\"\n)\n\nfunc Routes(r *gin.Engine) {\n\tr.Use(global.Service.CheckCallSafeMiddleware()) // 调用接口安全验证\n\tr.POST(\"test\", Test)\n}\n", "<>", serviceName, 999)
+func apiRoutes() string {
+	return "package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n)\n\nfunc Routes(r *gin.Engine) {\n\tr.POST(\"test\", Test)\n}\n"
 }
 
 func apiTest(serviceName string) string {
-	return strings.Replace("package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc Test(c *gin.Context) {\n\tspan, _ := core.GetSpan(c)\n\n\t// rpc call test\n\targs := define.TestRpcArgs{\n\t\tPing: \"ping\",\n\t}\n\treply := define.TestRpcReply{}\n\t_, _, err := global.Service.CallService(span, \"<>\", \"TestRpc\", nil, &args, &reply)\n\tif err != nil {\n\t\tspan.SetTag(\"CallService\", err)\n\t\tcore.Resp(c, core.HttpFail, 0, core.InfoServerError, nil)\n\t\treturn\n\t}\n\n\tcore.Resp(c, core.HttpOk, 0, core.InfoSuccess, core.MapData{\n\t\t\"pong\": reply.Pong,\n\t})\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc Test(c *gin.Context) {\n\tspan, _ := core.GetSpan(c)\n\n\t// rpc call test\n\targs := define.TestRpcArgs{\n\t\tPing: \"ping\",\n\t}\n\treply := define.TestRpcReply{}\n\terr := global.Garden.CallRpc(span, \"<>\", \"TestRpc\", &args, &reply)\n\tif err != nil {\n\t\tspan.SetTag(\"CallService\", err)\n\t\tcore.Resp(c, core.HttpFail, 0, core.InfoServerError, nil)\n\t\treturn\n\t}\n\n\tcore.Resp(c, core.HttpOk, 0, core.InfoSuccess, core.MapData{\n\t\t\"pong\": reply.Pong,\n\t})\n}\n", "<>", serviceName, 999)
 }

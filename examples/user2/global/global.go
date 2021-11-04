@@ -6,6 +6,6 @@ import (
 )
 
 var (
-	Service *core.Garden
+	Garden *core.Garden
 	Users   sync.Map
 )

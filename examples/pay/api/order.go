@@ -23,7 +23,7 @@ func Order(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
-		global.Service.Log(core.ErrorLevel, "GetSpan", err)
+		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
@@ -31,10 +31,10 @@ func Order(c *gin.Context) {
 		Username: username,
 	}
 	reply := user.ExistsReply{}
-	err = global.Service.CallRpc(span, "user", "exists", &args, &reply)
+	err = global.Garden.CallRpc(span, "user", "exists", &args, &reply)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
-		global.Service.Log(core.ErrorLevel, "rpcCall", err)
+		global.Garden.Log(core.ErrorLevel, "rpcCall", err)
 		span.SetTag("callRpc", err)
 		return
 	}

@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	global.Service = core.New()
-	global.Service.Run(api.Routes, new(rpc.Rpc), nil)
+	global.Garden = core.New()
+	global.Garden.Run(api.Routes, new(rpc.Rpc), global.Garden.CheckCallSafeMiddleware)
 }

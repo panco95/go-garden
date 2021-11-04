@@ -131,7 +131,7 @@ import (
 )
 
 var (
-	Service *core.Garden
+	Garden *core.Garden
 	Users   sync.Map
 )
 ```
@@ -168,7 +168,6 @@ import (
 )
 
 func Routes(r *gin.Engine) {
-	r.Use(global.Service.CheckCallSafeMiddleware())
 	r.POST("login", Login)
 }
 ```
@@ -223,7 +222,7 @@ import (
 
 func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define.ExistsReply) error {
    // rpc方法链路追踪开启
-	span := global.Service.StartRpcTrace(ctx, args, "Exists")
+	span := global.Garden.StartRpcTrace(ctx, args, "Exists")
 
    // rpc方法具体业务逻辑
 	reply.Exists = false
@@ -232,7 +231,7 @@ func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define
 	}
 
    // rpc方法链路追踪结束
-	global.Service.FinishRpcTrace(span)
+	global.Garden.FinishRpcTrace(span)
 	return nil
 }
 ```
@@ -315,7 +314,7 @@ func Order(c *gin.Context) {
 	span, err := core.GetSpan(c)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
-		global.Service.Log(core.ErrorLevel, "GetSpan", err)
+		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
@@ -325,10 +324,10 @@ func Order(c *gin.Context) {
 	}
 	reply := user.ExistsReply{}
 	// 调用rpc服务
-	err = global.Service.CallRpc(span, "my-user", "exists", &args, &reply)
+	err = global.Garden.CallRpc(span, "my-user", "exists", &args, &reply)
 	if err != nil {
 		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
-		global.Service.Log(core.ErrorLevel, "rpcCall", err)
+		global.Garden.Log(core.ErrorLevel, "rpcCall", err)
 		span.SetTag("callRpc", err)
 		return
 	}
@@ -355,7 +354,7 @@ import (
 )
 
 func Routes(r *gin.Engine) {
-	r.Use(global.Service.CheckCallSafeMiddleware())
+	r.Use(global.Garden.CheckCallSafeMiddleware())
 	r.POST("order", Order)
 }
 ```
@@ -478,20 +477,20 @@ config:
 
 如何使用：
 ```go
-db := global.Service.Db
+db := global.Garden.Db
 result := make(map[string]interface{})
 db.Raw("SELECT * FROM test").Scan(&result)
-global.Service.Log(core.InfoLevel, "result", result)
+global.Garden.Log(core.InfoLevel, "result", result)
 ```
 具体使用请参考gorm文档：https://gorm.io
 
 提示：如果需要使用多数据库或其他数据库又或者不想使用gorm，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
 ```go
-global.Service = core.New()
+global.Garden = core.New()
 // ...
 // 在这里初始化
 // ...
-global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
+global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 ```
 
 ### 十二、Redis缓存
@@ -512,21 +511,21 @@ config:
 
 如何使用：
 ```go
-redis := global.Service.Redis
+redis := global.Garden.Redis
 err := redis.Set(context.Background(), "key", "value", 0).Err()
 if err != nil {
-    global.Service.Log(core.InfoLevel, "redis", err)
+    global.Garden.Log(core.InfoLevel, "redis", err)
 }
 ```
 具体使用请参考goredis文档：https://github.com/go-redis/redis
 
 提示：如果需要其他中间件或不愿使用goredis，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
 ```go
-global.Service = core.New()
+global.Garden = core.New()
 // ...
 // 在这里初始化
 // ...
-global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
+global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 ```
 
 ### 十三、消息队列
@@ -542,21 +541,21 @@ import (
 // 连接
 client, err := amqp.Conn("amqp://guest:guest@192.168.125.186:5672")
 if err != nil {
-	global.Service.Log(core.FatalLevel, "rabbitmq", err)
+	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 
 // 消费者
 err := amqp.Consumer(client, "fanout", "test", "test", "test", func(msg amqp2.Delivery) {
-	global.Service.Log(core.InfoLevel, "msg", msg.Body)
+	global.Garden.Log(core.InfoLevel, "msg", msg.Body)
 }) 
 if err != nil {
-	global.Service.Log(core.FatalLevel, "rabbitmq", err)
+	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 
 // 生产者
 err = amqp.Publish(client, "fanout", "test", "test", "test", "test")
 if err != nil {
-	global.Service.Log(core.FatalLevel, "rabbitmq", err)
+	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 ```
 
@@ -595,13 +594,13 @@ if err != nil {
 go-garden封装了规范的日志函数，用如下代码进行调用：
 
 ```go
-global.Service.Log(core.DebugLevel, "error", err)
-global.Service.Log(core.InfoLevel, "test", "info")
-global.Service.Log(core.WarnLevel, "test", "info")
-global.Service.Log(core.ErrorLevel, "test", "info")
-global.Service.Log(core.DPanicLevel, "test", "info")
-global.Service.Log(core.PanicLevel, "test", "info")
-global.Service.Log(core.FatalLevel, "test", "info")
+global.Garden.Log(core.DebugLevel, "error", err)
+global.Garden.Log(core.InfoLevel, "test", "info")
+global.Garden.Log(core.WarnLevel, "test", "info")
+global.Garden.Log(core.ErrorLevel, "test", "info")
+global.Garden.Log(core.DPanicLevel, "test", "info")
+global.Garden.Log(core.PanicLevel, "test", "info")
+global.Garden.Log(core.FatalLevel, "test", "info")
 ```
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。

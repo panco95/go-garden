@@ -7,13 +7,13 @@ import (
 )
 
 func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define.ExistsReply) error {
-	span := global.Service.StartRpcTrace(ctx, args, "Exists")
+	span := global.Garden.StartRpcTrace(ctx, args, "Exists")
 
 	reply.Exists = false
 	if _, ok := global.Users.Load(args.Username); ok {
 		reply.Exists = true
 	}
 
-	global.Service.FinishRpcTrace(span)
+	global.Garden.FinishRpcTrace(span)
 	return nil
 }

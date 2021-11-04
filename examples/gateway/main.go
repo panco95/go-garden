@@ -8,6 +8,6 @@ import (
 )
 
 func main() {
-	global.Service = core.New()
-	global.Service.Run(global.Service.GatewayRoute, new(rpc.Rpc), auth.Auth)
+	global.Garden = core.New()
+	global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 }
