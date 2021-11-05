@@ -39,7 +39,7 @@ func Order(c *gin.Context) {
 		return
 	}
 	if !reply.Exists {
-		Fail(c, MsgOk)
+		Fail(c, MsgFail)
 		return
 	}
 
