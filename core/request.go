@@ -53,7 +53,7 @@ func (g *Garden) callService(span opentracing.Span, service, action string, requ
 	if route.Fusing != "" {
 		second, quantity, err := g.fusingAnalyze(route.Fusing)
 		if err != nil {
-			g.Log(DebugLevel, "Fusing", err)
+			g.Log(ErrorLevel, "Fusing", err)
 		} else if !g.fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service fusing")
 			return httpNotFound, infoServerFusing, errors.New("server fusing")

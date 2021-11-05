@@ -63,7 +63,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 
 		if err != nil {
 			g.Log(ErrorLevel, "callService", err)
-			g.addFusingQuantity(service + "/" + action)
+			g.addFusingQuantity(g.Services[service].Nodes[nodeIndex].Addr + "/" + service + "/" + action)
 
 			// call timeout don't retry
 			if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {

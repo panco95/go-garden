@@ -4,17 +4,16 @@ import (
 	"errors"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type fusingData struct {
-	Lock           sync.Mutex
 	StartTimestamp int64
-	Quantity       int
+	Quantity       int64
 }
 
-func (g *Garden) fusingAnalyze(limiter string) (int, int, error) {
+func (g *Garden) fusingAnalyze(limiter string) (int64, int64, error) {
 	arr := strings.Split(limiter, "/")
 	if len(arr) != 2 {
 		return 0, 0, errors.New("route fusing format error")
@@ -27,10 +26,10 @@ func (g *Garden) fusingAnalyze(limiter string) (int, int, error) {
 	if err != nil {
 		return 0, 0, errors.New("route fusing format error")
 	}
-	return second, quantity, nil
+	return int64(second), int64(quantity), nil
 }
 
-func (g *Garden) fusingInspect(path string, second, quantity int) bool {
+func (g *Garden) fusingInspect(path string, second, quantity int64) bool {
 	f, ok := g.fusingMap.Load(path)
 	if !ok {
 		f = g.resetFusingIndex(path)
@@ -38,12 +37,13 @@ func (g *Garden) fusingInspect(path string, second, quantity int) bool {
 	fd := f.(*fusingData)
 
 	now := time.Now().Unix()
-	lost := int(now) - int(fd.StartTimestamp)
+	lost := now - fd.StartTimestamp
 	if lost >= second {
 		fd = g.resetFusingIndex(path)
 	}
 
-	if fd.Quantity >= quantity {
+	q := atomic.LoadInt64(&fd.Quantity)
+	if q >= quantity {
 		return false
 	}
 
@@ -66,7 +66,5 @@ func (g *Garden) addFusingQuantity(index string) {
 	}
 	fd := f.(*fusingData)
 
-	fd.Lock.Lock()
-	fd.Quantity++
-	fd.Lock.Unlock()
+	atomic.AddInt64(&fd.Quantity, 1)
 }
