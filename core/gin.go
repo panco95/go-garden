@@ -61,6 +61,11 @@ func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
 		g.gateway(c)
 	})
+	r.Any("healthy", func(c *gin.Context) {
+		c.JSON(200, MapData{
+			"services": g.Services,
+		})
+	})
 }
 
 func notFound(r *gin.Engine) {
@@ -72,7 +77,7 @@ func notFound(r *gin.Engine) {
 	})
 }
 
-func (g *Garden)cors(ctx *gin.Context) {
+func (g *Garden) cors(ctx *gin.Context) {
 	method := ctx.Request.Method
 	ctx.Header("Access-Control-Allow-Origin", "*")
 	ctx.Header("Access-Control-Allow-Headers", "*")

@@ -6,6 +6,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -35,12 +36,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 	var err error
 
 	for i, r := range retry {
-		sm := serviceOperate{
-			operate:     "incWaiting",
-			serviceName: service,
-			nodeIndex:   nodeIndex,
-		}
-		g.serviceManager <- sm
+		atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Waiting, 1)
 
 		if route.Type == "http" {
 			addr, err = g.getServiceHttpAddr(service, nodeIndex)
@@ -63,8 +59,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 			}
 		}
 
-		sm.operate = "decWaiting"
-		g.serviceManager <- sm
+		atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Waiting, -1)
 
 		if err != nil {
 			g.Log(ErrorLevel, "callService", err)
@@ -90,6 +85,8 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 
 		break
 	}
+
+	atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Finish, 1)
 
 	return code, result, err
 }

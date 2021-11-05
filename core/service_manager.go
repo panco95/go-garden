@@ -7,12 +7,13 @@ import (
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"math/rand"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
 type node struct {
 	Addr    string
-	Waiting int
+	Waiting int64
 	Finish  int64
 }
 
@@ -214,20 +215,8 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 					}
 				}
 				break
-
-			case "incWaiting":
-				if g.existsService(sm.serviceName) {
-					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Waiting++
-				}
-				break
-
-			case "decWaiting":
-				if g.existsService(sm.serviceName) {
-					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Waiting--
-					g.Services[sm.serviceName].Nodes[sm.nodeIndex].Finish++
-				}
-				break
 			}
+
 		}
 	}
 }
@@ -237,7 +226,7 @@ func (g *Garden) selectService(name string) (string, int, error) {
 		return "", 0, errors.New("service not found")
 	}
 
-	waitingMin := 0
+	var waitingMin int64 = 0
 	nodeIndex := 0
 	nodeLen := len(g.Services[name].Nodes)
 	if nodeLen < 1 {
@@ -246,18 +235,20 @@ func (g *Garden) selectService(name string) (string, int, error) {
 		// get the min waiting service node
 		for k, v := range g.Services[name].Nodes {
 			if k == 0 {
-				waitingMin = v.Waiting
+				waitingMin = atomic.LoadInt64(&v.Waiting)
 				continue
 			}
-			if v.Waiting < waitingMin {
+			if t := atomic.LoadInt64(&v.Waiting); t < waitingMin {
 				nodeIndex = k
-				waitingMin = v.Waiting
+				waitingMin = t
 			}
 		}
 		// if all zero, use rand
 		if waitingMin == 0 {
 			nodeIndex = rand.Intn(nodeLen)
-		}
+		}/* else { //test
+			fmt.Println("not rand")
+		}*/
 	}
 
 	return g.Services[name].Nodes[nodeIndex].Addr, nodeIndex, nil
