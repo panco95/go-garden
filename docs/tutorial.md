@@ -29,6 +29,9 @@ docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```sh
 garden new my-gateway gateway
 ```
+
+目录结构请参考文档：[目录结构](../tools/garden#目录结构)
+
 项目创建好后我们需要修改配置文件才能成功启动，修改`configs/config.yml`服务配置文件：
 
 |          字段           |                              说明                               |
@@ -150,12 +153,12 @@ func Login(c *gin.Context) {
 		Username string `form:"username" binding:"required,max=20,min=1"`
 	}
 	if err := c.ShouldBind(&validate); err != nil {
-		core.Resp(c, core.HttpOk, -1, core.InfoInvalidParam, nil)
+		Fail(c, MsgInvalidParams)
 		return
 	}
-	username := c.DefaultPostForm("username", "")
+	username := c.PostForm("username")
 	global.Users.Store(username, 1)
-	core.Resp(c, core.HttpOk, 0, "登陆成功", nil)
+	Success(c, MsgOk, nil)
 }
 ```
 添加login接口路由path定义，`api/base.go`：
@@ -221,16 +224,13 @@ import (
 )
 
 func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define.ExistsReply) error {
-   // rpc方法链路追踪开启
 	span := global.Garden.StartRpcTrace(ctx, args, "Exists")
 
-   // rpc方法具体业务逻辑
 	reply.Exists = false
 	if _, ok := global.Users.Load(args.Username); ok {
 		reply.Exists = true
 	}
 
-   // rpc方法链路追踪结束
 	global.Garden.FinishRpcTrace(span)
 	return nil
 }
@@ -306,39 +306,36 @@ func Order(c *gin.Context) {
 		Username string `form:"username" binding:"required,max=20,min=1" `
 	}
 	if err := c.ShouldBind(&validate); err != nil {
-		core.Resp(c, core.HttpOk, -1, core.InfoInvalidParam, nil)
+		Fail(c, MsgInvalidParams)
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 
 	span, err := core.GetSpan(c)
 	if err != nil {
-		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
+		Fail(c, MsgFail)
 		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
 
-   // 定义rpc exists方法的调用参数和返回参数结构体
 	args := user.ExistsArgs{
 		Username: username,
 	}
 	reply := user.ExistsReply{}
-	// 调用rpc服务
-	err = global.Garden.CallRpc(span, "my-user", "exists", &args, &reply)
+	err = global.Garden.CallRpc(span, "user", "exists", &args, &reply)
 	if err != nil {
-		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
+		Fail(c, MsgFail)
 		global.Garden.Log(core.ErrorLevel, "rpcCall", err)
 		span.SetTag("callRpc", err)
 		return
 	}
-	// 收到exists方法返回数据，判断数据(业务逻辑)
 	if !reply.Exists {
-		core.Resp(c, core.HttpOk, -1, "下单失败", nil)
+		Fail(c, MsgOk)
 		return
 	}
 
 	orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
-	core.Resp(c, core.HttpOk, 0, "下单成功", core.MapData{
+	Success(c, MsgOk, core.MapData{
 		"orderId": orderId,
 	})
 }
@@ -354,7 +351,6 @@ import (
 )
 
 func Routes(r *gin.Engine) {
-	r.Use(global.Garden.CheckCallSafeMiddleware())
 	r.POST("order", Order)
 }
 ```

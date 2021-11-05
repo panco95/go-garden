@@ -15,14 +15,14 @@ func Order(c *gin.Context) {
 		Username string `form:"username" binding:"required,max=20,min=1" `
 	}
 	if err := c.ShouldBind(&validate); err != nil {
-		core.Resp(c, core.HttpOk, -1, core.InfoInvalidParam, nil)
+		Fail(c, MsgInvalidParams)
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 
 	span, err := core.GetSpan(c)
 	if err != nil {
-		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
+		Fail(c, MsgFail)
 		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
 		return
 	}
@@ -33,18 +33,18 @@ func Order(c *gin.Context) {
 	reply := user.ExistsReply{}
 	err = global.Garden.CallRpc(span, "user", "exists", &args, &reply)
 	if err != nil {
-		core.Resp(c, core.HttpFail, -1, core.InfoServerError, nil)
+		Fail(c, MsgFail)
 		global.Garden.Log(core.ErrorLevel, "rpcCall", err)
 		span.SetTag("callRpc", err)
 		return
 	}
 	if !reply.Exists {
-		core.Resp(c, core.HttpOk, -1, "下单失败", nil)
+		Fail(c, MsgOk)
 		return
 	}
 
 	orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
-	core.Resp(c, core.HttpOk, 0, "下单成功", core.MapData{
+	Success(c, MsgOk, core.MapData{
 		"orderId": orderId,
 	})
 }

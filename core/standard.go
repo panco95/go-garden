@@ -1,7 +1,6 @@
 package core
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
@@ -44,27 +43,18 @@ const (
 )
 
 const (
-	HttpOk       = http.StatusOK
-	HttpFail     = http.StatusInternalServerError
-	HttpNotFound = http.StatusNotFound
+	httpOk       = http.StatusOK
+	httpFail     = http.StatusInternalServerError
+	httpNotFound = http.StatusNotFound
 
-	InfoSuccess       = "Success"
-	InfoInvalidParam  = "Invalid param"
-	InfoServerError   = "Server Error"
-	InfoServerLimiter = "Server limit flow"
-	InfoServerFusing  = "Server fusing flow"
-	InfoNoAuth        = "No access permission"
-	InfoNotFound      = "The resource could not be found"
-	InfoTimeout       = "Request timeout"
+	infoSuccess       = "Success"
+	infoServerError   = "Server Error"
+	infoServerLimiter = "Server limit flow"
+	infoServerFusing  = "Server fusing flow"
+	infoNoAuth        = "No access permission"
+	infoNotFound      = "The resource could not be found"
+	infoTimeout       = "Request timeout"
 )
-
-func Resp(c *gin.Context, code int, dataCode int, msg string, data interface{}) {
-	c.JSON(code, MapData{
-		"code": dataCode,
-		"msg":  msg,
-		"data": data,
-	})
-}
 
 // RebootFunc if func panic
 func (g *Garden) RebootFunc(label string, f func()) {

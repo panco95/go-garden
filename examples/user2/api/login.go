@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/examples/user2/global"
 )
 
@@ -11,10 +10,10 @@ func Login(c *gin.Context) {
 		Username string `form:"username" binding:"required,max=20,min=1"`
 	}
 	if err := c.ShouldBind(&validate); err != nil {
-		core.Resp(c, core.HttpOk, -1, core.InfoInvalidParam, nil)
+		Fail(c, MsgInvalidParams)
 		return
 	}
 	username := c.DefaultPostForm("username", "")
 	global.Users.Store(username, 1)
-	core.Resp(c, core.HttpOk, 0, "登陆成功", nil)
+	Success(c, MsgOk, nil)
 }

@@ -47,7 +47,7 @@ func newGateway(serviceName string) {
 	createFile("./"+serviceName+"/auth/auth.go", gatewayAuth())
 	createDir("./" + serviceName + "/configs")
 	createFile("./"+serviceName+"/configs/routes.yml", gatewayRoutesYml())
-	createFile("./"+serviceName+"/configs/config.yml", configsYml(serviceName))
+	createFile("./"+serviceName+"/configs/config.yml", configsYml(serviceName, "true"))
 	createDir("./" + serviceName + "/global")
 	createFile("./"+serviceName+"/global/global.go", globalGo())
 	createDir("./" + serviceName + "/rpc")
@@ -61,7 +61,7 @@ func newService(serviceName string) {
 	createFile("./"+serviceName+"/main.go", serviceMain(serviceName))
 	createDir("./" + serviceName + "/configs")
 	createFile("./"+serviceName+"/configs/routes.yml", serviceRoutesYml(serviceName))
-	createFile("./"+serviceName+"/configs/config.yml", configsYml(serviceName))
+	createFile("./"+serviceName+"/configs/config.yml", configsYml(serviceName, "false"))
 	createDir("./" + serviceName + "/global")
 	createFile("./"+serviceName+"/global/global.go", globalGo())
 	createDir("./" + serviceName + "/rpc")
@@ -71,6 +71,7 @@ func newService(serviceName string) {
 	createFile("./"+serviceName+"/rpc/define/test.go", rpcDefineTest())
 	createDir("./" + serviceName + "/api")
 	createFile("./"+serviceName+"/api/routes.go", apiRoutes())
+	createFile("./"+serviceName+"/api/define.go", apiDefine())
 	createFile("./"+serviceName+"/api/test.go", apiTest(serviceName))
 	sysCmd(serviceName, "go", "mod", "init", serviceName)
 	sysCmd(serviceName, "go", "mod", "tidy")
@@ -130,8 +131,8 @@ func gatewayAuth() string {
 	return "package auth\n\nimport \"github.com/gin-gonic/gin\"\n\n// Auth Customize the auth middleware\nfunc Auth() gin.HandlerFunc {\n\treturn func(c *gin.Context) {\n\t\t// before logic\n\t\tc.Next()\n\t\t// after logic\n\t}\n}\n"
 }
 
-func configsYml(serviceName string) string {
-	return strings.Replace("service:\n  debug: true\n  serviceName: <>\n  httpOut: true\n  httpPort: 8080\n  allowCors: true\n  rpcOut: false\n  rpcPort: 9000\n  callKey: garden\n  callRetry: 20/30/50\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n  zipkinAddress: http:/127.0.0.1:9411/api/v2/spans\n\nconfig:\n", "<>", serviceName, 999)
+func configsYml(serviceName, httpOut string) string {
+	return strings.Replace("service:\n  debug: true\n  serviceName: <>\n  httpOut: "+httpOut+"\n  httpPort: 8080\n  allowCors: true\n  rpcOut: false\n  rpcPort: 9000\n  callKey: garden\n  callRetry: 20/30/50\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n  zipkinAddress: http:/127.0.0.1:9411/api/v2/spans\n\nconfig:\n", "<>", serviceName, 999)
 }
 
 func serviceRoutesYml(serviceName string) string {
@@ -171,5 +172,9 @@ func apiRoutes() string {
 }
 
 func apiTest(serviceName string) string {
-	return strings.Replace("package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc Test(c *gin.Context) {\n\tspan, _ := core.GetSpan(c)\n\n\t// rpc call test\n\targs := define.TestRpcArgs{\n\t\tPing: \"ping\",\n\t}\n\treply := define.TestRpcReply{}\n\terr := global.Garden.CallRpc(span, \"<>\", \"TestRpc\", &args, &reply)\n\tif err != nil {\n\t\tspan.SetTag(\"CallService\", err)\n\t\tcore.Resp(c, core.HttpFail, 0, core.InfoServerError, nil)\n\t\treturn\n\t}\n\n\tcore.Resp(c, core.HttpOk, 0, core.InfoSuccess, core.MapData{\n\t\t\"pong\": reply.Pong,\n\t})\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/global\"\n\t\"<>/rpc/define\"\n)\n\nfunc Test(c *gin.Context) {\n\tspan, _ := core.GetSpan(c)\n\n\t// rpc call test\n\targs := define.TestRpcArgs{\n\t\tPing: \"ping\",\n\t}\n\treply := define.TestRpcReply{}\n\terr := global.Garden.CallRpc(span, \"<>\", \"TestRpc\", &args, &reply)\n\tif err != nil {\n\t\tspan.SetTag(\"CallService\", err)\n\t\tFail(c, MsgFail)\n\t\treturn\n\t}\n\n\tSuccess(c, MsgOk, core.MapData{\n\t\t\"pong\": reply.Pong,\n\t})\n}\n", "<>", serviceName, 999)
+}
+
+func apiDefine() string {
+	return "package api\n\nimport (\n\t\"github.com/gin-gonic/gin\"\n\t\"github.com/panco95/go-garden/core\"\n)\n\nconst (\n\tCodeOk   = 1000\n\tCodeFail = 1001\n\n\tMsgOk            = \"Success\"\n\tMsgFail          = \"Server error\"\n\tMsgInvalidParams = \"Invalid params\"\n)\n\nfunc Success(c *gin.Context, msg string, data core.MapData) {\n\tc.JSON(200, core.MapData{\n\t\t\"code\": CodeOk,\n\t\t\"msg\":  msg,\n\t\t\"data\": data,\n\t})\n}\n\nfunc Fail(c *gin.Context, msg string) {\n\tc.JSON(200, core.MapData{\n\t\t\"code\": CodeFail,\n\t\t\"msg\":  msg,\n\t\t\"data\": nil,\n\t})\n}\n"
 }
