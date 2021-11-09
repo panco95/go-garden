@@ -75,7 +75,6 @@ func getEncoder() zapcore.Encoder {
 }
 
 func getLogWriter(runtimePath string) zapcore.WriteSyncer {
-	fmt.Printf(runtimePath)
 	lumberJackLogger := &lumberjack.Logger{
 		Filename:   runtimePath + "/logs/log.log",
 		MaxSize:    2,
