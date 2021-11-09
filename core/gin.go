@@ -16,11 +16,10 @@ import (
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode("release")
 	server := gin.Default()
-	path, _ := os.Getwd()
-	if err := createDir(path + "/runtime"); err != nil {
+	if err := createDir(g.cfg.runtimePath); err != nil {
 		return err
 	}
-	file, err := os.Create(fmt.Sprintf("%s/runtime/gin.log", path))
+	file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.runtimePath))
 	if err != nil {
 		return err
 	}

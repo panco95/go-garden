@@ -31,13 +31,15 @@ type serviceCfg struct {
 }
 
 type cfg struct {
-	Service serviceCfg
-	Routes  map[string]map[string]routeCfg
-	Config  map[string]interface{}
+	Service     serviceCfg
+	Routes      map[string]map[string]routeCfg
+	Config      map[string]interface{}
+	runtimePath string
+	configsPath string
 }
 
-func (g *Garden) initConfig(path, fileType string) {
-	viper.AddConfigPath(path)
+func (g *Garden) initConfig(fileType string) {
+	viper.AddConfigPath(g.cfg.configsPath)
 	viper.SetConfigType(fileType)
 
 	viper.SetConfigName("config")

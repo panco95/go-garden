@@ -15,7 +15,7 @@ func (g *Garden) initLog() {
 
 	var cores []zapcore.Core
 
-	writeSyncer := getLogWriter()
+	writeSyncer := getLogWriter(g.cfg.runtimePath)
 	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 	cores = append(cores, fileCore)
 
@@ -63,20 +63,21 @@ func getEncoder() zapcore.Encoder {
 		EncodeTime: func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
 			enc.AppendString(t.Format("2006-01-02 15:04:05"))
 		},
-		TimeKey:     "time",
-		LevelKey:    "level",
-		NameKey:     "logger",
-		CallerKey:   "caller",
-		MessageKey:  "msg",
-		EncodeLevel: zapcore.LowercaseLevelEncoder,
+		TimeKey:      "time",
+		LevelKey:     "level",
+		NameKey:      "logger",
+		CallerKey:    "caller",
+		MessageKey:   "msg",
+		EncodeLevel:  zapcore.LowercaseLevelEncoder,
 		EncodeCaller: zapcore.ShortCallerEncoder,
 	}
 	return zapcore.NewConsoleEncoder(encoderConfig)
 }
 
-func getLogWriter() zapcore.WriteSyncer {
+func getLogWriter(runtimePath string) zapcore.WriteSyncer {
+	fmt.Printf(runtimePath)
 	lumberJackLogger := &lumberjack.Logger{
-		Filename:   "./runtime/logs/log.log",
+		Filename:   runtimePath + "/logs/log.log",
 		MaxSize:    2,
 		MaxBackups: 10000,
 		MaxAge:     180,

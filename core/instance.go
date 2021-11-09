@@ -12,6 +12,6 @@ func New() *Garden {
 	flag.StringVar(&runtimePath, "runtime", "runtime", "runtime log files path")
 	flag.Parse()
 
-	service.bootstrap(configPath)
+	service.bootstrap(configPath, runtimePath)
 	return &service
 }
