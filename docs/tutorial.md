@@ -52,11 +52,13 @@ garden new my-gateway gateway
 
 修改好对应的配置后，启动服务：
 
+* 启动服务有两个参数可选，configs为指定配置文件目录，runtime为指定日志输出目录，默认为当前路径configs目录和runtime目录
+
 ```sh
-go run main.go
+go run main.go -configs=configs -runtime=runtime
 ```
 
-启动成功输出：
+成功输出：
 ```sh
 2021-10-27 09:49:18     info    core/bootstrap.go:9     [bootstrap] my-gateway service starting now...
 2021-10-27 09:49:18     info    core/rpc.go:16  [rpc] listen on: 192.168.8.98:9000
@@ -71,7 +73,7 @@ garden new my-user service
 ```
 同样修改`configs/config.yml`配置文件，如果跟gateway在同一台主机，需要修改httpPort和rpcPort防止端口冲突；启动服务：
 ```sh
-go run main.go
+go run main.go -configs=configs -runtime=runtime
 ```
 启动成功输出：
 ```sh
@@ -246,7 +248,7 @@ garden new my-pay service
 ```
 修改配置文件`configs/config.yml`，然后启动服务：
 ```sh
-go run main.go
+go run main.go -configs=configs -runtime=runtime
 ```
 启动成功后我们把定义一下路由文件，然后在服务开启状态会自动同步给其他服务，`configs/routes.yml`：
 ```yml

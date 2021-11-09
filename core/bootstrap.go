@@ -35,8 +35,8 @@ func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin
 	<-forever
 }
 
-func (g *Garden) bootstrap() {
-	g.initConfig("configs", "yml")
+func (g *Garden) bootstrap(configPath string) {
+	g.initConfig(configPath, "yml")
 	g.checkConfig()
 	g.initLog()
 

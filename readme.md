@@ -63,9 +63,9 @@ garden new my-service service
 ......
 
 // 启动网关
-go run my-gateway/main.go
+go run my-gateway/main.go -configs=my-gateway/configs -runtime=my-gateway/runtime
 // 启动服务
-go run my-service/main.go
+go run my-service/main.go -configs=my-gateway/configs -runtime=my-gateway/runtime
 ```
 
 ## 教程：基于Go Garden快速构建微服务
