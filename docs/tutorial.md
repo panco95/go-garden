@@ -13,11 +13,12 @@
 访问 [examples](../examples) 查看当前教程完整代码
 
 ### 一. 环境准备
+
 go-garden基于Etcd实现服务注册发现，基于Zipkin实现链路追踪，启动必须安装好Etcd、Zipkin
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 示例环境仅作为测试使用，不可用于生产环境
- 
+
 ```sh
 docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
 docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
@@ -26,6 +27,7 @@ docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ### 二. 启动Gateway（统一api网关）
 
 安装 [脚手架工具](../tools/garden) 执行命令创建网关服务，服务名称为`my-gateway`：
+
 ```sh
 garden new my-gateway gateway
 ```
@@ -59,6 +61,7 @@ go run main.go -configs=configs -runtime=runtime
 ```
 
 成功输出：
+
 ```sh
 2021-10-27 09:49:18     info    core/bootstrap.go:9     [bootstrap] my-gateway service starting now...
 2021-10-27 09:49:18     info    core/rpc.go:16  [rpc] listen on: 192.168.8.98:9000
@@ -67,15 +70,21 @@ go run main.go -configs=configs -runtime=runtime
 ```
 
 ### 三. 启动User服务
+
 执行命令创建user服务，服务名称为`my-user`：
+
 ```sh
 garden new my-user service
 ```
+
 同样修改`configs/config.yml`配置文件，如果跟gateway在同一台主机，需要修改httpPort和rpcPort防止端口冲突；启动服务：
+
 ```sh
 go run main.go -configs=configs -runtime=runtime
 ```
+
 启动成功输出：
+
 ```sh
 2021-10-27 09:50:08     info    core/bootstrap.go:9     [bootstrap] my-user service starting now...
 2021-10-27 09:50:08     info    core/rpc.go:16  [rpc] listen on: 192.168.8.98:9001
@@ -84,12 +93,15 @@ go run main.go -configs=configs -runtime=runtime
 ```
 
 这时gateway发现user服务节点加入且输出信息：
+
 ```sh
 2021-10-27 11:35:08     info    core/service_manager.go:106     [Service] [my-user] node [192.168.8.98:8081:9001] join
 ```
 
 ### 四. 定义user路由
+
 路由文件路径为`configs/routes.yml`，我们需要正确修改路由文件方才能让框架内部正常执行请求链路；修改`routes.yml`：
+
 ```yml
 routes:
   my-user:
@@ -105,28 +117,24 @@ routes:
       fusing: 5/100
       timeout: 2000
 ```
-路由说明：
-|         字段          |                              说明                               |
-| ---------------------- | --------------------------------------------------------------- |
-| my-user                           | 服务名称 |
-| my-user->login                | my-user服务的login路由配置                                                       |
-| my-user->login->type      | 路由类型：http，表示此接口是api接口，由gateway调用转发                    |
-| my-user->login->path      | http路由类型时需要此配置，表示login接口完整路由                                                     |
-| my-user->login->limiter    |  服务限流器，5/100表示login接口5秒内最多接受100个请求，超出后限流                    |
-| my-user->login->fusing    | 服务熔断器，5/100表示login接口5秒内最多允许100次错误，超出后熔断                                                     |
-| my-user->login->timeout  | 服务超时控制，单位ms，2000表示请求login接口超出2秒后不等待结果                             |
-| my-user->exists                  | my-user服务的exists路由配置                            |
-| my-user->exists->type  |     路由类型：rpc，表示此接口是rpc方法，由业务服务之间调用                      |
-| my-user->exists->limiter    |  服务限流器，5/100表示exists方法5秒内最多接受100个请求，超出后限流                    |
-| my-user->exists->fusing    | 服务熔断器，5/100表示exists方法5秒内最多允许100次错误，超出后熔断                                                     |
-| my-user->exists->timeout  | 服务超时控制，单位ms，2000表示请求exists方法超出2秒后不等待结果                             |
+
+路由说明： | 字段 | 说明 | | ---------------------- | --------------------------------------------------------------- | | my-user
+| 服务名称 | | my-user->login | my-user服务的login路由配置 | | my-user->login->type | 路由类型：http，表示此接口是api接口，由gateway调用转发 | |
+my-user->login->path | http路由类型时需要此配置，表示login接口完整路由 | | my-user->login->limiter |
+服务限流器，5/100表示login接口5秒内最多接受100个请求，超出后限流 | | my-user->login->fusing | 服务熔断器，5/100表示login接口5秒内最多允许100次错误，超出后熔断 | |
+my-user->login->timeout | 服务超时控制，单位ms，2000表示请求login接口超出2秒后不等待结果 | | my-user->exists | my-user服务的exists路由配置 | | my-user->
+exists->type | 路由类型：rpc，表示此接口是rpc方法，由业务服务之间调用 | | my-user->exists->limiter | 服务限流器，5/100表示exists方法5秒内最多接受100个请求，超出后限流 |
+| my-user->exists->fusing | 服务熔断器，5/100表示exists方法5秒内最多允许100次错误，超出后熔断 | | my-user->exists->timeout |
+服务超时控制，单位ms，2000表示请求exists方法超出2秒后不等待结果 |
 
 修改好路由配置后保存，框架会热更新路由配置且同步到其他的服务，无需重启服务；可以观察`my-gateway`的路由配置文件已经同步为`my-user`的路由配置文件了。
 
 ### 五. 编写user服务api接口
+
 上面我们定义了user服务的login接口，现在我们来实现它；
 
 创建全局变量Users（简单代替mysql数据库存储），用于保存用户信息，`global/global.go`：
+
 ```go
 package global
 
@@ -137,10 +145,12 @@ import (
 
 var (
 	Garden *core.Garden
-	Users   sync.Map
+	Users  sync.Map
 )
 ```
+
 创建`api/login.go`，编写login接口代码：
+
 ```go
 package api
 
@@ -163,7 +173,9 @@ func Login(c *gin.Context) {
 	Success(c, MsgOk, nil)
 }
 ```
+
 添加login接口路由path定义，`api/base.go`：
+
 ```go
 package api
 
@@ -176,6 +188,7 @@ func Routes(r *gin.Engine) {
 	r.POST("login", Login)
 }
 ```
+
 ### 六：访问api接口
 
 实现了user服务的login接口后，现在通过客户端来请求它；
@@ -190,18 +203,21 @@ func Routes(r *gin.Engine) {
 
 ```json
 {
-    "code": 0,
-    "data": null,
-    "msg": "登陆成功",
-    "status": true
+  "code": 0,
+  "data": null,
+  "msg": "登陆成功",
+  "status": true
 }
 ```
+
 gateway服务会通过请求路径，把对应的请求转发给my-user服务，然后my-user返回响应给gateway，gateway接收到my-user的响应内容，返回给客户端；
 
 gateway会把收到的请求结果增加一个status字段，如果请求my-user服务失败会返回false，成功既true。
 
 ### 七：编写user服务rpc方法
+
 现在我们要给user服务增加一个exists方法给其他服务调用，首先在`rpc/define`定义exists方法的调用参数和返回参数，`rpc/define/exists.go`：
+
 ```go
 package define
 
@@ -213,9 +229,11 @@ type ExistsReply struct {
 	Exists bool
 }
 ```
+
 ExistsArgs是调用的参数结构体，ExistsReply是方法返回的结构体；
 
 接着在增加方法具体萝莉，`rpc/exists.go`：
+
 ```go
 package rpc
 
@@ -243,14 +261,19 @@ func (r *Rpc) Exists(ctx context.Context, args *define.ExistsArgs, reply *define
 ### 八：调用user服务rpc方法
 
 增加一个pay服务，在其api里来调用user的rpc方法，创建pay服务，服务名称为`my-pay`：
+
 ```sh
 garden new my-pay service
 ```
+
 修改配置文件`configs/config.yml`，然后启动服务：
+
 ```sh
 go run main.go -configs=configs -runtime=runtime
 ```
+
 启动成功后我们把定义一下路由文件，然后在服务开启状态会自动同步给其他服务，`configs/routes.yml`：
+
 ```yml
 routes:
   my-user:
@@ -273,9 +296,11 @@ routes:
       fusing: 5/100
       timeout: 2000
 ```
+
 我们给pay服务增加了一个order接口，我们在order接口实现里调用user服务的exists rpc方法；
 
 首先我们把exists方法的rpc参数定义，就类似grpc的protobuf，把user服务那里定义的赋值进来就好，`rpc/user/exists.go`：
+
 ```go
 package user
 
@@ -344,6 +369,7 @@ func Order(c *gin.Context) {
 ```
 
 接着修改api请求路由，`api/base.go`：
+
 ```go
 package api
 
@@ -363,12 +389,12 @@ func Routes(r *gin.Engine) {
 
 ```json
 {
-    "code": 0,
-    "data": {
-        "orderId": "16353190617887"
-    },
-    "msg": "下单成功",
-    "status": true
+  "code": 0,
+  "data": {
+    "orderId": "16353190617887"
+  },
+  "msg": "下单成功",
+  "status": true
 }
 ```
 
@@ -387,10 +413,10 @@ func Routes(r *gin.Engine) {
 go-garden内部集成了分布式链路追踪系统，调用链每一层我们都可以记录信息，然后在非常清晰的ui界面上查看，我们访问zipkin所在服务器网址：`http://127.0.0.1:9411/zipkin/`，可以查询到刚刚的请求链路追踪记录，如下图所示：
 ![链路追踪zipkin](zipkin.png)
 
-
 ### 十. 自定义配置
 
 我们在业务中会自定义一些配置，例如您需要在业务中连接memcached、elasticsearch等，可在此处自行添加配置项然后通过框架提供的函数获取配置值，`configs/config.yml`：
+
 ```yml
 service:
 
@@ -419,6 +445,7 @@ config:
 框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置，不使用把open改为false：
 
 #### Mysql
+
 ```yml
 service:
   ---
@@ -438,6 +465,7 @@ config:
 ```
 
 #### PostgresSql
+
 ```yml
 service:
   ---
@@ -457,6 +485,7 @@ config:
 ```
 
 #### SqlServer
+
 ```yml
 service:
   ---
@@ -474,15 +503,18 @@ config:
 ```
 
 如何使用：
+
 ```go
 db := global.Garden.Db
 result := make(map[string]interface{})
 db.Raw("SELECT * FROM test").Scan(&result)
 global.Garden.Log(core.InfoLevel, "result", result)
 ```
+
 具体使用请参考gorm文档：https://gorm.io
 
 提示：如果需要使用多数据库或其他数据库又或者不想使用gorm，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
+
 ```go
 global.Garden = core.New()
 // ...
@@ -494,6 +526,7 @@ global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 ### 十二、Redis缓存
 
 框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置，不使用把open配置改为false：
+
 ```yml
 service:
   ---
@@ -508,16 +541,19 @@ config:
 ```
 
 如何使用：
+
 ```go
 redis := global.Garden.Redis
 err := redis.Set(context.Background(), "key", "value", 0).Err()
 if err != nil {
-    global.Garden.Log(core.InfoLevel, "redis", err)
+global.Garden.Log(core.InfoLevel, "redis", err)
 }
 ```
+
 具体使用请参考goredis文档：https://github.com/go-redis/redis
 
 提示：如果需要其他中间件或不愿使用goredis，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
+
 ```go
 global.Garden = core.New()
 // ...
@@ -532,28 +568,28 @@ global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 
 ```go
 import (
-    "github.com/panco95/go-garden/drives/amqp"
-    "amqp2 "github.com/streadway/amqp"
+"github.com/panco95/go-garden/drives/amqp"
+"amqp2 "github.com/streadway/amqp"
 )
 
 // 连接
 client, err := amqp.Conn("amqp://guest:guest@192.168.125.186:5672")
 if err != nil {
-	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
+global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 
 // 消费者
-err := amqp.Consumer(client, "fanout", "test", "test", "test", func(msg amqp2.Delivery) {
-	global.Garden.Log(core.InfoLevel, "msg", msg.Body)
-}) 
+err := amqp.Consumer(client, "fanout", "test", "test", "test", func (msg amqp2.Delivery) {
+global.Garden.Log(core.InfoLevel, "msg", msg.Body)
+})
 if err != nil {
-	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
+global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 
 // 生产者
 err = amqp.Publish(client, "fanout", "test", "test", "test", "test")
 if err != nil {
-	global.Garden.Log(core.FatalLevel, "rabbitmq", err)
+global.Garden.Log(core.FatalLevel, "rabbitmq", err)
 }
 ```
 
@@ -562,8 +598,8 @@ if err != nil {
 提示：其他消息队列组件请自行封装，可参考框架drives/amqp源码！
 
 ### 十四、负载均衡
-上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群；
-复制一份user服务代码修改监听端口，启动；
+
+上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群； 复制一份user服务代码修改监听端口，启动；
 
 现在user服务就是两个节点在运行，这时候我们调用user服务接口或者rpc方法的时候，go-garden内部会通过最小连接数以及轮询策略来选择服务器节点进行请求，开发者无需关心内部逻辑。
 
@@ -577,7 +613,8 @@ if err != nil {
 
 ### 十七. 服务重试
 
-在调用下游服务时，下游服务可能会返回错误，go-garden支持重试机制，在config.yml中配置`callRetry`参数，格式 `timer1/timer2/timer3/...`，可不限制调整，重试次数使用`/`分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整重试策略配置。
+在调用下游服务时，下游服务可能会返回错误，go-garden支持重试机制，在config.yml中配置`callRetry`参数，格式 `timer1/timer2/timer3/...`，可不限制调整，重试次数使用`/`
+分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整重试策略配置。
 
 ### 十八. 超时控制
 
@@ -602,3 +639,50 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 ```
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
+
+
+### 二十. Docker部署
+
+宿主机代码目录：/data/gateway
+```shell
+cd /data/gateway
+```
+
+编译项目：
+```shell
+docker run --rm \
+ -v /data/gateway:/usr/src/gateway \
+ -w /usr/src/gateway \
+ golang:1.17 \
+ sh -c "export CGO_ENABLED=0 && go build -v"
+```
+编译项目(使用国内源)：
+```shell
+docker run --rm \
+ -v /data/gateway:/usr/src/gateway \
+ -w /usr/src/gateway \
+ golang:1.17 \
+ sh -c "export CGO_ENABLED=0 && export GO111MODULE=on && export GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,https://goproxy.io,direct && go build -v"
+```
+
+Dockerfile文件编写：
+```dockerfile
+FROM alpine:latest
+COPY gateway /app/gateway
+CMD ["/app/gateway","-configs=/app/configs","-runtime=/app/runtime"]
+```
+
+打包镜像：
+```shell
+docker build -t gateway .
+```
+
+运行容器：
+```shell
+docker run -it --name gateway \
+ -v /data/gateway/configs:/app/configs \
+ -v /data/gateway/runtime:/app/runtime \
+ -p 8080:8080 \
+ -p 9000:9000 \
+ gateway
+```
