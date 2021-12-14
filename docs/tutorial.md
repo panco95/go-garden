@@ -14,14 +14,29 @@
 
 ### 一. 环境准备
 
-go-garden基于Etcd实现服务注册发现，基于Zipkin实现链路追踪，启动必须安装好Etcd、Zipkin
+go-garden基于Etcd实现服务注册发现，基于Zipkin或Jaeger实现链路追踪，启动必须安装好Etcd、Zipkin或Jaeger
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 示例环境仅作为测试使用，不可用于生产环境
+* zipkin和jaeger都是链路追踪系统，选择一个即可，推荐jaeger
 
 ```sh
 docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
+
 docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
+
+docker run -it -d --name jaeger \
+   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+   -p 5775:5775/udp \
+   -p 6831:6831/udp \
+   -p 6832:6832/udp \
+   -p 5778:5778 \
+   -p 16686:16686 \
+   -p 14268:14268 \
+   -p 14250:14250 \
+   -p 9411:9411 \
+   jaegertracing/all-in-one:1.29
+
 ```
 
 ### 二. 启动Gateway（统一api网关）
@@ -49,7 +64,9 @@ garden new my-gateway gateway
 | service->callRetry     | 服务重试策略，格式`timer1/timer2/timer3/...`（单位毫秒）           |
 | service->etcdKey       | Etcd关联密钥，一套服务使用同一个key才能实现服务注册发现              |
 | service->etcdAddress   | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写         |
-| service->zipkinAddress | zipkin地址，格式：http://192.168.125.185:9411/api/v2/spans       |
+| service->tracerDrive   | 分布式链路追踪引擎，可选zipkin、jaeger，推荐jaeger      |
+| service->zipkinAddress | zipkin上报地址，格式：http://127.0.0.1:9411/api/v2/spans       |
+| service->jaegerAddress | jaeger上报地址，格式：127.0.0.1:6831       |
 | config->*              | 自定义配置项，框架默认定义好redis和数据库配置                                           |
 
 修改好对应的配置后，启动服务：
@@ -385,7 +402,7 @@ func Routes(r *gin.Engine) {
 
 上面就是rpc方法调用的全部步骤，跟grpc很像，只不过go-garden没有使用protobuf编码协议，不需要定义protobuf文件然后用工具执行编码、解码，只需要定义结构体即可，非常方便。
 
-重启pay服务，现在来测试一下rpc调用是否正常，通过gateway访问pay服务的order方法完整地址为：`http://127.0.0.1:8080/api/my-pay/order`，带上跟user/login一样的参数请求，返回响应：
+重启pay服务，现在来测试一下rpc调用是否正常，通过gateway访问pay服务的order方法完整地址为： `http://127.0.0.1:8080/api/my-pay/order` ，带上跟user/login一样的参数请求，返回响应：
 
 ```json
 {
@@ -410,8 +427,9 @@ func Routes(r *gin.Engine) {
 
 第一个方法可以日志排查，在所有调用链的服务的runtime日志找出错误，逐一排查，这种方法在只有2-3个服务的时候勉强行得通，但是也非常的低效；
 
-go-garden内部集成了分布式链路追踪系统，调用链每一层我们都可以记录信息，然后在非常清晰的ui界面上查看，我们访问zipkin所在服务器网址：`http://127.0.0.1:9411/zipkin/`，可以查询到刚刚的请求链路追踪记录，如下图所示：
-![链路追踪zipkin](zipkin.png)
+go-garden内部集成了分布式链路追踪系统，支持zipkin和jaeger，需要在配置文件中配置；
+
+调用链每一层我们都可以记录信息，然后在非常清晰的ui界面上查看，zipkin地址： http://127.0.0.1:9411/zipkin    jaeger地址： http://127.0.0.1:16686
 
 ### 十. 自定义配置
 
