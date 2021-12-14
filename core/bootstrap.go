@@ -55,7 +55,7 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 		g.Log(FatalLevel, "init", err)
 	}
 
-	if err := g.initOpenTracing(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp); err != nil {
+	if err := g.initOpenTracing(); err != nil {
 		g.Log(FatalLevel, "openTracing", err)
 	}
 

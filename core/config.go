@@ -27,7 +27,9 @@ type serviceCfg struct {
 	CallRetry     string
 	EtcdKey       string
 	EtcdAddress   []string
+	TracerDrive   string
 	ZipkinAddress string
+	JaegerAddress string
 }
 
 type cfg struct {

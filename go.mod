@@ -3,6 +3,7 @@ module github.com/panco95/go-garden
 go 1.16
 
 require (
+	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/apache/thrift v0.15.0 // indirect
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/dgryski/go-jump v0.0.0-20211018200510-ba001c3ffce0 // indirect
@@ -43,6 +44,8 @@ require (
 	github.com/spf13/viper v1.8.1
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/tjfoc/gmsm v1.4.1 // indirect
+	github.com/uber/jaeger-client-go v2.30.0+incompatible
+	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.0
 	go.uber.org/zap v1.17.0

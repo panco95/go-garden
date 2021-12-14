@@ -1,16 +1,22 @@
 service:
   debug: true
   serviceName: user
+
   httpOut: false
   httpPort: 8081
   allowCors: false
   rpcOut: false
   rpcPort: 9001
+
   callKey: garden
   callRetry: 50/80/100
+
   etcdKey: garden
   etcdAddress:
-    - 192.168.125.187:2379
-  zipkinAddress: http://192.168.125.187:9411/api/v2/spans
+    - 192.168.125.164:2379
+
+  tracerDrive: jaeger
+  jaegerAddress: 192.168.125.164:6831
+  zipkinAddress: http://192.168.125.164:9411/api/v2/spans
 
 config:
