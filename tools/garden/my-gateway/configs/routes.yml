@@ -1,0 +1,13 @@
+routes:
+  my-gateway:
+    test:
+      type: http
+      path: /test
+      limiter: 5/100
+      fusing: 5/100
+      timeout: 2000
+    testrpc:
+      type: rpc
+      limiter: 5/100
+      fusing: 5/100
+      timeout: 2000

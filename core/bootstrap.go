@@ -104,7 +104,13 @@ func (g *Garden) checkConfig() {
 	if len(g.cfg.Service.EtcdAddress) == 0 {
 		g.Log(FatalLevel, "Config", "empty option etcdAddress")
 	}
-	if g.cfg.Service.ZipkinAddress == "" {
+	if g.cfg.Service.TracerDrive != "zipkin" && g.cfg.Service.TracerDrive != "jaeger" {
+		g.Log(FatalLevel, "Config", "traceDrive just support zipkin or jaeger")
+	}
+	if g.cfg.Service.TracerDrive == "zipkin" && g.cfg.Service.ZipkinAddress == "" {
 		g.Log(FatalLevel, "Config", "empty option zipkinAddress")
+	}
+	if g.cfg.Service.TracerDrive == "jaeger" && g.cfg.Service.JaegerAddress == "" {
+		g.Log(FatalLevel, "Config", "empty option jaegerAddress")
 	}
 }

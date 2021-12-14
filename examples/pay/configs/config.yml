@@ -17,6 +17,23 @@ service:
 
   tracerDrive: jaeger
   jaegerAddress: 192.168.125.164:6831
-  zipkinAddress: http://192.168.125.164:9411/api/v2/spans
+  #zipkinAddress: http://192.168.125.164:9411/api/v2/spans
 
 config:
+  #redis:
+    #open: true
+    #host: "127.0.0.1"
+    #port: "6379"
+    #pass: ""
+    #db: 0
+  #db:
+    #open: true
+    #drive: mysql
+    #host: "127.0.0.1"
+    #port: "3306"
+    #user: "root"
+    #pass: ""
+    #dbname: "test"
+    #charset: "utf8mb4"
+    #parseTime: true
+    #connPool: 10
