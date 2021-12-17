@@ -67,6 +67,7 @@ garden new my-gateway gateway
 | service->tracerDrive   | 分布式链路追踪引擎，可选zipkin、jaeger，推荐jaeger      |
 | service->zipkinAddress | zipkin上报地址，格式：http://127.0.0.1:9411/api/v2/spans       |
 | service->jaegerAddress | jaeger上报地址，格式：127.0.0.1:6831       |
+| service->pushGatewayAddress | 服务监控Prometheus->pushGateway上报地址，格式：127.0.0.1:9091       |
 | config->*              | 自定义配置项，框架默认定义好redis和数据库配置                                           |
 
 修改好对应的配置后，启动服务：
@@ -658,8 +659,21 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
 
+### 二十. 服务监控与警报
 
-### 二十. Docker部署
+1、框架支持Prometheus监控系统，默认监听了/metrics接口提供采集指标数据；
+
+2、同时支持指标主动上报PushGateway，调用如下：
+```golang
+data := map[string]interface{}{
+	"metric-1": 100,
+	"metric-2": 200,
+}
+global.Garden.PushGateway("jobname", data)
+```
+
+
+### 二十一. Docker部署
 
 宿主机代码目录：/data/gateway
 ```shell
