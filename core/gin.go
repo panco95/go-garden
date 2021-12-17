@@ -81,8 +81,8 @@ func notFound(r *gin.Engine) {
 func (g *Garden) prometheus(r *gin.Engine) {
 	r.GET("/metrics", func(c *gin.Context) {
 		data := MapData{
-			"RequestProcess": g.RequestProcess,
-			"RequestFinish":  g.RequestFinish,
+			"RequestProcess": g.RequestProcess.String(),
+			"RequestFinish":  g.RequestFinish.String(),
 		}
 		g.Metrics.Range(func(k, v interface{}) bool {
 			data[k.(string)] = v
