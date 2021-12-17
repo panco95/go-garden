@@ -8,16 +8,8 @@ import (
 	"time"
 )
 
-//Metrics data format
-func (g *Garden) Metrics() string {
-	data := map[string]interface{}{
-
-	}
-	return GenMetricsData(data)
-}
-
 //PushGateway upload metrics data
-func (g *Garden) PushGateway(job string, data map[string]interface{}) (string, error) {
+func (g *Garden) PushGateway(job string, data MapData) (string, error) {
 	client := &http.Client{
 		Timeout: time.Millisecond * time.Duration(5000),
 	}
@@ -42,7 +34,7 @@ func (g *Garden) PushGateway(job string, data map[string]interface{}) (string, e
 }
 
 // GenMetricsData format
-func GenMetricsData(data map[string]interface{}) string {
+func GenMetricsData(data MapData) string {
 	body := ""
 	for k, v := range data {
 		body += fmt.Sprintf("%s %v\n", k, v)

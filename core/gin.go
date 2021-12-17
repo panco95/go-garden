@@ -67,11 +67,6 @@ func (g *Garden) GatewayRoute(r *gin.Engine) {
 	r.Any("api/:service/:action", func(c *gin.Context) {
 		g.gateway(c)
 	})
-	r.Any("healthy", func(c *gin.Context) {
-		c.JSON(200, MapData{
-			"services": g.Services,
-		})
-	})
 }
 
 func notFound(r *gin.Engine) {
@@ -85,7 +80,15 @@ func notFound(r *gin.Engine) {
 
 func (g *Garden) prometheus(r *gin.Engine) {
 	r.GET("/metrics", func(c *gin.Context) {
-		c.String(200, g.Metrics())
+		data := MapData{
+			"RequestProcess": g.RequestProcess,
+			"RequestFinish":  g.RequestFinish,
+		}
+		g.Metrics.Range(func(k, v interface{}) bool {
+			data[k.(string)] = v
+			return true
+		})
+		c.String(200, GenMetricsData(data))
 	})
 }
 
@@ -103,6 +106,8 @@ func (g *Garden) cors(ctx *gin.Context) {
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		g.RequestProcess.Inc()
+
 		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
 		span.SetTag("CallType", "Http")
 		span.SetTag("ServiceIp", g.ServiceIp)
@@ -126,6 +131,9 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 
 		span.SetTag("Status", "finished")
 		span.Finish()
+
+		g.RequestProcess.Dec()
+		g.RequestFinish.Inc()
 	}
 }
 

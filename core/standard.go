@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/go-redis/redis/v8"
 	clientV3 "go.etcd.io/etcd/client/v3"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 	"net/http"
@@ -29,6 +30,9 @@ type (
 		Etcd           *clientV3.Client
 		Db             *gorm.DB
 		Redis          *redis.Client
+		Metrics        sync.Map
+		RequestProcess atomic.Int64
+		RequestFinish  atomic.Int64
 	}
 )
 
