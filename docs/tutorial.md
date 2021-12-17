@@ -87,6 +87,9 @@ go run main.go -configs=configs -runtime=runtime
 2021/10/27 09:49:18 server.go:198: INFO : server pid:16224
 ```
 
+
+注意：如果出现错误请查看go.mod中go-garden包版本号是否为最新版！
+
 ### 三. 启动User服务
 
 执行命令创建user服务，服务名称为`my-user`：
