@@ -14,8 +14,11 @@ import (
 )
 
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+	// init
 	gin.SetMode("release")
 	server := gin.Default()
+
+	// log
 	if err := createDir(g.cfg.runtimePath); err != nil {
 		return err
 	}
@@ -24,6 +27,8 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 		return err
 	}
 	gin.DefaultWriter = file
+
+	// middlewares
 	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
 		return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
 			param.ClientIP,
@@ -38,7 +43,6 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	}))
 	server.Use(gin.Recovery())
 	server.Use(g.openTracingMiddleware())
-
 	if g.cfg.Service.AllowCors {
 		server.Use(g.cors)
 	}
@@ -46,10 +50,13 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 		server.Use(auth())
 	}
 
-	notFound(server)
+	// routes
 	route(server)
+	notFound(server)
+	g.prometheus(server)
 	pprof.Register(server)
 
+	// run
 	g.Log(InfoLevel, "http", fmt.Sprintf("listen on: %s", listenAddress))
 	return server.Run(listenAddress)
 }
@@ -73,6 +80,12 @@ func notFound(r *gin.Engine) {
 	})
 	r.NoMethod(func(c *gin.Context) {
 		c.JSON(httpNotFound, gatewayFail(infoNotFound))
+	})
+}
+
+func (g *Garden) prometheus(r *gin.Engine) {
+	r.GET("/metrics", func(c *gin.Context) {
+		c.String(200, g.Metrics())
 	})
 }
 

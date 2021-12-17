@@ -16,20 +16,21 @@ type routeCfg struct {
 }
 
 type serviceCfg struct {
-	Debug         bool
-	ServiceName   string
-	HttpOut       bool
-	HttpPort      string
-	AllowCors     bool
-	RpcOut        bool
-	RpcPort       string
-	CallKey       string
-	CallRetry     string
-	EtcdKey       string
-	EtcdAddress   []string
-	TracerDrive   string
-	ZipkinAddress string
-	JaegerAddress string
+	Debug              bool
+	ServiceName        string
+	HttpOut            bool
+	HttpPort           string
+	AllowCors          bool
+	RpcOut             bool
+	RpcPort            string
+	CallKey            string
+	CallRetry          string
+	EtcdKey            string
+	EtcdAddress        []string
+	TracerDrive        string
+	ZipkinAddress      string
+	JaegerAddress      string
+	PushGatewayAddress string
 }
 
 type cfg struct {
