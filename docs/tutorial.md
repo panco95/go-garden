@@ -666,14 +666,41 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 1、集成pprof性能监控，路由：/debug/pprof
 
-
 2、支持[Prometheus](https://prometheus.io)：
 
-/metrics接口提供采集指标，默认实现了RequestProcess和RequestFinish两个指标，分别表示处理中请求数和已完成请求数，可通过以下方式添加指标数据：
+/metrics接口提供采集指标，默认实现了RequestProcess和RequestFinish两个指标，分别表示处理中请求数和已完成请求数，可通过表达式查询；
+
+修改Prometheus配置增加采集目标：
+```yml
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: "gateway"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["192.168.125.193:8080"]
+
+  - job_name: "pay"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["192.168.125.193:8082"]
+
+  - job_name: "user-1"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["192.168.125.193:8081"]
+
+  - job_name: "user-2"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["192.168.125.193:8083"]
+```
+
+代码中可增加自定义指标：
 ```golang
 global.Garden.Metrics.Store("metric-1", 100)
 global.Garden.Metrics.Store("metric-2", 200)
 ```
+
 同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
 ```golang
 data := core.MapData{
@@ -682,7 +709,16 @@ data := core.MapData{
 }
 global.Garden.PushGateway("jobname", data)
 ```
-报警需搭配Prometheus组件[AlertManager](https://github.com/prometheus/alertmanager) 使用
+
+按照服务目标和指标名称通过Prometheus查询表达式进行查询：
+```shell
+RequestProcess{instance="192.168.125.193:8080",job="gateway"}
+RequestFinish{instance="192.168.125.193:8080",job="gateway"}
+```
+
+
+* 可视化搭配[grafana](https://grafana.com/)
+* 报警搭配[AlertManager](https://github.com/prometheus/alertmanager) 
 
 
 ### 二十一. Docker部署
