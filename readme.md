@@ -55,7 +55,7 @@ github地址：https://github.com/panco95/go-garden
 
 ```
 // 安装项目脚手架
-go install github.com/panco95/go-garden/tools/garden@v1.2.0
+go install github.com/panco95/go-garden/tools/garden@v1.2.1
 
 // 创建项目
 garden new my-gateway gateway

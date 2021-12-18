@@ -714,6 +714,9 @@ global.Garden.PushGateway("jobname", data)
 ```shell
 RequestProcess{instance="192.168.125.193:8080",job="gateway"}
 RequestFinish{instance="192.168.125.193:8080",job="gateway"}
+RequestFinish{job="gateway"}
+RequestFinish{job="user-1"}
+RequestFinish
 ```
 
 
