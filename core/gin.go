@@ -46,15 +46,18 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	if g.cfg.Service.AllowCors {
 		server.Use(g.cors)
 	}
+
+	// monitoring
+	g.prometheus(server)
+	pprof.Register(server)
+
 	if auth != nil {
 		server.Use(auth())
 	}
 
 	// routes
-	route(server)
 	notFound(server)
-	g.prometheus(server)
-	pprof.Register(server)
+	route(server)
 
 	// run
 	g.Log(InfoLevel, "http", fmt.Sprintf("listen on: %s", listenAddress))
