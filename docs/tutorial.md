@@ -664,13 +664,17 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 ### 二十. 服务监控与警报
 
-1、框架支持[Prometheus](https://prometheus.io)，监听了/metrics接口提供采集指标，默认集成了RequestProcess和RequestFinish两个指标，分别表示请求中数量和已完成请求数量，可根据您的需求自行添加指标数据：
+1、集成pprof性能监控，路由：/debug/pprof
+
+
+2、支持[Prometheus](https://prometheus.io)：
+
+/metrics接口提供采集指标，默认实现了RequestProcess和RequestFinish两个指标，分别表示处理中请求数和已完成请求数，可通过以下方式添加指标数据：
 ```golang
 global.Garden.Metrics.Store("metric-1", 100)
 global.Garden.Metrics.Store("metric-2", 200)
 ```
-
-2、同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
+同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
 ```golang
 data := core.MapData{
 	"metric-1": 100,
@@ -678,8 +682,7 @@ data := core.MapData{
 }
 global.Garden.PushGateway("jobname", data)
 ```
-
-3、报警需搭配Prometheus组件[AlertManager](https://github.com/prometheus/alertmanager) 使用
+报警需搭配Prometheus组件[AlertManager](https://github.com/prometheus/alertmanager) 使用
 
 
 ### 二十一. Docker部署
