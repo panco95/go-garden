@@ -13,25 +13,6 @@ import (
 	"time"
 )
 
-func (g *Garden) initOpenTracing() error {
-	var err error
-	switch g.cfg.Service.TracerDrive {
-	case "jaeger":
-		err = connJaeger(g.cfg.Service.ServiceName, g.cfg.Service.JaegerAddress)
-		break
-	case "zipkin":
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
-		break
-	default:
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
-		break
-	}
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // StartSpanFromHeader Get the opentracing span from the request header
 // If no span, will create new root span, if any, new child span
 func StartSpanFromHeader(header http.Header, operateName string) opentracing.Span {

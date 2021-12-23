@@ -10,13 +10,7 @@ import (
 	"time"
 )
 
-func Connect(dbConf map[string]interface{}, f func(err interface{})) (*gorm.DB, error) {
-	defer func() {
-		if err := recover(); err != nil {
-			f(err)
-		}
-	}()
-
+func Connect(dbConf map[string]interface{}) (*gorm.DB, error) {
 	var db *gorm.DB
 	var err error
 	switch dbConf["drive"] {

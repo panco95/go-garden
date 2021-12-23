@@ -28,26 +28,11 @@ type serviceOperate struct {
 	nodeIndex   int
 }
 
-func (g *Garden) initService(serviceName, httpPort, rpcPort string) error {
-	g.Services = map[string]*service{}
-	var err error
-	g.ServiceIp, err = getOutboundIP()
-	if err != nil {
-		return err
-	}
-	g.ServiceId = g.cfg.Service.EtcdKey + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
-
-	g.serviceManager = make(chan serviceOperate, 0)
-	go g.RebootFunc("serviceManageWatchReboot", func() {
-		g.serviceManageWatch(g.serviceManager)
-	})
-
-	return g.serviceRegister()
-}
 
 func (g *Garden) serviceRegister() error {
+	client := g.GetEtcd()
 	// New lease
-	resp, err := g.Etcd.Grant(context.TODO(), 2)
+	resp, err := client.Grant(context.TODO(), 2)
 	if err != nil {
 		return err
 	}
@@ -55,12 +40,12 @@ func (g *Garden) serviceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = g.Etcd.Put(context.TODO(), g.ServiceId, "0", clientV3.WithLease(resp.ID))
+	_, err = client.Put(context.TODO(), g.ServiceId, "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
 	// keep alive
-	ch, err := g.Etcd.KeepAlive(context.TODO(), resp.ID)
+	ch, err := client.KeepAlive(context.TODO(), resp.ID)
 	if err != nil {
 		return err
 	}
@@ -94,7 +79,8 @@ func (g *Garden) serviceRegister() error {
 }
 
 func (g *Garden) serviceWatcher() {
-	rch := g.Etcd.Watch(context.Background(), g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
+	client := g.GetEtcd()
+	rch := client.Watch(context.Background(), g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
 			arr := strings.Split(string(ev.Kv.Key), "_")
@@ -114,8 +100,9 @@ func (g *Garden) serviceWatcher() {
 }
 
 func (g *Garden) getAllServices() []string {
+	client := g.GetEtcd()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := g.Etcd.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
+	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetAllServices", err)
@@ -131,8 +118,9 @@ func (g *Garden) getAllServices() []string {
 }
 
 func (g *Garden) getServicesByName(serviceName string) []string {
+	client := g.GetEtcd()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	resp, err := g.Etcd.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
+	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetServicesByName", err)

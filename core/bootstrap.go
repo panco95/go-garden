@@ -1,39 +1,10 @@
 package core
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/drives/db"
 	"github.com/panco95/go-garden/drives/etcd"
 	"github.com/panco95/go-garden/drives/redis"
 )
-
-// Run  http(gin) && rpc(rpcx)
-func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
-	go func() {
-		address := g.ServiceIp
-		if g.cfg.Service.HttpOut {
-			address = "0.0.0.0"
-		}
-		listenAddress := address + ":" + g.cfg.Service.HttpPort
-		if err := g.ginListen(listenAddress, route, auth); err != nil {
-			g.Log(FatalLevel, "ginRun", err)
-		}
-	}()
-
-	go func() {
-		address := g.ServiceIp
-		if g.cfg.Service.RpcOut {
-			address = "0.0.0.0"
-		}
-		rpcAddress := address + ":" + g.cfg.Service.RpcPort
-		if err := g.rpcListen(g.cfg.Service.ServiceName, "tcp", rpcAddress, rpc, ""); err != nil {
-			g.Log(FatalLevel, "rpcRun", err)
-		}
-	}()
-
-	forever := make(chan int, 0)
-	<-forever
-}
 
 func (g *Garden) bootstrap(configPath, runtimePath string) {
 	g.cfg.configsPath = configPath
@@ -41,44 +12,88 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 	g.initConfig("yml")
 	g.checkConfig()
 	g.initLog()
-
 	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
+	g.bootEtcd()
+	g.bootService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort)
+	g.bootOpenTracing()
+	g.bootDb()
+	g.bootRedis()
+}
 
+func (g *Garden) bootService(serviceName, httpPort, rpcPort string) {
 	var err error
+	g.Services = map[string]*service{}
+	g.ServiceIp, err = getOutboundIP()
+	if err != nil {
+		g.Log(FatalLevel, "bootService", err)
+	}
+	g.ServiceId = g.cfg.Service.EtcdKey + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
 
-	g.Etcd, err = etcd.Connect(g.cfg.Service.EtcdAddress)
+	g.serviceManager = make(chan serviceOperate, 0)
+	go g.RebootFunc("serviceManageWatchReboot", func() {
+		g.serviceManageWatch(g.serviceManager)
+	})
+
+	if err = g.serviceRegister(); err != nil {
+		g.Log(FatalLevel, "bootService", err)
+	}
+}
+
+func (g *Garden) bootOpenTracing() {
+	var err error
+	switch g.cfg.Service.TracerDrive {
+	case "jaeger":
+		err = connJaeger(g.cfg.Service.ServiceName, g.cfg.Service.JaegerAddress)
+		break
+	case "zipkin":
+		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
+		break
+	default:
+		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
+		break
+	}
+	if err != nil {
+		g.Log(FatalLevel, "openTracing", err)
+	}
+}
+
+func (g *Garden) bootEtcd() {
+	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress)
 	if err != nil {
 		g.Log(FatalLevel, "etcd", err)
 	}
-
-	if err := g.initService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort); err != nil {
-		g.Log(FatalLevel, "init", err)
+	if err := g.Set("etcd", etcdC); err != nil {
+		g.Log(FatalLevel, "etcd", err)
 	}
+}
 
-	if err := g.initOpenTracing(); err != nil {
-		g.Log(FatalLevel, "openTracing", err)
-	}
-
+func (g *Garden) bootDb() {
 	dbConf := g.GetConfigValueMap("db")
-	if dbConf != nil && dbConf["open"].(bool) {
-		g.Db, err = db.Connect(dbConf, func(err interface{}) {
-			g.Log(FatalLevel, "db", err)
-		})
+	if dbConf != nil {
+		dbC, err := db.Connect(dbConf)
 		if err != nil {
 			g.Log(FatalLevel, "db", err)
 		}
 		g.Log(InfoLevel, "db", "Connect success")
+		if err := g.Set("db", dbC); err != nil {
+			g.Log(FatalLevel, "db", err)
+		}
 	}
+}
 
+func (g *Garden) bootRedis() {
 	redisConf := g.GetConfigValueMap("redis")
-	if redisConf != nil && redisConf["open"].(bool) {
-		g.Redis, err = redis.Connect(redisConf, func(err interface{}) {
+	if redisConf != nil {
+		redisC, err := redis.Connect(redisConf, func(err interface{}) {
 			g.Log(FatalLevel, "redis", err)
 		})
 		if err != nil {
 			g.Log(FatalLevel, "database", err)
 		}
 		g.Log(InfoLevel, "redis", "Connect success")
+		if err := g.Set("redis", redisC); err != nil {
+			g.Log(FatalLevel, "redis", err)
+		}
 	}
 }
 
