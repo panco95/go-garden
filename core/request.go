@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// Request struct
-type Request struct {
+// Request datatype
+type req struct {
 	Method   string  `json:"method"`
 	Url      string  `json:"url"`
 	UrlParam string  `json:"urlParam"`
@@ -21,7 +21,7 @@ type Request struct {
 	Body     MapData `json:"body"`
 }
 
-func (g *Garden) callService(span opentracing.Span, service, action string, request *Request, args, reply interface{}) (int, string, error) {
+func (g *Garden) callService(span opentracing.Span, service, action string, request *req, args, reply interface{}) (int, string, error) {
 	s := g.cfg.Routes[service]
 	if len(s) == 0 {
 		return httpNotFound, infoNotFound, errors.New("service not found")
@@ -72,7 +72,7 @@ func (g *Garden) callService(span opentracing.Span, service, action string, requ
 	return code, result, err
 }
 
-func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *Request, timeout int) (int, string, error) {
+func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *req, timeout int) (int, string, error) {
 	client := &http.Client{
 		Timeout: time.Millisecond * time.Duration(timeout),
 	}
@@ -119,7 +119,7 @@ func (g *Garden) requestServiceHttp(span opentracing.Span, url string, request *
 	return httpOk, string(body2), nil
 }
 
-// CallRpc call service rpc method
+// CallRpc call other service rpc method
 func (g *Garden) CallRpc(span opentracing.Span, service, action string, args, reply interface{}) error {
 	_, _, err := g.callService(span, service, action, nil, &args, &reply)
 	if err != nil {

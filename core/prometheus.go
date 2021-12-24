@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-//PushGateway upload metrics data
+//PushGateway upload metric to pushGateway
 func (g *Garden) PushGateway(job string, data MapData) (string, error) {
 	client := &http.Client{
 		Timeout: time.Millisecond * time.Duration(5000),
 	}
 
 	url := fmt.Sprintf("http://%s/metrics/job/%s/instance/%s", g.cfg.Service.PushGatewayAddress, job, job)
-	r, err := http.NewRequest("POST", url, strings.NewReader(GenMetricsData(data)))
+	r, err := http.NewRequest("POST", url, strings.NewReader(metricFormat(data)))
 	if err != nil {
 		return "", err
 	}
@@ -33,11 +33,15 @@ func (g *Garden) PushGateway(job string, data MapData) (string, error) {
 	return string(body2), nil
 }
 
-// GenMetricsData format
-func GenMetricsData(data MapData) string {
+func metricFormat(data MapData) string {
 	body := ""
 	for k, v := range data {
 		body += fmt.Sprintf("%s %v\n", k, v)
 	}
 	return body
+}
+
+//SetMetric to prometheus collect
+func (g *Garden) SetMetric(key string, val interface{}) {
+	g.metrics.Store(key, val)
 }

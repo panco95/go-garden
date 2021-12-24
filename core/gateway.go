@@ -6,21 +6,10 @@ import (
 )
 
 func (g *Garden) gateway(c *gin.Context) {
-	// openTracing span
-	span, err := GetSpan(c)
-	if err != nil {
-		c.JSON(httpFail, gatewayFail(infoServerError))
-		g.Log(ErrorLevel, "GetSpan", err)
-		return
-	}
-	// request struct
-	request, err := getRequest(c)
-	if err != nil {
-		c.JSON(httpFail, gatewayFail(infoServerError))
-		g.Log(ErrorLevel, "GetRequestContext", err)
-		span.SetTag("GetRequestContext", err)
-		return
-	}
+	// get openTracing span
+	span := GetSpan(c)
+	// get request datatype
+	request := GetRequest(c)
 
 	service := c.Param("service")
 	action := c.Param("action")

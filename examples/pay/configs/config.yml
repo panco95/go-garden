@@ -1,6 +1,7 @@
 service:
   debug: true
   serviceName: pay
+  #serviceIp: 127.0.0.1
 
   httpOut: false
   httpPort: 8082
@@ -13,13 +14,13 @@ service:
 
   etcdKey: garden
   etcdAddress:
-    - 192.168.125.193:2379
+    - 192.168.125.194:2379
 
   tracerDrive: jaeger
-  jaegerAddress: 192.168.125.193:6831
-  #zipkinAddress: http://192.168.125.193:9411/api/v2/spans
+  jaegerAddress: 192.168.125.194:6831
+  #zipkinAddress: http://192.168.125.194:9411/api/v2/spans
 
-  pushGatewayAddress: 192.168.125.193:9091
+  pushGatewayAddress: 192.168.125.194:9091
 
 config:
   #redis:

@@ -16,6 +16,7 @@ type SyncRoutesReply struct {
 	Result bool
 }
 
+//SyncRoutes sync routes.yml method
 func (r *Rpc) SyncRoutes(ctx context.Context, args *SyncRoutesArgs, reply *SyncRoutesReply) error {
 	reply.Result = true
 	if err := writeFile("./configs/routes.yml", args.Yml); err != nil {
@@ -45,9 +46,9 @@ func (g *Garden) sendRoutes() {
 		Yml: fileData,
 	}
 	reply := SyncRoutesReply{}
-	for k1, v1 := range g.Services {
+	for k1, v1 := range g.services {
 		for k2, v2 := range v1.Nodes {
-			if strings.Compare(v2.Addr, g.ServiceId) == 0 {
+			if strings.Compare(v2.Addr, g.GetServiceId()) == 0 {
 				continue
 			}
 			addr, err := g.getServiceRpcAddr(k1, k2)

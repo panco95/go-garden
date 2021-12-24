@@ -10,12 +10,12 @@ import (
 	"time"
 )
 
-func (g *Garden) initLog() {
+func (g *Garden) bootLog() {
 	encoder := getEncoder()
 
 	var cores []zapcore.Core
 
-	writeSyncer := getLogWriter(g.cfg.runtimePath)
+	writeSyncer := getLogWriter(g.cfg.RuntimePath)
 	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
 	cores = append(cores, fileCore)
 
@@ -28,30 +28,32 @@ func (g *Garden) initLog() {
 	core := zapcore.NewTee(cores...)
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 
-	g.log = logger.Sugar()
+	l := logger.Sugar()
+	g.setSafe("log", l)
 
-	g.isLogBootstrap = 1
+	g.logBoot = 1
 }
 
-// Log write log file and print if debug is true
+// Log format to write log file and print to shell if debug set true
 func (g *Garden) Log(level logLevel, label string, data interface{}) {
+	l := g.GetLog()
 	format := logFormat(label, data)
 	switch level {
 	case DebugLevel:
-		g.log.Debug(format)
+		l.Debug(format)
 	case InfoLevel:
-		g.log.Info(format)
+		l.Info(format)
 	case WarnLevel:
-		g.log.Warn(format)
+		l.Warn(format)
 	case ErrorLevel:
-		g.log.Errorf(format)
+		l.Errorf(format)
 	case DPanicLevel:
-		g.log.DPanic(format)
+		l.DPanic(format)
 	case PanicLevel:
-		g.log.Panic(format)
+		l.Panic(format)
 	case FatalLevel:
-		if g.isLogBootstrap == 1 {
-			g.log.Fatal(format)
+		if g.logBoot == 1 {
+			l.Fatal(format)
 		} else {
 			log.Fatal(format)
 		}

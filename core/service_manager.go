@@ -28,6 +28,40 @@ type serviceOperate struct {
 	nodeIndex   int
 }
 
+//GetServices get all cluster service map by etcdKey
+func (g *Garden) GetServices() map[string]*service {
+	return g.services
+}
+
+//GetServiceIp get this service ip
+func (g *Garden) GetServiceIp() string {
+	return g.cfg.Service.ServiceIp
+}
+
+//GetServiceId get this service union id
+func (g *Garden) GetServiceId() string {
+	return g.cfg.Service.EtcdKey + "_" + g.cfg.Service.ServiceName + "_" + g.cfg.Service.ServiceIp + ":" + g.cfg.Service.HttpPort + ":" + g.cfg.Service.RpcPort
+}
+
+func (g *Garden) bootService() {
+	var err error
+	g.services = map[string]*service{}
+
+	if g.cfg.Service.ServiceIp == "" {
+		g.cfg.Service.ServiceIp, err = getOutboundIP()
+		if err != nil {
+			g.Log(FatalLevel, "bootService", err)
+		}
+	}
+	g.serviceManager = make(chan serviceOperate, 0)
+	go g.RebootFunc("serviceManageWatchReboot", func() {
+		g.serviceManageWatch(g.serviceManager)
+	})
+
+	if err = g.serviceRegister(); err != nil {
+		g.Log(FatalLevel, "bootService", err)
+	}
+}
 
 func (g *Garden) serviceRegister() error {
 	client := g.GetEtcd()
@@ -40,7 +74,7 @@ func (g *Garden) serviceRegister() error {
 	if err != nil {
 		return err
 	}
-	_, err = client.Put(context.TODO(), g.ServiceId, "0", clientV3.WithLease(resp.ID))
+	_, err = client.Put(context.TODO(), g.GetServiceId(), "0", clientV3.WithLease(resp.ID))
 	if err != nil {
 		return err
 	}
@@ -155,30 +189,30 @@ func (g *Garden) delServiceNode(name, addr string) {
 
 func (g *Garden) createServiceIndex(name string) {
 	if !g.existsService(name) {
-		g.Services[name] = &service{
+		g.services[name] = &service{
 			Nodes: []node{},
 		}
 	}
 }
 
 func (g *Garden) existsService(name string) bool {
-	_, ok := g.Services[name]
+	_, ok := g.services[name]
 	return ok
 }
 
 func (g *Garden) getServiceHttpAddr(name string, index int) (string, error) {
-	if index > len(g.Services[name].Nodes)-1 {
+	if index > len(g.services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(strings.Split(g.Services[name].Nodes[index].Addr, "_")[0], ":")
+	arr := strings.Split(strings.Split(g.services[name].Nodes[index].Addr, "_")[0], ":")
 	return arr[0] + ":" + arr[1], nil
 }
 
 func (g *Garden) getServiceRpcAddr(name string, index int) (string, error) {
-	if index > len(g.Services[name].Nodes)-1 {
+	if index > len(g.services[name].Nodes)-1 {
 		return "", errors.New("service node not found")
 	}
-	arr := strings.Split(strings.Split(g.Services[name].Nodes[index].Addr, "_")[0], ":")
+	arr := strings.Split(strings.Split(g.services[name].Nodes[index].Addr, "_")[0], ":")
 	return arr[0] + ":" + arr[2], nil
 }
 
@@ -190,14 +224,14 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 
 			case "addNode":
 				g.createServiceIndex(sm.serviceName)
-				g.Services[sm.serviceName].Nodes = append(g.Services[sm.serviceName].Nodes, node{Addr: sm.serviceAddr})
+				g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes, node{Addr: sm.serviceAddr})
 				break
 
 			case "delNode":
 				if g.existsService(sm.serviceName) {
-					for i := 0; i < len(g.Services[sm.serviceName].Nodes); i++ {
-						if g.Services[sm.serviceName].Nodes[i].Addr == sm.serviceAddr {
-							g.Services[sm.serviceName].Nodes = append(g.Services[sm.serviceName].Nodes[:i], g.Services[sm.serviceName].Nodes[i+1:]...)
+					for i := 0; i < len(g.services[sm.serviceName].Nodes); i++ {
+						if g.services[sm.serviceName].Nodes[i].Addr == sm.serviceAddr {
+							g.services[sm.serviceName].Nodes = append(g.services[sm.serviceName].Nodes[:i], g.services[sm.serviceName].Nodes[i+1:]...)
 							i--
 						}
 					}
@@ -210,18 +244,18 @@ func (g *Garden) serviceManageWatch(ch chan serviceOperate) {
 }
 
 func (g *Garden) selectService(name string) (string, int, error) {
-	if _, ok := g.Services[name]; !ok {
+	if _, ok := g.services[name]; !ok {
 		return "", 0, errors.New("service not found")
 	}
 
 	var waitingMin int64 = 0
 	nodeIndex := 0
-	nodeLen := len(g.Services[name].Nodes)
+	nodeLen := len(g.services[name].Nodes)
 	if nodeLen < 1 {
 		return "", 0, errors.New("service node not found")
 	} else if nodeLen > 1 {
 		// get the min waiting service node
-		for k, v := range g.Services[name].Nodes {
+		for k, v := range g.services[name].Nodes {
 			if k == 0 {
 				waitingMin = atomic.LoadInt64(&v.Waiting)
 				continue
@@ -234,10 +268,10 @@ func (g *Garden) selectService(name string) (string, int, error) {
 		// if all zero, use rand
 		if waitingMin == 0 {
 			nodeIndex = rand.Intn(nodeLen)
-		}/* else { //test
+		} /* else { //test
 			fmt.Println("not rand")
 		}*/
 	}
 
-	return g.Services[name].Nodes[nodeIndex].Addr, nodeIndex, nil
+	return g.services[name].Nodes[nodeIndex].Addr, nodeIndex, nil
 }

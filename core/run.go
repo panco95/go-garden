@@ -2,7 +2,7 @@ package core
 
 import "github.com/gin-gonic/gin"
 
-// Run  http(gin) && rpc(rpcx)
+// Run service start
 func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
 	go g.runHttpServer(route, auth)
 	go g.runRpcServer(rpc)
@@ -11,7 +11,7 @@ func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin
 }
 
 func (g *Garden) runHttpServer(route func(r *gin.Engine), auth func() gin.HandlerFunc) {
-	address := g.ServiceIp
+	address := g.GetServiceIp()
 	if g.cfg.Service.HttpOut {
 		address = "0.0.0.0"
 	}
@@ -22,7 +22,7 @@ func (g *Garden) runHttpServer(route func(r *gin.Engine), auth func() gin.Handle
 }
 
 func (g *Garden) runRpcServer(rpc interface{}) {
-	address := g.ServiceIp
+	address := g.GetServiceIp()
 	if g.cfg.Service.RpcOut {
 		address = "0.0.0.0"
 	}
@@ -32,7 +32,7 @@ func (g *Garden) runRpcServer(rpc interface{}) {
 	}
 }
 
-// RebootFunc if func panic
+// RebootFunc auto reboot when panic
 func (g *Garden) RebootFunc(label string, f func()) {
 	defer func() {
 		if err := recover(); err != nil {

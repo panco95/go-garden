@@ -19,10 +19,10 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	server := gin.Default()
 
 	// log
-	if err := createDir(g.cfg.runtimePath); err != nil {
+	if err := createDir(g.cfg.RuntimePath); err != nil {
 		return err
 	}
-	file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.runtimePath))
+	file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.RuntimePath))
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	return server.Run(listenAddress)
 }
 
-// GatewayRoute create gateway service, use this gin route
+// GatewayRoute create gateway service type to use this
 func (g *Garden) GatewayRoute(r *gin.Engine) {
 	g.serviceType = 1
 	r.Any("api/:service/:action", func(c *gin.Context) {
@@ -84,14 +84,14 @@ func notFound(r *gin.Engine) {
 func (g *Garden) prometheus(r *gin.Engine) {
 	r.GET("/metrics", func(c *gin.Context) {
 		data := MapData{
-			"RequestProcess": g.RequestProcess.String(),
-			"RequestFinish":  g.RequestFinish.String(),
+			"RequestProcess": g.requestProcess.String(),
+			"RequestFinish":  g.requestFinish.String(),
 		}
-		g.Metrics.Range(func(k, v interface{}) bool {
+		g.metrics.Range(func(k, v interface{}) bool {
 			data[k.(string)] = v
 			return true
 		})
-		c.String(200, GenMetricsData(data))
+		c.String(200, metricFormat(data))
 	})
 }
 
@@ -109,15 +109,15 @@ func (g *Garden) cors(ctx *gin.Context) {
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		g.RequestProcess.Inc()
+		g.requestProcess.Inc()
 
 		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
 		span.SetTag("CallType", "Http")
-		span.SetTag("ServiceIp", g.ServiceIp)
-		span.SetTag("ServiceId", g.ServiceId)
+		span.SetTag("ServiceIp", g.GetServiceIp())
+		span.SetTag("ServiceId", g.GetServiceId())
 		span.SetTag("Status", "unfinished")
 
-		request := Request{
+		request := req{
 			getMethod(c),
 			getUrl(c),
 			getUrlParam(c),
@@ -135,12 +135,12 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 		span.SetTag("Status", "finished")
 		span.Finish()
 
-		g.RequestProcess.Dec()
-		g.RequestFinish.Inc()
+		g.requestProcess.Dec()
+		g.requestFinish.Inc()
 	}
 }
 
-// CheckCallSafeMiddleware create service use this middleware
+// CheckCallSafeMiddleware from call service safe check
 func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.checkCallSafe(c.GetHeader("Call-Key")) {
@@ -150,7 +150,13 @@ func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	}
 }
 
-func getContext(c *gin.Context, name string) (interface{}, error) {
+//SetContext set custom context
+func SetContext(c *gin.Context, name string, val interface{}) {
+	c.Set(name, val)
+}
+
+//GetContext get custom context
+func GetContext(c *gin.Context, name string) (interface{}, error) {
 	t, success := c.Get(name)
 	if !success {
 		return nil, errors.New(name + " is nil")
@@ -158,23 +164,18 @@ func getContext(c *gin.Context, name string) (interface{}, error) {
 	return t, nil
 }
 
-func getRequest(c *gin.Context) (*Request, error) {
-	t, err := getContext(c, "request")
-	if err != nil {
-		return nil, err
-	}
-	r := t.(*Request)
-	return r, nil
+//GetRequest get request datatype from context
+func GetRequest(c *gin.Context) *req {
+	t, _ := GetContext(c, "request")
+	r := t.(*req)
+	return r
 }
 
-// GetSpan service get opentracing span at gin context
-func GetSpan(c *gin.Context) (opentracing.Span, error) {
-	t, err := getContext(c, "span")
-	if err != nil {
-		return nil, err
-	}
+// GetSpan get opentracing span from context
+func GetSpan(c *gin.Context) opentracing.Span {
+	t, _ := GetContext(c, "span")
 	r := t.(opentracing.Span)
-	return r, nil
+	return r
 }
 
 func getMethod(c *gin.Context) string {

@@ -7,54 +7,17 @@ import (
 )
 
 func (g *Garden) bootstrap(configPath, runtimePath string) {
-	g.cfg.configsPath = configPath
-	g.cfg.runtimePath = runtimePath
-	g.initConfig("yml")
+	g.cfg.ConfigsPath = configPath
+	g.cfg.RuntimePath = runtimePath
+	g.bootConfig("yml")
 	g.checkConfig()
-	g.initLog()
-	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" service starting now...")
+	g.bootLog()
+	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" running")
 	g.bootEtcd()
-	g.bootService(g.cfg.Service.ServiceName, g.cfg.Service.HttpPort, g.cfg.Service.RpcPort)
+	g.bootService()
 	g.bootOpenTracing()
 	g.bootDb()
 	g.bootRedis()
-}
-
-func (g *Garden) bootService(serviceName, httpPort, rpcPort string) {
-	var err error
-	g.Services = map[string]*service{}
-	g.ServiceIp, err = getOutboundIP()
-	if err != nil {
-		g.Log(FatalLevel, "bootService", err)
-	}
-	g.ServiceId = g.cfg.Service.EtcdKey + "_" + serviceName + "_" + g.ServiceIp + ":" + httpPort + ":" + rpcPort
-
-	g.serviceManager = make(chan serviceOperate, 0)
-	go g.RebootFunc("serviceManageWatchReboot", func() {
-		g.serviceManageWatch(g.serviceManager)
-	})
-
-	if err = g.serviceRegister(); err != nil {
-		g.Log(FatalLevel, "bootService", err)
-	}
-}
-
-func (g *Garden) bootOpenTracing() {
-	var err error
-	switch g.cfg.Service.TracerDrive {
-	case "jaeger":
-		err = connJaeger(g.cfg.Service.ServiceName, g.cfg.Service.JaegerAddress)
-		break
-	case "zipkin":
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
-		break
-	default:
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.ServiceIp)
-		break
-	}
-	if err != nil {
-		g.Log(FatalLevel, "openTracing", err)
-	}
 }
 
 func (g *Garden) bootEtcd() {
@@ -62,9 +25,7 @@ func (g *Garden) bootEtcd() {
 	if err != nil {
 		g.Log(FatalLevel, "etcd", err)
 	}
-	if err := g.Set("etcd", etcdC); err != nil {
-		g.Log(FatalLevel, "etcd", err)
-	}
+	g.setSafe("etcd", etcdC)
 }
 
 func (g *Garden) bootDb() {
@@ -75,9 +36,7 @@ func (g *Garden) bootDb() {
 			g.Log(FatalLevel, "db", err)
 		}
 		g.Log(InfoLevel, "db", "Connect success")
-		if err := g.Set("db", dbC); err != nil {
-			g.Log(FatalLevel, "db", err)
-		}
+		g.setSafe("db", dbC)
 	}
 }
 
@@ -91,9 +50,7 @@ func (g *Garden) bootRedis() {
 			g.Log(FatalLevel, "database", err)
 		}
 		g.Log(InfoLevel, "redis", "Connect success")
-		if err := g.Set("redis", redisC); err != nil {
-			g.Log(FatalLevel, "redis", err)
-		}
+		g.setSafe("redis", redisC)
 	}
 }
 

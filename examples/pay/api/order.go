@@ -20,18 +20,12 @@ func Order(c *gin.Context) {
 	}
 	username := c.DefaultPostForm("username", "")
 
-	span, err := core.GetSpan(c)
-	if err != nil {
-		Fail(c, MsgFail)
-		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
-		return
-	}
-
+	span := core.GetSpan(c)
 	args := user.ExistsArgs{
 		Username: username,
 	}
 	reply := user.ExistsReply{}
-	err = global.Garden.CallRpc(span, "user", "exists", &args, &reply)
+	err := global.Garden.CallRpc(span, "user", "exists", &args, &reply)
 	if err != nil {
 		Fail(c, MsgFail)
 		global.Garden.Log(core.ErrorLevel, "rpcCall", err)
@@ -39,7 +33,7 @@ func Order(c *gin.Context) {
 		return
 	}
 	if !reply.Exists {
-		Fail(c, MsgFail)
+		Fail(c, "user not exists")
 		return
 	}
 

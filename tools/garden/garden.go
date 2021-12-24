@@ -132,7 +132,7 @@ func gatewayAuth() string {
 }
 
 func configsYml(serviceName, httpOut string) string {
-	return strings.Replace("service:\n  debug: true\n  serviceName: <>\n\n  httpOut: "+httpOut+"\n  httpPort: 8080\n  allowCors: true\n  rpcOut: false\n  rpcPort: 9000\n\n  callKey: garden\n  callRetry: 20/30/50\n\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n\n  tracerDrive: jaeger\n  jaegerAddress: 127.0.0.1:6831\n  #zipkinAddress: http://127.0.0.1:9411/api/v2/spans\n\n  pushGatewayAddress: 127.0.0.1:9091\n\nconfig:\n  #redis:\n    #open: true\n    #host: \"127.0.0.1\"\n    #port: \"6379\"\n    #pass: \"\"\n    #db: 0\n  #db:\n    #open: true\n    #drive: mysql\n    #host: \"127.0.0.1\"\n    #port: \"3306\"\n    #user: \"root\"\n    #pass: \"\"\n    #dbname: \"test\"\n    #charset: \"utf8mb4\"\n    #parseTime: true\n    #connPool: 10\n", "<>", serviceName, 999)
+	return strings.Replace("service:\n  debug: true\n  serviceName: <>\n\n  #serviceIp: 127.0.0.1\n\n  httpOut: "+httpOut+"\n  httpPort: 8080\n  allowCors: true\n  rpcOut: false\n  rpcPort: 9000\n\n  callKey: garden\n  callRetry: 20/30/50\n\n  etcdKey: garden\n  etcdAddress:\n    - 127.0.0.1:2379\n\n  tracerDrive: jaeger\n  jaegerAddress: 127.0.0.1:6831\n  #zipkinAddress: http://127.0.0.1:9411/api/v2/spans\n\n  pushGatewayAddress: 127.0.0.1:9091\n\nconfig:\n  #redis:\n    #open: true\n    #host: \"127.0.0.1\"\n    #port: \"6379\"\n    #pass: \"\"\n    #db: 0\n  #db:\n    #open: true\n    #drive: mysql\n    #host: \"127.0.0.1\"\n    #port: \"3306\"\n    #user: \"root\"\n    #pass: \"\"\n    #dbname: \"test\"\n    #charset: \"utf8mb4\"\n    #parseTime: true\n    #connPool: 10\n", "<>", serviceName, 999)
 }
 
 func serviceRoutesYml(serviceName string) string {

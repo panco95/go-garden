@@ -2,7 +2,7 @@ package core
 
 import "flag"
 
-// New create go garden class
+// New create go-garden instance
 func New() *Garden {
 	service := Garden{}
 

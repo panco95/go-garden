@@ -2,7 +2,6 @@ package core
 
 import (
 	"go.uber.org/atomic"
-	"go.uber.org/zap"
 	"net/http"
 	"sync"
 )
@@ -13,26 +12,19 @@ type (
 	MapData map[string]interface{}
 	// Garden go garden framework class
 	Garden struct {
-		isLogBootstrap uint
-		serviceType    uint //0:service 1:gateway
+		container      sync.Map
 		cfg            cfg
-		Services       map[string]*service
+		logBoot        uint
+		serviceType    uint //0:service 1:gateway
+		services       map[string]*service
 		serviceManager chan serviceOperate
 		syncCache      []byte
-		log            *zap.SugaredLogger
 		fusingMap      sync.Map
 		limiterMap     sync.Map
-		ServiceIp      string
-		ServiceId      string
 
-		//Etcd           *clientV3.Client
-		//Db             *gorm.DB
-		//Redis          *redis.Client
-		Metrics        sync.Map
-		RequestProcess atomic.Int64
-		RequestFinish  atomic.Int64
-
-		container sync.Map
+		metrics        sync.Map
+		requestProcess atomic.Int64
+		requestFinish  atomic.Int64
 	}
 )
 

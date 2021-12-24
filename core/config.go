@@ -18,6 +18,7 @@ type routeCfg struct {
 type serviceCfg struct {
 	Debug              bool
 	ServiceName        string
+	ServiceIp          string
 	HttpOut            bool
 	HttpPort           string
 	AllowCors          bool
@@ -37,12 +38,17 @@ type cfg struct {
 	Service     serviceCfg
 	Routes      map[string]map[string]routeCfg
 	Config      map[string]interface{}
-	runtimePath string
-	configsPath string
+	RuntimePath string
+	ConfigsPath string
 }
 
-func (g *Garden) initConfig(fileType string) {
-	viper.AddConfigPath(g.cfg.configsPath)
+//GetCfg instance to read
+func (g *Garden) GetCfg() cfg {
+	return g.cfg
+}
+
+func (g *Garden) bootConfig(fileType string) {
+	viper.AddConfigPath(g.cfg.ConfigsPath)
 	viper.SetConfigType(fileType)
 
 	viper.SetConfigName("config")
@@ -74,7 +80,7 @@ func (g *Garden) unmarshalConfig() {
 	}
 }
 
-// GetConfigValueInterface in config.yml: configs key
+// GetConfigValueInterface to read as interface{} datatype
 func (g *Garden) GetConfigValueInterface(key string) interface{} {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -83,7 +89,7 @@ func (g *Garden) GetConfigValueInterface(key string) interface{} {
 	return nil
 }
 
-// GetConfigValueMap in config.yml: configs key
+// GetConfigValueMap to read as map[string]interface{} datatype
 func (g *Garden) GetConfigValueMap(key string) map[string]interface{} {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -92,7 +98,7 @@ func (g *Garden) GetConfigValueMap(key string) map[string]interface{} {
 	return nil
 }
 
-// GetConfigValueString in config.yml: configs key
+// GetConfigValueString to read as string datatype
 func (g *Garden) GetConfigValueString(key string) string {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -101,7 +107,7 @@ func (g *Garden) GetConfigValueString(key string) string {
 	return ""
 }
 
-// GetConfigValueInt in config.yml: configs key
+// GetConfigValueInt to read as int datatype
 func (g *Garden) GetConfigValueInt(key string) int {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -110,7 +116,7 @@ func (g *Garden) GetConfigValueInt(key string) int {
 	return 0
 }
 
-// GetConfigValueFloat32 in config.yml: configs key
+// GetConfigValueFloat32 to read as float32 datatype
 func (g *Garden) GetConfigValueFloat32(key string) float32 {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -119,7 +125,7 @@ func (g *Garden) GetConfigValueFloat32(key string) float32 {
 	return 0
 }
 
-// GetConfigValueFloat64 in config.yml: configs key
+// GetConfigValueFloat64 to read as float64 datatype
 func (g *Garden) GetConfigValueFloat64(key string) float64 {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {
@@ -128,7 +134,7 @@ func (g *Garden) GetConfigValueFloat64(key string) float64 {
 	return 0
 }
 
-// GetConfigValueBool in config.yml: configs key
+// GetConfigValueBool to read as bool datatype
 func (g *Garden) GetConfigValueBool(key string) bool {
 	config := g.cfg.Config
 	if val, ok := config[strings.ToLower(key)]; ok {

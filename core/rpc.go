@@ -54,7 +54,7 @@ func rpcCall(span opentracing.Span, addr, service, method string, args, reply in
 	return nil
 }
 
-// StartSpanFormRpc start and get opentracing span from rpc
+// StartSpanFormRpc start and get opentracing span from rpc call
 func StartSpanFormRpc(ctx context.Context, operateName string) opentracing.Span {
 	reqMeta := ctx.Value(share.ReqMetaDataKey).(map[string]string)
 	span := StartSpanFromTextMap(reqMeta, operateName)

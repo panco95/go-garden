@@ -29,14 +29,14 @@ func retryAnalyze(retry string) ([]int, error) {
 	return retrySlice, nil
 }
 
-func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, span opentracing.Span, route routeCfg, request *Request, rpcArgs, rpcReply interface{}) (int, string, error) {
+func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, span opentracing.Span, route routeCfg, request *req, rpcArgs, rpcReply interface{}) (int, string, error) {
 	code := httpOk
 	result := infoSuccess
 	addr := ""
 	var err error
 
 	for i, r := range retry {
-		atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Waiting, 1)
+		atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Waiting, 1)
 
 		if route.Type == "http" {
 			addr, err = g.getServiceHttpAddr(service, nodeIndex)
@@ -59,11 +59,11 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 			}
 		}
 
-		atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Waiting, -1)
+		atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Waiting, -1)
 
 		if err != nil {
 			g.Log(ErrorLevel, "callService", err)
-			g.addFusingQuantity(g.Services[service].Nodes[nodeIndex].Addr + "/" + service + "/" + action)
+			g.addFusingQuantity(g.services[service].Nodes[nodeIndex].Addr + "/" + service + "/" + action)
 
 			// call timeout don't retry
 			if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
@@ -86,7 +86,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		break
 	}
 
-	atomic.AddInt64(&g.Services[service].Nodes[nodeIndex].Finish, 1)
+	atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Finish, 1)
 
 	return code, result, err
 }
