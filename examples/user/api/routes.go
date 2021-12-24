@@ -5,5 +5,5 @@ import (
 )
 
 func Routes(r *gin.Engine) {
-	r.POST("login", Login)
+	r.POST("register", Register)
 }

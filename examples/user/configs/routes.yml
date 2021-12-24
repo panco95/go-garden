@@ -1,8 +1,8 @@
 routes:
   user:
-    login:
+    register:
       type: http
-      path: /login
+      path: /register
       limiter: 5/10000
       fusing: 5/100
       timeout: 2000

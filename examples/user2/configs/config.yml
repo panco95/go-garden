@@ -23,18 +23,18 @@ service:
   pushGatewayAddress: 192.168.125.194:9091
 
 config:
+  db:
+    drive: mysql
+    host: "127.0.0.1"
+    port: "3306"
+    user: "root"
+    pass: "0825"
+    dbname: "garden_example"
+    charset: "utf8mb4"
+    parseTime: true
+    connPool: 10
   #redis:
     #host: "127.0.0.1"
     #port: "6379"
     #pass: ""
     #db: 0
-  #db:
-    #drive: mysql
-    #host: "127.0.0.1"
-    #port: "3306"
-    #user: "root"
-    #pass: ""
-    #dbname: "test"
-    #charset: "utf8mb4"
-    #parseTime: true
-    #connPool: 10

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/examples/pay/global"
+	"github.com/panco95/go-garden/examples/pay/model"
 	"github.com/panco95/go-garden/examples/pay/rpc/user"
 	"math/rand"
 	"time"
@@ -38,7 +39,16 @@ func Order(c *gin.Context) {
 	}
 
 	orderId := fmt.Sprintf("%d%d", time.Now().Unix(), rand.Intn(10000))
-	Success(c, MsgOk, core.MapData{
+	order := model.Order{
+		OrderId: orderId,
+	}
+	db := global.Garden.GetDb()
+	if db.Create(&order).RowsAffected < 1 {
+		Fail(c, "order fail!")
+		return
+	}
+
+	Success(c, "order success!", core.MapData{
 		"orderId": orderId,
 	})
 }
