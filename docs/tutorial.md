@@ -53,9 +53,9 @@ garden new my-gateway gateway
 
 |          字段           |                              说明                               |
 | ---------------------- | --------------------------------------------------------------- |
-| service->debug         | 调试模式开关（true：日志打印和文件存储；false：日志仅文件存储不打印） |
+| service->debug         | 调试模式（true：gin日志、打印日志、写入文件；false：日志仅写入文件） |
 | service->serviceName   | 服务名称                                                         |
-| service->serviceIp   | 服务器内网IP（如服务调用不正常可配置此项)                                                       |
+| service->serviceIp   | 服务器内网IP（如服务之间调用不正常需配置此项)                                                       |
 | service->httpOut       | http端口是否允许外网访问：true允许，false不允许                     |
 | service->httpPort      | http监听端口                                                     |
 | service->allowCors      | http是否允许跨域                                                    |
@@ -681,7 +681,7 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 ### 二十. 服务监控与警报
 
-1、集成pprof性能监控，路由：/debug/pprof
+1、集成pprof性能监控，路由：/debug/pprof（需要开启debug调试模式，因为安全问题不建议生产环境开启）
 
 2、支持[Prometheus](https://prometheus.io)：
 

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -14,54 +15,48 @@ import (
 )
 
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
-	// init
-	gin.SetMode("release")
-	server := gin.Default()
-
-	// log
-	if err := createDir(g.cfg.RuntimePath); err != nil {
-		return err
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	engine.Use(gin.Logger(), gin.Recovery())
+	if g.cfg.Service.Debug {
+		if err := createDir(g.cfg.RuntimePath); err != nil {
+			return err
+		}
+		file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.RuntimePath))
+		if err != nil {
+			return err
+		}
+		gin.DefaultWriter = file
+		engine.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+			return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
+				param.ClientIP,
+				param.TimeStamp.Format(time.RFC1123),
+				param.Method,
+				param.Path,
+				param.Request.Proto,
+				param.StatusCode,
+				param.Latency,
+				param.Request.UserAgent(),
+				param.ErrorMessage)
+		}))
+		pprof.Register(engine)
+	} else {
+		gin.DefaultWriter = ioutil.Discard
 	}
-	file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.RuntimePath))
-	if err != nil {
-		return err
-	}
-	gin.DefaultWriter = file
 
-	// middlewares
-	server.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
-		return fmt.Sprintf("%s - [%s] \"%s %s %s %d %s \"%s\" %s\"\n",
-			param.ClientIP,
-			param.TimeStamp.Format(time.RFC1123),
-			param.Method,
-			param.Path,
-			param.Request.Proto,
-			param.StatusCode,
-			param.Latency,
-			param.Request.UserAgent(),
-			param.ErrorMessage)
-	}))
-	server.Use(gin.Recovery())
-	server.Use(g.openTracingMiddleware())
+	engine.Use(g.openTracingMiddleware())
 	if g.cfg.Service.AllowCors {
-		server.Use(g.cors)
+		engine.Use(cors)
 	}
-
-	// monitoring
-	g.prometheus(server)
-	pprof.Register(server)
-
+	g.prometheus(engine)
 	if auth != nil {
-		server.Use(auth())
+		engine.Use(auth())
 	}
+	notFound(engine)
+	route(engine)
 
-	// routes
-	notFound(server)
-	route(server)
-
-	// run
 	g.Log(InfoLevel, "http", fmt.Sprintf("listen on: %s", listenAddress))
-	return server.Run(listenAddress)
+	return engine.Run(listenAddress)
 }
 
 // GatewayRoute create gateway service type to use this
@@ -95,7 +90,7 @@ func (g *Garden) prometheus(r *gin.Engine) {
 	})
 }
 
-func (g *Garden) cors(ctx *gin.Context) {
+func cors(ctx *gin.Context) {
 	method := ctx.Request.Method
 	ctx.Header("Access-Control-Allow-Origin", "*")
 	ctx.Header("Access-Control-Allow-Headers", "*")
