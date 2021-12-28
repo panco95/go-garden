@@ -55,6 +55,7 @@ garden new my-gateway gateway
 | ---------------------- | --------------------------------------------------------------- |
 | service->debug         | 调试模式开关（true：日志打印和文件存储；false：日志仅文件存储不打印） |
 | service->serviceName   | 服务名称                                                         |
+| service->serviceIp   | 服务器内网IP（如服务调用不正常可配置此项)                                                       |
 | service->httpOut       | http端口是否允许外网访问：true允许，false不允许                     |
 | service->httpPort      | http监听端口                                                     |
 | service->allowCors      | http是否允许跨域                                                    |
@@ -359,13 +360,7 @@ func Order(c *gin.Context) {
 	}
 	username := c.DefaultPostForm("username", "")
 
-	span, err := core.GetSpan(c)
-	if err != nil {
-		Fail(c, MsgFail)
-		global.Garden.Log(core.ErrorLevel, "GetSpan", err)
-		return
-	}
-
+	span := core.GetSpan(c)
 	args := user.ExistsArgs{
 		Username: username,
 	}
@@ -438,10 +433,7 @@ go-garden内部集成了分布式链路追踪系统，支持zipkin和jaeger，�
 记录链路日志，日志数据支持string和err类型：
 
 ```golang
-span, err := core.GetSpan(c)
-if err != nil {
-	return
-}
+span := core.GetSpan(c)
 span.SetTag("key", "val")
 span.SetTag("key", err)
 ```
@@ -475,7 +467,7 @@ config:
 
 ### 十一、数据库
 
-框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置，不使用把open改为false：
+框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置：
 
 #### Mysql
 
@@ -485,7 +477,6 @@ service:
 
 config:
   db:
-    open: true
     drive: mysql
     host: "127.0.0.1"
     port: "3306"
@@ -505,7 +496,6 @@ service:
 
 config:
   db:
-    open: true
     drive: pgsql
     host: "127.0.0.1"
     port: "5432"
@@ -525,7 +515,6 @@ service:
 
 config:
   db:
-    open: true
     drive: mssql
     host: "192.168.125.186"
     port: "1433"
@@ -538,7 +527,7 @@ config:
 如何使用：
 
 ```go
-db := global.Garden.Db
+db := global.Garden.GetDb()
 result := make(map[string]interface{})
 db.Raw("SELECT * FROM test").Scan(&result)
 global.Garden.Log(core.InfoLevel, "result", result)
@@ -558,7 +547,7 @@ global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 
 ### 十二、Redis缓存
 
-框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置，不使用把open配置改为false：
+框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置：
 
 ```yml
 service:
@@ -576,7 +565,7 @@ config:
 如何使用：
 
 ```go
-redis := global.Garden.Redis
+redis := global.Garden.GetRedis()
 err := redis.Set(context.Background(), "key", "value", 0).Err()
 if err != nil {
 global.Garden.Log(core.InfoLevel, "redis", err)
@@ -708,8 +697,8 @@ scrape_configs:
 
 代码中可增加自定义指标：
 ```golang
-global.Garden.Metrics.Store("metric-1", 100)
-global.Garden.Metrics.Store("metric-2", 200)
+global.Garden.SetMetrics("metric-1", 100)
+global.Garden.SetMetrics("metric-2", 200)
 ```
 
 同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
