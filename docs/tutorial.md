@@ -555,7 +555,6 @@ service:
 
 config:
   redis:
-    open: true
     host: "127.0.0.1"
     port: "6379"
     pass: ""
@@ -583,6 +582,24 @@ global.Garden = core.New()
 // ...
 global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
 ```
+
+### 小插曲：容器全局变量
+框架提供了一个全局容器提供给大家使用，上面的GetDb()和GetRedis()都是默认封装好的方法，可以使用Get()和Set()方法存储/取出自定义全局变量：
+```golang
+err := global.Garden.Set("key", "value")
+if err != nil {
+	
+}
+res, err := global.Garden.Get("key")
+if err != nil {
+	
+}
+global.Garden.Log(core.DebugLevel,"container test", res)
+```
+* value可以存储任意类型，get获取到interface{}类型，需要自行断言类型；
+* Get和Set都是并发安全的；
+* 如果你有多数据库、连接其他客户端等需求，可使用自定义配置加上容器全局变量实现。
+
 
 ### 十三、消息队列
 
