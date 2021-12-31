@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/opentracing/opentracing-go"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -29,11 +30,12 @@ func retryAnalyze(retry string) ([]int, error) {
 	return retrySlice, nil
 }
 
-func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, span opentracing.Span, route routeCfg, request *req, rpcArgs, rpcReply interface{}) (int, string, error) {
+func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, span opentracing.Span, route routeCfg, request *req, rpcArgs, rpcReply interface{}) (int, string, http.Header, error) {
 	code := httpOk
 	result := infoSuccess
 	addr := ""
 	var err error
+	var header http.Header
 
 	for i, r := range retry {
 		atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Waiting, 1)
@@ -45,7 +47,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 				break
 			}
 			addr = "http://" + addr + route.Path
-			code, result, err = g.requestServiceHttp(span, addr, request, route.Timeout)
+			code, result, header, err = g.requestServiceHttp(span, addr, request, route.Timeout)
 		} else if route.Type == "rpc" {
 			addr, err = g.getServiceRpcAddr(service, nodeIndex)
 			if err != nil {
@@ -68,16 +70,16 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 			// call timeout don't retry
 			if strings.Contains(err.Error(), "Timeout") || strings.Contains(err.Error(), "deadline") {
 				err = errors.New(fmt.Sprintf("Call %s %s %s timeout", route.Type, service, action))
-				return code, infoTimeout, err
+				return code, infoTimeout, nil, err
 			}
 
 			// call 404 don't retry
 			if code == httpNotFound {
-				return code, infoNotFound, err
+				return code, infoNotFound, nil, err
 			}
 
 			if i == len(retry)-1 {
-				return code, infoServerError, err
+				return code, infoServerError, nil, err
 			}
 			time.Sleep(time.Millisecond * time.Duration(r))
 			continue
@@ -88,5 +90,5 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 
 	atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Finish, 1)
 
-	return code, result, err
+	return code, result, header, err
 }
