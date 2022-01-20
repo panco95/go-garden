@@ -1,7 +1,6 @@
 package core
 
 import (
-	"go.uber.org/atomic"
 	"net/http"
 	"sync"
 )
@@ -23,8 +22,8 @@ type (
 		limiterMap     sync.Map
 
 		metrics        sync.Map
-		requestProcess atomic.Int64
-		requestFinish  atomic.Int64
+		requestProcess int64
+		requestFinish  int64
 	}
 )
 

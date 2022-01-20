@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -79,8 +80,8 @@ func notFound(r *gin.Engine) {
 func (g *Garden) prometheus(r *gin.Engine) {
 	r.GET("/metrics", func(c *gin.Context) {
 		data := MapData{
-			"RequestProcess": g.requestProcess.String(),
-			"RequestFinish":  g.requestFinish.String(),
+			"RequestProcess": g.requestProcess,
+			"RequestFinish":  g.requestFinish,
 		}
 		g.metrics.Range(func(k, v interface{}) bool {
 			data[k.(string)] = v
@@ -104,7 +105,7 @@ func cors(ctx *gin.Context) {
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		g.requestProcess.Inc()
+		atomic.AddInt64(&g.requestProcess, 1)
 
 		span := StartSpanFromHeader(c.Request.Header, c.Request.RequestURI)
 		span.SetTag("CallType", "Http")
@@ -130,8 +131,8 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 		span.SetTag("Status", "finished")
 		span.Finish()
 
-		g.requestProcess.Dec()
-		g.requestFinish.Inc()
+		atomic.AddInt64(&g.requestProcess, -1)
+		atomic.AddInt64(&g.requestFinish, 1)
 	}
 }
 
