@@ -603,38 +603,7 @@ global.Garden.Log(core.DebugLevel,"container test", res)
 
 ### 十三、消息队列
 
-框架提供了rabbitmq（amqp协议都可）消息队列，如何使用：
-
-```go
-import (
-"github.com/panco95/go-garden/drives/amqp"
-"amqp2 "github.com/streadway/amqp"
-)
-
-// 连接
-client, err := amqp.Conn("amqp://guest:guest@192.168.125.186:5672")
-if err != nil {
-global.Garden.Log(core.FatalLevel, "rabbitmq", err)
-}
-
-// 消费者
-err := amqp.Consumer(client, "fanout", "test", "test", "test", func (msg amqp2.Delivery) {
-global.Garden.Log(core.InfoLevel, "msg", msg.Body)
-})
-if err != nil {
-global.Garden.Log(core.FatalLevel, "rabbitmq", err)
-}
-
-// 生产者
-err = amqp.Publish(client, "fanout", "test", "test", "test", "test")
-if err != nil {
-global.Garden.Log(core.FatalLevel, "rabbitmq", err)
-}
-```
-
-试着学习mysql与redis的自定义配置项，在你的项目里把rabbitmq连接地址从配置文件获取吧！
-
-提示：其他消息队列组件请自行封装，可参考框架drives/amqp源码！
+暂无
 
 ### 十四、负载均衡
 

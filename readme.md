@@ -46,8 +46,6 @@ github地址：https://github.com/panco95/go-garden
 
 - **统一日志存储**
 
-- **可选组件：数据库、redis、消息队列**
-
 - **脚手架工具**
 
 
