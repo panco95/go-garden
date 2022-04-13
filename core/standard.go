@@ -13,7 +13,6 @@ type (
 	Garden struct {
 		container      sync.Map
 		cfg            cfg
-		logBoot        uint
 		serviceType    uint //0:service 1:gateway
 		services       map[string]*service
 		serviceManager chan serviceOperate

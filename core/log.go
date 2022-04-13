@@ -2,12 +2,13 @@ package core
 
 import (
 	"fmt"
-	"github.com/natefinch/lumberjack"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"time"
+
+	"github.com/natefinch/lumberjack"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func (g *Garden) bootLog() {
@@ -30,14 +31,24 @@ func (g *Garden) bootLog() {
 
 	l := logger.Sugar()
 	g.setSafe("log", l)
-
-	g.logBoot = 1
 }
 
 // Log format to write log file and print to shell if debug set true
 func (g *Garden) Log(level logLevel, label string, data interface{}) {
-	l := g.GetLog()
 	format := logFormat(label, data)
+	l, err := g.GetLog()
+	if err != nil {
+		switch level {
+		case PanicLevel:
+			log.Panic(format)
+		case FatalLevel:
+			log.Fatal(format)
+		default:
+			log.Print(format)
+		}
+		return
+	}
+
 	switch level {
 	case DebugLevel:
 		l.Debug(format)
@@ -52,11 +63,7 @@ func (g *Garden) Log(level logLevel, label string, data interface{}) {
 	case PanicLevel:
 		l.Panic(format)
 	case FatalLevel:
-		if g.logBoot == 1 {
-			l.Fatal(format)
-		} else {
-			log.Fatal(format)
-		}
+		l.Fatal(format)
 	}
 }
 

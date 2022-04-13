@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+
 	"github.com/go-redis/redis/v8"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
@@ -38,9 +39,12 @@ func (g *Garden) Set(name string, val interface{}) error {
 }
 
 //GetLog instance to write custom Logs
-func (g *Garden) GetLog() *zap.SugaredLogger {
-	res, _ := g.Get("log")
-	return res.(*zap.SugaredLogger)
+func (g *Garden) GetLog() (*zap.SugaredLogger, error) {
+	res, err := g.Get("log")
+	if err != nil {
+		return nil, err
+	}
+	return res.(*zap.SugaredLogger), nil
 }
 
 //GetDb instance to performing database operations

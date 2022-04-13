@@ -603,7 +603,7 @@ global.Garden.Log(core.DebugLevel,"container test", res)
 
 ### 十三、消息队列
 
-暂无
+试着尝试模仿mysql与redis的自定义配置项，在你的项目里把消息队列rabbitmq配置定义并获取后封装到容器全局变量？
 
 ### 十四、负载均衡
 

@@ -14,13 +14,13 @@ service:
 
   etcdKey: garden
   etcdAddress:
-    - 192.168.125.194:2379
+    - 127.0.0.1:2379
 
   tracerDrive: jaeger
-  jaegerAddress: 192.168.125.194:6831
-  #zipkinAddress: http://192.168.125.194:9411/api/v2/spans
+  jaegerAddress: 127.0.0.1:6831
+  #zipkinAddress: http://127.0.0.1:9411/api/v2/spans
 
-  pushGatewayAddress: 192.168.125.194:9091
+  pushGatewayAddress: 127.0.0.1:9091
 
 config:
   db:
