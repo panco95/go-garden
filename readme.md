@@ -55,8 +55,8 @@ github地址：https://github.com/panco95/go-garden
 
 ```
 // 安装项目脚手架
-go get -u github.com/panco95/go-garden@v1.3.3
-go install github.com/panco95/go-garden/tools/garden@v1.3.3
+go get -u github.com/panco95/go-garden@v1.3.4
+go install github.com/panco95/go-garden/tools/garden@v1.3.4
 
 // 创建项目
 garden new my-gateway gateway
@@ -81,7 +81,7 @@ go run my-service/main.go -configs=my-gateway/configs -runtime=my-gateway/runtim
 访问 [tools](tools/garden) 查看脚手架使用说明
 
 ## 特别鸣谢
-感谢 **JetBrains** 为本项目免费提供的正版 **IDE** 激活码，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
+感谢 **JetBrains** 为本项目免费提供 **GOLAND** ，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
 
 ## 交流
 QQ群：967256601
