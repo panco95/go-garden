@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// unSafeList is used keys
 var unSafeList = map[string]interface{}{
 	"log":   nil,
 	"db":    nil,
@@ -17,6 +18,7 @@ var unSafeList = map[string]interface{}{
 	"etcd":  nil,
 }
 
+// setSafe keys
 func (g *Garden) setSafe(name string, val interface{}) {
 	g.container.Store(name, val)
 }
@@ -48,19 +50,28 @@ func (g *Garden) GetLog() (*zap.SugaredLogger, error) {
 }
 
 //GetDb instance to performing database operations
-func (g *Garden) GetDb() *gorm.DB {
-	res, _ := g.Get("db")
-	return res.(*gorm.DB)
+func (g *Garden) GetDb() (*gorm.DB, error) {
+	res, err := g.Get("db")
+	if err != nil {
+		return nil, err
+	}
+	return res.(*gorm.DB), nil
 }
 
 //GetRedis instance to performing redis operations
-func (g *Garden) GetRedis() *redis.Client {
-	res, _ := g.Get("redis")
-	return res.(*redis.Client)
+func (g *Garden) GetRedis() (*redis.Client, error) {
+	res, err := g.Get("redis")
+	if err != nil {
+		return nil, err
+	}
+	return res.(*redis.Client), nil
 }
 
 //GetEtcd instance to performing etcd operations
-func (g *Garden) GetEtcd() *clientV3.Client {
-	res, _ := g.Get("etcd")
-	return res.(*clientV3.Client)
+func (g *Garden) GetEtcd() (*clientV3.Client, error) {
+	res, err := g.Get("etcd")
+	if err != nil {
+		return nil, err
+	}
+	return res.(*clientV3.Client), nil
 }

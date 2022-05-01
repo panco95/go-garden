@@ -2,13 +2,14 @@ package api
 
 import (
 	"fmt"
+	"math/rand"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/panco95/go-garden/core"
 	"github.com/panco95/go-garden/examples/pay/global"
 	"github.com/panco95/go-garden/examples/pay/model"
 	"github.com/panco95/go-garden/examples/pay/rpc/user"
-	"math/rand"
-	"time"
 )
 
 func Order(c *gin.Context) {
@@ -42,7 +43,7 @@ func Order(c *gin.Context) {
 	order := model.Order{
 		OrderId: orderId,
 	}
-	db := global.Garden.GetDb()
+	db, _ := global.Garden.GetDb()
 	if db.Create(&order).RowsAffected < 1 {
 		Fail(c, "order fail!")
 		return

@@ -16,7 +16,7 @@ func Register(c *gin.Context) {
 	}
 	username := c.PostForm("username")
 
-	db := global.Garden.GetDb()
+	db, _ := global.Garden.GetDb()
 	user := model.User{}
 	result := db.Where("username = ?", username).First(&user)
 	if result.RowsAffected > 0 {

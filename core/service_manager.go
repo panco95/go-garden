@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	clientV3 "go.etcd.io/etcd/client/v3"
 	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
 type node struct {
@@ -59,12 +60,15 @@ func (g *Garden) bootService() {
 	})
 
 	if err = g.serviceRegister(); err != nil {
-		g.Log(FatalLevel, "bootService", err)
+		g.Log(FatalLevel, "serviceRegister", err)
 	}
 }
 
 func (g *Garden) serviceRegister() error {
-	client := g.GetEtcd()
+	client, err := g.GetEtcd()
+	if err != nil {
+		return err
+	}
 	// New lease
 	resp, err := client.Grant(context.TODO(), 2)
 	if err != nil {
@@ -92,7 +96,10 @@ func (g *Garden) serviceRegister() error {
 		}
 	}()
 
-	services := g.getAllServices()
+	services, err := g.getAllServices()
+	if err != nil {
+		return err
+	}
 	for _, service := range services {
 		arr := strings.Split(service, "_")
 		serviceName := arr[0]
@@ -102,18 +109,16 @@ func (g *Garden) serviceRegister() error {
 	}
 
 	go g.RebootFunc("serviceWatcherReboot", g.serviceWatcher)
-	go func() {
-		for {
-			time.Sleep(15 * time.Second)
-			g.getAllServices()
-		}
-	}()
-
 	return nil
 }
 
 func (g *Garden) serviceWatcher() {
-	client := g.GetEtcd()
+	client, err := g.GetEtcd()
+	if err != nil {
+		g.Log(ErrorLevel, "GetEtcd", err)
+		return
+	}
+
 	rch := client.Watch(context.Background(), g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	for wresp := range rch {
 		for _, ev := range wresp.Events {
@@ -133,14 +138,17 @@ func (g *Garden) serviceWatcher() {
 	}
 }
 
-func (g *Garden) getAllServices() []string {
-	client := g.GetEtcd()
+func (g *Garden) getAllServices() ([]string, error) {
+	client, err := g.GetEtcd()
+	if err != nil {
+		return []string{}, err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetAllServices", err)
-		return []string{}
+		return []string{}, nil
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
@@ -148,17 +156,20 @@ func (g *Garden) getAllServices() []string {
 		service := arr[1]
 		services = append(services, service)
 	}
-	return services
+	return services, nil
 }
 
-func (g *Garden) getServicesByName(serviceName string) []string {
-	client := g.GetEtcd()
+func (g *Garden) getServicesByName(serviceName string) ([]string, error) {
+	client, err := g.GetEtcd()
+	if err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
 		g.Log(ErrorLevel, "GetServicesByName", err)
-		return []string{}
+		return []string{}, nil
 	}
 	var services []string
 	for _, ev := range resp.Kvs {
@@ -166,7 +177,7 @@ func (g *Garden) getServicesByName(serviceName string) []string {
 		serviceAddr := arr[1]
 		services = append(services, serviceAddr)
 	}
-	return services
+	return services, nil
 }
 
 func (g *Garden) addServiceNode(name, addr string) {
