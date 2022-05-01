@@ -654,9 +654,9 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 2、支持[Prometheus](https://prometheus.io)：
 
-/metrics接口提供采集指标，默认实现了RequestProcess和RequestFinish两个指标，分别表示处理中请求数和已完成请求数，可通过表达式查询；
+/metrics接口提供采集指标，在promtheus配置文件中增加接口地址：
 
-修改Prometheus配置增加采集目标：
+prometheus.yml：
 ```yml
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
@@ -681,11 +681,7 @@ scrape_configs:
       - targets: ["192.168.125.193:8083"]
 ```
 
-代码中可增加自定义指标：
-```golang
-global.Garden.SetMetrics("metric-1", 100)
-global.Garden.SetMetrics("metric-2", 200)
-```
+指标默认为golang_client组件提供，可前往grafana官网搜索模板；
 
 同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
 ```golang
@@ -704,7 +700,6 @@ RequestFinish{job="gateway"}
 RequestFinish{job="user-1"}
 RequestFinish
 ```
-
 
 * 可视化搭配[grafana](https://grafana.com/)
 * 报警搭配[AlertManager](https://github.com/prometheus/alertmanager) 

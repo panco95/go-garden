@@ -4,15 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gin-contrib/pprof"
-	"github.com/gin-gonic/gin"
-	"github.com/opentracing/opentracing-go"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/gin-contrib/pprof"
+	"github.com/gin-gonic/gin"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
@@ -49,7 +51,7 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	if g.cfg.Service.AllowCors {
 		engine.Use(cors)
 	}
-	g.prometheus(engine)
+	engine.GET("/metrics", g.prometheus())
 	if auth != nil {
 		engine.Use(auth())
 	}
@@ -77,18 +79,11 @@ func notFound(r *gin.Engine) {
 	})
 }
 
-func (g *Garden) prometheus(r *gin.Engine) {
-	r.GET("/metrics", func(c *gin.Context) {
-		data := MapData{
-			"RequestProcess": g.requestProcess,
-			"RequestFinish":  g.requestFinish,
-		}
-		g.metrics.Range(func(k, v interface{}) bool {
-			data[k.(string)] = v
-			return true
-		})
-		c.String(200, metricFormat(data))
-	})
+func (g *Garden) prometheus() gin.HandlerFunc {
+	h := promhttp.Handler()
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
 }
 
 func cors(ctx *gin.Context) {

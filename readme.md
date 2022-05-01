@@ -44,7 +44,7 @@ github地址：https://github.com/panco95/go-garden
 
 - **服务监控与警报**
 
-- **可选组件：数据库、缓存等**
+- **可选组件：数据库、缓存**
 
 - **统一日志存储**
 
@@ -79,10 +79,6 @@ go run my-service/main.go -configs=my-gateway/configs -runtime=my-gateway/runtim
 
 ## 脚手架：快速创建按项目
 访问 [tools](tools/garden) 查看脚手架使用说明
-
-## 特别鸣谢
-感谢 **JetBrains** 为本项目免费提供 **GOLAND** ，支持正版请前往购买：[Jetbrains商店](https://www.jetbrains.com/store/#commercial?billing=yearly)
-
 ## 交流
 QQ群：967256601
 
