@@ -80,7 +80,7 @@ func getEncoder() zapcore.Encoder {
 		EncodeLevel:  zapcore.LowercaseLevelEncoder,
 		EncodeCaller: zapcore.ShortCallerEncoder,
 	}
-	return zapcore.NewConsoleEncoder(encoderConfig)
+	return zapcore.NewJSONEncoder(encoderConfig)
 }
 
 func getLogWriter(runtimePath string) zapcore.WriteSyncer {

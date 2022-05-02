@@ -25,18 +25,18 @@ docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e
 
 docker run -it -d --name zipkin -p 9411:9411 openzipkin/zipkin
 
-docker run -it -d --name jaeger \
-   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-   -p 5775:5775/udp \
-   -p 6831:6831/udp \
-   -p 6832:6832/udp \
-   -p 5778:5778 \
-   -p 16686:16686 \
-   -p 14268:14268 \
-   -p 14250:14250 \
-   -p 9411:9411 \
-   jaegertracing/all-in-one:1.29
-
+docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14250:14250 \
+  -p 14268:14268 \
+  -p 14269:14269 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.33
 ```
 
 ### 二. 启动Gateway（统一api网关）
@@ -647,6 +647,11 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 ```
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
+
+deply目录下有filebeat同步日志到elasticsearch示例文件，修改es节点信息后执行同步：
+```shell
+filebeat -e -c ./deply/filebeat.yml
+```
 
 ### 二十. 服务监控与警报
 

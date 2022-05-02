@@ -28,7 +28,7 @@ func (r *Rpc) SyncRoutes(ctx context.Context, args *SyncRoutesArgs, reply *SyncR
 func (g *Garden) sendRoutes() {
 	fileData, err := readFile("configs/routes.yml")
 	if err != nil {
-		g.Log(ErrorLevel, "SyncRoutes", err)
+		g.Log(ErrorLevel, "syncRoutes", err)
 		return
 	}
 
@@ -57,13 +57,13 @@ func (g *Garden) sendRoutes() {
 				continue
 			}
 			if err := rpcCall(nil, addr, k1, "SyncRoutes", &args, &reply, 10000); err != nil {
-				g.Log(ErrorLevel, "SyncRoutes", err)
+				g.Log(ErrorLevel, "syncRoutes", err)
 				return
 			}
 			if !reply.Result {
-				g.Log(ErrorLevel, "SyncRoutes", "fail")
+				g.Log(ErrorLevel, "syncRoutes", "fail")
 			}
-			g.Log(InfoLevel, "SyncRoutes", "success")
+			g.Log(InfoLevel, "syncRoutes", "success")
 		}
 	}
 }

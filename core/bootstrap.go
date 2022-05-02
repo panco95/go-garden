@@ -56,33 +56,33 @@ func (g *Garden) bootRedis() {
 
 func (g *Garden) checkConfig() {
 	if g.cfg.Service.ServiceName == "" {
-		g.Log(FatalLevel, "Config", "empty option serviceName")
+		g.Log(FatalLevel, "config", "empty option serviceName")
 	}
 	if g.cfg.Service.HttpPort == "" {
-		g.Log(FatalLevel, "Config", "empty option httpPort")
+		g.Log(FatalLevel, "config", "empty option httpPort")
 	}
 	if g.cfg.Service.RpcPort == "" {
-		g.Log(FatalLevel, "Config", "empty option httpPort")
+		g.Log(FatalLevel, "config", "empty option httpPort")
 	}
 	if g.cfg.Service.CallKey == "" {
-		g.Log(FatalLevel, "Config", "empty option callKey")
+		g.Log(FatalLevel, "config", "empty option callKey")
 	}
 	if g.cfg.Service.CallRetry == "" {
-		g.Log(FatalLevel, "Config", "empty option callRetry")
+		g.Log(FatalLevel, "config", "empty option callRetry")
 	}
 	if g.cfg.Service.EtcdKey == "" {
-		g.Log(FatalLevel, "Config", "empty option etcdKey")
+		g.Log(FatalLevel, "config", "empty option etcdKey")
 	}
 	if len(g.cfg.Service.EtcdAddress) == 0 {
-		g.Log(FatalLevel, "Config", "empty option etcdAddress")
+		g.Log(FatalLevel, "config", "empty option etcdAddress")
 	}
 	if g.cfg.Service.TracerDrive != "zipkin" && g.cfg.Service.TracerDrive != "jaeger" {
-		g.Log(FatalLevel, "Config", "traceDrive just support zipkin or jaeger")
+		g.Log(FatalLevel, "config", "traceDrive just support zipkin or jaeger")
 	}
 	if g.cfg.Service.TracerDrive == "zipkin" && g.cfg.Service.ZipkinAddress == "" {
-		g.Log(FatalLevel, "Config", "empty option zipkinAddress")
+		g.Log(FatalLevel, "config", "empty option zipkinAddress")
 	}
 	if g.cfg.Service.TracerDrive == "jaeger" && g.cfg.Service.JaegerAddress == "" {
-		g.Log(FatalLevel, "Config", "empty option jaegerAddress")
+		g.Log(FatalLevel, "config", "empty option jaegerAddress")
 	}
 }

@@ -115,7 +115,7 @@ func (g *Garden) serviceRegister() error {
 func (g *Garden) serviceWatcher() {
 	client, err := g.GetEtcd()
 	if err != nil {
-		g.Log(ErrorLevel, "GetEtcd", err)
+		g.Log(ErrorLevel, "getEtcd", err)
 		return
 	}
 
@@ -129,10 +129,10 @@ func (g *Garden) serviceWatcher() {
 			switch ev.Type {
 			case 0: //put
 				g.addServiceNode(serviceName, serviceAddr)
-				g.Log(InfoLevel, "Service", fmt.Sprintf("[%s] node [%s] join", serviceName, serviceAddr))
+				g.Log(InfoLevel, "service", fmt.Sprintf("%s node %s join", serviceName, serviceAddr))
 			case 1: //delete
 				g.delServiceNode(serviceName, serviceAddr)
-				g.Log(InfoLevel, "Service", fmt.Sprintf("[%s] node [%s] leave", serviceName, serviceAddr))
+				g.Log(InfoLevel, "service", fmt.Sprintf("%s node %s leave", serviceName, serviceAddr))
 			}
 		}
 	}
@@ -147,7 +147,7 @@ func (g *Garden) getAllServices() ([]string, error) {
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		g.Log(ErrorLevel, "GetAllServices", err)
+		g.Log(ErrorLevel, "getAllServices", err)
 		return []string{}, nil
 	}
 	var services []string
@@ -168,7 +168,7 @@ func (g *Garden) getServicesByName(serviceName string) ([]string, error) {
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		g.Log(ErrorLevel, "GetServicesByName", err)
+		g.Log(ErrorLevel, "getServicesByName", err)
 		return []string{}, nil
 	}
 	var services []string

@@ -1,0 +1,1 @@
+filebeat.yml：Use filebeat sync logs to elasticsearch.

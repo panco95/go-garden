@@ -1,10 +1,11 @@
 package core
 
 import (
-	"github.com/fsnotify/fsnotify"
-	"github.com/spf13/viper"
 	"path/filepath"
 	"strings"
+
+	"github.com/fsnotify/fsnotify"
+	"github.com/spf13/viper"
 )
 
 type routeCfg struct {
@@ -53,12 +54,12 @@ func (g *Garden) bootConfig(fileType string) {
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		g.Log(FatalLevel, "Config", err)
+		g.Log(FatalLevel, "config", err)
 	}
 
 	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
-		g.Log(FatalLevel, "Config", err)
+		g.Log(FatalLevel, "config", err)
 	}
 
 	g.unmarshalConfig()
@@ -76,7 +77,7 @@ func (g *Garden) bootConfig(fileType string) {
 
 func (g *Garden) unmarshalConfig() {
 	if err := viper.Unmarshal(&g.cfg); err != nil {
-		g.Log(ErrorLevel, "Config", err)
+		g.Log(ErrorLevel, "config", err)
 	}
 }
 
