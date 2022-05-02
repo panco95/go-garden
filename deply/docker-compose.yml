@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+
+  gateway:
+    build: .
+    container_name: gateway-1
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    volumes:
+      - /etc/gateway:/configs
+      - /var/log/gateway:/runtime
