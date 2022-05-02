@@ -79,6 +79,9 @@ go run my-service/main.go -configs=my-gateway/configs -runtime=my-gateway/runtim
 
 ## 脚手架：快速创建按项目
 访问 [tools](tools/garden) 查看脚手架使用说明
+
+## Docker部署：
+参考deply目录下的Dockerfile以及docker-compose.yml，也可参考[示例网关项目](https://github.com/panco95/garden-example-gateway)
 ## 交流
 QQ群：967256601
 
