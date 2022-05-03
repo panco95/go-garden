@@ -18,7 +18,7 @@ go-garden基于Etcd实现服务注册发现，基于Zipkin或Jaeger实现链路�
 
 * 在这里给不熟悉的同学介绍Docker快速安装
 * 示例环境仅作为测试使用，不可用于生产环境
-* zipkin和jaeger都是链路追踪系统，选择一个即可，推荐jaeger
+* zipkin和jaeger都是链路追踪系统，选择一个即可，推荐jaeger，如果不想接入可以删掉相关配置
 
 ```sh
 docker run -it -d --name etcd -p 2379:2379 -e "ALLOW_NONE_AUTHENTICATION=yes" -e "ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379" bitnami/etcd
@@ -65,7 +65,7 @@ garden new my-gateway gateway
 | service->callRetry     | 服务重试策略，格式`timer1/timer2/timer3/...`（单位毫秒）           |
 | service->etcdKey       | Etcd关联密钥，一套服务使用同一个key才能实现服务注册发现              |
 | service->etcdAddress   | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写         |
-| service->tracerDrive   | 分布式链路追踪引擎，可选zipkin、jaeger，推荐jaeger      |
+| service->tracerDrive   | 分布式链路追踪引擎，可选zipkin、jaeger，如果不需要，删掉此项配置      |
 | service->zipkinAddress | zipkin上报地址，格式：http://127.0.0.1:9411/api/v2/spans       |
 | service->jaegerAddress | jaeger上报地址，格式：127.0.0.1:6831       |
 | service->pushGatewayAddress | 服务监控Prometheus->pushGateway上报地址，格式：127.0.0.1:9091       |

@@ -3,14 +3,16 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/opentracing/opentracing-go"
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
 	"github.com/uber/jaeger-client-go"
 	jaegerCfg "github.com/uber/jaeger-client-go/config"
-	"net/http"
-	"time"
+	"github.com/uber/jaeger-client-go/log/zap"
 )
 
 func (g *Garden) bootOpenTracing() {
@@ -23,12 +25,16 @@ func (g *Garden) bootOpenTracing() {
 		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.GetServiceIp())
 		break
 	default:
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.GetServiceIp())
 		break
 	}
 	if err != nil {
 		g.Log(FatalLevel, "openTracing", err)
 	}
+	l, err := g.GetLog()
+	if err != nil {
+		g.Log(FatalLevel, "openTracing GetLog", err)
+	}
+	zap.NewLoggingTracer(l.Desugar(), opentracing.GlobalTracer())
 }
 
 // StartSpanFromHeader Get the opentracing span from the request header
