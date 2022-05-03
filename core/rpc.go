@@ -2,15 +2,24 @@ package core
 
 import (
 	"context"
+	"time"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/smallnest/rpcx/client"
+	"github.com/smallnest/rpcx/log"
 	"github.com/smallnest/rpcx/server"
 	"github.com/smallnest/rpcx/share"
-	"time"
 )
 
 func (g *Garden) rpcListen(name, network, address string, obj interface{}, metadata string) error {
 	s := server.NewServer()
+
+	l, err := g.GetLog()
+	if err != nil {
+		return err
+	}
+	log.SetLogger(l)
+
 	if err := s.RegisterName(name, obj, metadata); err != nil {
 		return err
 	}
