@@ -59,12 +59,12 @@ func (g *Garden) bootService() {
 		g.serviceManageWatch(g.serviceManager)
 	})
 
-	if err = g.serviceRegister(); err != nil {
+	if err = g.serviceRegister(true); err != nil {
 		g.Log(FatalLevel, "serviceRegister", err)
 	}
 }
 
-func (g *Garden) serviceRegister() error {
+func (g *Garden) serviceRegister(isReconnect bool) error {
 	client, err := g.GetEtcd()
 	if err != nil {
 		return err
@@ -87,28 +87,28 @@ func (g *Garden) serviceRegister() error {
 	if err != nil {
 		return err
 	}
+	// monitor etcd connection
 	go func() {
 		for {
 			select {
-			case <-ch:
-
+			case resp := <-ch:
+				if resp == nil {
+					go g.serviceRegister(false)
+					return
+				}
 			}
 		}
 	}()
 
-	services, err := g.getAllServices()
-	if err != nil {
-		return err
+	if isReconnect {
+		go g.serviceWatcher()
+		go func() {
+			for {
+				g.getAllServices()
+				time.Sleep(time.Second * 5)
+			}
+		}()
 	}
-	for _, service := range services {
-		arr := strings.Split(service, "_")
-		serviceName := arr[0]
-		serviceHttpAddr := arr[1]
-
-		g.addServiceNode(serviceName, serviceHttpAddr)
-	}
-
-	go g.RebootFunc("serviceWatcherReboot", g.serviceWatcher)
 	return nil
 }
 
@@ -156,6 +156,15 @@ func (g *Garden) getAllServices() ([]string, error) {
 		service := arr[1]
 		services = append(services, service)
 	}
+
+	for _, service := range services {
+		arr := strings.Split(service, "_")
+		serviceName := arr[0]
+		serviceHttpAddr := arr[1]
+
+		g.addServiceNode(serviceName, serviceHttpAddr)
+	}
+
 	return services, nil
 }
 

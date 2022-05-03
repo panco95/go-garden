@@ -22,7 +22,7 @@ func (g *Garden) bootLog() {
 
 	if g.cfg.Service.Debug {
 		consoleDebug := zapcore.Lock(os.Stdout)
-		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.DebugLevel)
+		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.InfoLevel)
 		cores = append(cores, consoleCore)
 	}
 

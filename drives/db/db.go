@@ -3,11 +3,12 @@ package db
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
-	"time"
 )
 
 func Connect(dbConf map[string]interface{}) (*gorm.DB, error) {

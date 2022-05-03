@@ -21,7 +21,11 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 }
 
 func (g *Garden) bootEtcd() {
-	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress)
+	l, err := g.GetLog()
+	if err != nil {
+		g.Log(FatalLevel, "etcd GetLog", err)
+	}
+	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress, l.Desugar())
 	if err != nil {
 		g.Log(FatalLevel, "etcd", err)
 	}
