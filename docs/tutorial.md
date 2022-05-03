@@ -10,8 +10,6 @@
 
 3、pay服务，提供order接口下单，参数为用户名username，在接口中会rpc调用user的exists方法查询username是否存在，存在下单成功，不存在下单失败。
 
-访问 [examples](../examples) 查看当前教程完整代码
-
 ### 一. 环境准备
 
 go-garden基于Etcd实现服务注册发现，基于Zipkin或Jaeger实现链路追踪，启动必须安装好Etcd、Zipkin或Jaeger
@@ -53,12 +51,12 @@ garden new my-gateway gateway
 
 |          字段           |                              说明                               |
 | ---------------------- | --------------------------------------------------------------- |
-| service->debug         | 调试模式（true：gin日志、打印日志、写入文件；false：日志仅写入文件） |
+| service->debug         | 调试模式（true：打印、写入文件；false：仅写入文件） |
 | service->serviceName   | 服务名称                                                         |
-| service->serviceIp   | 服务器内网IP（如服务之间调用不正常需配置此项)                                                       |
+| service->serviceIp     | 服务器内网IP（如服务调用不正常需配置此项)                                                       |
 | service->httpOut       | http端口是否允许外网访问：true允许，false不允许                     |
 | service->httpPort      | http监听端口                                                     |
-| service->allowCors      | http是否允许跨域                                                    |
+| service->allowCors     | http是否允许跨域                                                    |
 | service->rpcOut        | rpc端口是否允许外网访问：true允许，false不允许                     |
 | service->rpcPort       | rpc监听端口                                                     |
 | service->callKey       | 服务之间调用的密钥，请保持每个服务一致                              |
@@ -69,7 +67,7 @@ garden new my-gateway gateway
 | service->zipkinAddress | zipkin上报地址，格式：http://127.0.0.1:9411/api/v2/spans       |
 | service->jaegerAddress | jaeger上报地址，格式：127.0.0.1:6831       |
 | service->pushGatewayAddress | 服务监控Prometheus->pushGateway上报地址，格式：127.0.0.1:9091       |
-| config->*              | 自定义配置项，框架默认定义好redis和数据库配置                                           |
+| config->*              | 自定义配置项                                           |
 
 修改好对应的配置后，启动服务：
 
@@ -82,10 +80,11 @@ go run main.go -configs=configs -runtime=runtime
 成功输出：
 
 ```sh
-2021-10-27 09:49:18     info    core/bootstrap.go:9     [bootstrap] my-gateway service starting now...
-2021-10-27 09:49:18     info    core/rpc.go:16  [rpc] listen on: 192.168.8.98:9000
-2021-10-27 09:49:18     info    core/gin.go:49  [http] listen on: 0.0.0.0:8080
-2021/10/27 09:49:18 server.go:198: INFO : server pid:16224
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/bootstrap.go:15","msg":"[bootstrap] my-gateway running"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/opentracing.go:37","msg":"loggingTracer created","sampler":"ConstSampler(decision=true)","tags":[{"Key":"jaeger.version","Value":"Go-2.30.0"},{"Key":"hostname","Value":"localhost.localdomain"},{"Key":"ip","Value":"192.168.129.151"}]}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/rpc.go:26","msg":"[rpc] listen on: 192.168.129.151:9000"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/gin.go:61","msg":"[http] listen on: 0.0.0.0:8080"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"server/server.go:198","msg":"server pid:44373"}
 ```
 
 
@@ -105,20 +104,7 @@ garden new my-user service
 go run main.go -configs=configs -runtime=runtime
 ```
 
-启动成功输出：
-
-```sh
-2021-10-27 09:50:08     info    core/bootstrap.go:9     [bootstrap] my-user service starting now...
-2021-10-27 09:50:08     info    core/rpc.go:16  [rpc] listen on: 192.168.8.98:9001
-2021-10-27 09:50:08     info    core/gin.go:49  [http] listen on: 0.0.0.0:8081
-2021/10/27 09:50:08 server.go:198: INFO : server pid:23740
-```
-
-这时gateway发现user服务节点加入且输出信息：
-
-```sh
-2021-10-27 11:35:08     info    core/service_manager.go:106     [Service] [my-user] node [192.168.8.98:8081:9001] join
-```
+这时gateway会发现user服务节点加入且输出信息节点信息。
 
 ### 四. 定义user路由
 
@@ -140,14 +126,21 @@ routes:
       timeout: 2000
 ```
 
-路由说明： | 字段 | 说明 | | ---------------------- | --------------------------------------------------------------- | | my-user
-| 服务名称 | | my-user->login | my-user服务的login路由配置 | | my-user->login->type | 路由类型：http，表示此接口是api接口，由gateway调用转发 | |
-my-user->login->path | http路由类型时需要此配置，表示login接口完整路由 | | my-user->login->limiter |
-服务限流器，5/100表示login接口5秒内最多接受100个请求，超出后限流 | | my-user->login->fusing | 服务熔断器，5/100表示login接口5秒内最多允许100次错误，超出后熔断 | |
-my-user->login->timeout | 服务超时控制，单位ms，2000表示请求login接口超出2秒后不等待结果 | | my-user->exists | my-user服务的exists路由配置 | | my-user->
-exists->type | 路由类型：rpc，表示此接口是rpc方法，由业务服务之间调用 | | my-user->exists->limiter | 服务限流器，5/100表示exists方法5秒内最多接受100个请求，超出后限流 |
-| my-user->exists->fusing | 服务熔断器，5/100表示exists方法5秒内最多允许100次错误，超出后熔断 | | my-user->exists->timeout |
-服务超时控制，单位ms，2000表示请求exists方法超出2秒后不等待结果 |
+路由说明：
+
+| 字段 | 说明 |
+| ---------------------- | --------------------------------------------------------------- | 
+| my-user | 服务名称 | | my-user->login | my-user服务的login路由配置 |
+| my-user->login->type | 路由类型：http，表示此接口是api接口，由gateway调用转发 |
+| my-user->login->path | http路由类型时需要此配置，表示login接口完整路由 |
+| my-user->login->limiter | 服务限流器，5/100表示login接口5秒内最多接受100个请求，超出后限流 |
+| my-user->login->fusing | 服务熔断器，5/100表示login接口5秒内最多允许100次错误，超出后熔断 |
+| my-user->login->timeout | 服务超时控制，单位ms，2000表示请求login接口超出2秒后不等待结果 |
+| my-user->exists | my-user服务的exists路由配置 |
+| my-user->exists->type | 路由类型：rpc，表示此接口是rpc方法，由业务服务之间调用 |
+| my-user->exists->limiter | 服务限流器，5/100表示exists方法5秒内最多接受100个请求，超出后限流 |
+| my-user->exists->fusing | 服务熔断器，5/100表示exists方法5秒内最多允许100次错误，超出后熔断 |
+| my-user->exists->timeout | 服务超时控制，单位ms，2000表示请求exists方法超出2秒后不等待结果 |
 
 修改好路由配置后保存，框架会热更新路由配置且同步到其他的服务，无需重启服务；可以观察`my-gateway`的路由配置文件已经同步为`my-user`的路由配置文件了。
 
@@ -254,7 +247,7 @@ type ExistsReply struct {
 
 ExistsArgs是调用的参数结构体，ExistsReply是方法返回的结构体；
 
-接着在增加方法具体萝莉，`rpc/exists.go`：
+接着在增加方法具体逻辑，`rpc/exists.go`：
 
 ```go
 package rpc
@@ -440,7 +433,7 @@ span.SetTag("key", err)
 
 ### 十. 自定义配置
 
-我们在业务中会自定义一些配置，例如您需要在业务中连接memcached、elasticsearch等，可在此处自行添加配置项然后通过框架提供的函数获取配置值，`configs/config.yml`：
+我们在业务中会自定义一些配置，例如您需要在业务中连接mysql、redis等，可在此处自行添加配置项然后通过框架提供的函数获取配置值，`configs/config.yml`：
 
 ```yml
 service:
@@ -465,128 +458,10 @@ config:
 * 获取bool类型配置：GetConfigValueString("d")
 * 获取interface类型配置：GetConfigValueInterface("a").(float64)
 
-### 十一、数据库
-
-框架集成了数据库组件gorm，支持mysql、sqlserver、pgsql，请选择你需要使用的一个数据库类型添加配置：
-
-#### Mysql
-
-```yml
-service:
-  ---
-
-config:
-  db:
-    drive: mysql
-    host: "127.0.0.1"
-    port: "3306"
-    user: "root"
-    pass: ""
-    dbname: "test"
-    charset: "utf8mb4"
-    parseTime: true
-    connPool: 10
-```
-
-#### PostgresSql
-
-```yml
-service:
-  ---
-
-config:
-  db:
-    drive: pgsql
-    host: "127.0.0.1"
-    port: "5432"
-    user: "postgres"
-    pass: ""
-    dbname: "postgres"
-    sslmode: "disable"
-    timezone: "Asia/Shanghai"
-    connPool: 10
-```
-
-#### SqlServer
-
-```yml
-service:
-  ---
-
-config:
-  db:
-    drive: mssql
-    host: "192.168.125.186"
-    port: "1433"
-    user: "sa"
-    pass: ""
-    dbname: "master"
-    connPool: 10
-```
-
-如何使用：
-
-```go
-db := global.Garden.GetDb()
-result := make(map[string]interface{})
-db.Raw("SELECT * FROM test").Scan(&result)
-global.Garden.Log(core.InfoLevel, "result", result)
-```
-
-具体使用请参考gorm文档：https://gorm.io
-
-提示：如果需要使用多数据库或其他数据库又或者不想使用gorm，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
-
-```go
-global.Garden = core.New()
-// ...
-// 在这里初始化
-// ...
-global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
-```
-
-### 十二、Redis缓存
-
-框架集成了redis组件goredis，如需使用请在configs.yml增加如下配置：
-
-```yml
-service:
-  ---
-
-config:
-  redis:
-    host: "127.0.0.1"
-    port: "6379"
-    pass: ""
-    db: 0
-```
-
-如何使用：
-
-```go
-redis := global.Garden.GetRedis()
-err := redis.Set(context.Background(), "key", "value", 0).Err()
-if err != nil {
-global.Garden.Log(core.InfoLevel, "redis", err)
-}
-```
-
-具体使用请参考goredis文档：https://github.com/go-redis/redis
-
-提示：如果需要其他中间件或不愿使用goredis，可以在业务代码global包添加全局变量，且在服务启动之前初始化连接，建议在如下代码块进行：
-
-```go
-global.Garden = core.New()
-// ...
-// 在这里初始化
-// ...
-global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)
-```
-
 ### 小插曲：容器全局变量
-框架提供了一个全局容器提供给大家使用，上面的GetDb()和GetRedis()都是默认封装好的方法，可以使用Get()和Set()方法存储/取出自定义全局变量：
+框架提供了一个全局容器提供给大家使用，如果你觉得全局变量的方式不够优雅，可以用框架提供的容器存储依赖，使用Get()和Set()方法存储/取出依赖：
 ```golang
-err := global.Garden.Set("key", "value")
+err := global.Garden.Set("key", interface{})
 if err != nil {
 	
 }
@@ -598,37 +473,31 @@ global.Garden.Log(core.DebugLevel,"container test", res)
 ```
 * value可以存储任意类型，get获取到interface{}类型，需要自行断言类型；
 * Get和Set都是并发安全的；
-* 如果你有多数据库、连接其他客户端等需求，可使用自定义配置加上容器全局变量实现。
 
-
-### 十三、消息队列
-
-试着尝试模仿mysql与redis的自定义配置项，在你的项目里把消息队列rabbitmq配置定义并获取后封装到容器全局变量？
-
-### 十四、负载均衡
+### 十一、负载均衡
 
 上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群； 复制一份user服务代码修改监听端口，启动；
 
 现在user服务就是两个节点在运行，这时候我们调用user服务接口或者rpc方法的时候，go-garden内部会通过最小连接数以及轮询策略来选择服务器节点进行请求，开发者无需关心内部逻辑。
 
-### 十五. 服务限流
+### 十二. 服务限流
 
 在`config.yml`中我们可以给每个服务的每个接口配置单独的限流规则`limiter`参数，`5/1000`表示每5秒钟之内最多处理1000个请求，超出数量不会请求下游服务。
 
-### 十六. 服务熔断
+### 十三. 服务熔断
 
 在`config.yml`中我们可以给每个服务的每个接口配置单独的熔断规则`fusing`参数，`5/100`表示接口每5秒钟之内下游服务器返回了100次错误响应后，直接会对下游服务熔断，在当前5秒内不请求下游服务，直接会返回错误响应。
 
-### 十七. 服务重试
+### 十四. 服务重试
 
 在调用下游服务时，下游服务可能会返回错误，go-garden支持重试机制，在config.yml中配置`callRetry`参数，格式 `timer1/timer2/timer3/...`，可不限制调整，重试次数使用`/`
 分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整重试策略配置。
 
-### 十八. 超时控制
+### 十五. 超时控制
 
 在调用下游服务时，下游服务可能会超时，go-garden支持超时控制防止超时问题加重导致服务雪崩，在routes.yml中给每个路由配置`timeout`参数，单位为毫秒ms，当下游服务接口请求超时将会熔断计数+1且不进行服务重试。
 
-### 十九. 日志
+### 十六. 日志
 
 提示：配置文件的`Debug`参数为`true`时，代表调试模式开启，任何日志输出都会同时打印在屏幕上和日志文件中，如果改为`false`，不会在屏幕打印，只会存储在日志文件中
 
@@ -648,12 +517,11 @@ global.Garden.Log(core.FatalLevel, "test", "info")
 
 第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
 
-deply目录下有filebeat同步日志到elasticsearch示例文件，修改es节点信息后执行同步：
+deply目录下有filebeat同步日志到elasticsearch配置，可根据需要自行使用集成到elasticsearch甚至是grafana：
 ```shell
 filebeat -e -c ./deply/filebeat.yml
 ```
-
-### 二十. 服务监控与警报
+### 十七. 服务监控与警报
 
 1、集成pprof性能监控，路由：/debug/pprof（需要开启debug调试模式，因为安全问题不建议生产环境开启）
 
@@ -686,7 +554,7 @@ scrape_configs:
       - targets: ["192.168.125.193:8083"]
 ```
 
-指标默认为golang_client组件提供，可前往grafana官网搜索模板；
+指标默认为golang_client组件提供，可前往grafana官网搜索metrics模板；
 
 同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
 ```golang
@@ -706,57 +574,13 @@ RequestFinish{job="user-1"}
 RequestFinish
 ```
 
-* 可视化搭配[grafana](https://grafana.com/)
-* 报警搭配[AlertManager](https://github.com/prometheus/alertmanager) 
+* 推荐搭配[grafana]一起使用(https://grafana.com/)
 
 
-### 二十一. Docker部署
+### 十八. Docker部署
 
-宿主机代码目录：/data/gateway
-```shell
-cd /data/gateway
-```
+deply目录里面有最佳实践Dockerfile和docker-compose.yml文件，仅供参考！
 
-编译项目：
-```shell
-docker run --rm \
- -v /data/gateway:/usr/src/gateway \
- -w /usr/src/gateway \
- golang:1.17 \
- sh -c "export CGO_ENABLED=0 && go build -v"
-```
-编译项目(使用国内源)：
-```shell
-docker run --rm \
- -v /data/gateway:/usr/src/gateway \
- -w /usr/src/gateway \
- golang:1.17 \
- sh -c "export CGO_ENABLED=0 && export GO111MODULE=on && export GOPROXY=https://goproxy.cn,https://mirrors.aliyun.com/goproxy/,https://goproxy.io,direct && go build -v"
-```
-
-Dockerfile文件编写：
-```dockerfile
-FROM alpine:latest
-COPY gateway /app/gateway
-CMD ["/app/gateway","-configs=/app/configs","-runtime=/app/runtime"]
-```
-
-打包镜像：
-```shell
-docker build -t gateway .
-```
-
-运行容器：
-```shell
-docker run -it --name gateway \
- -v /data/gateway/configs:/app/configs \
- -v /data/gateway/runtime:/app/runtime \
- -p 8080:8080 \
- -p 9000:9000 \
- gateway
-```
-
-生产环境版本Dockerfile，需要自行修改：
 ```dockerfile
 FROM golang:1.17 as mod
 LABEL stage=mod
@@ -802,4 +626,20 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
    rm -rf /var/cache/apk/* /tmp/*
 
 ENTRYPOINT ["/main"]
+```
+
+```
+version: '3'
+
+services:
+
+  gateway:
+    build: .
+    container_name: gateway-1
+    ports:
+      - "8080:8080"
+      - "9000:9000"
+    volumes:
+      - /etc/gateway:/configs
+      - /var/log/gateway:/runtime
 ```

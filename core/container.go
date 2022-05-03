@@ -4,18 +4,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-redis/redis/v8"
 	clientV3 "go.etcd.io/etcd/client/v3"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 )
 
 // unSafeList is used keys
 var unSafeList = map[string]interface{}{
-	"log":   nil,
-	"db":    nil,
-	"redis": nil,
-	"etcd":  nil,
+	"log":  nil,
+	"etcd": nil,
 }
 
 // setSafe keys
@@ -47,24 +43,6 @@ func (g *Garden) GetLog() (*zap.SugaredLogger, error) {
 		return nil, err
 	}
 	return res.(*zap.SugaredLogger), nil
-}
-
-//GetDb instance to performing database operations
-func (g *Garden) GetDb() (*gorm.DB, error) {
-	res, err := g.Get("db")
-	if err != nil {
-		return nil, err
-	}
-	return res.(*gorm.DB), nil
-}
-
-//GetRedis instance to performing redis operations
-func (g *Garden) GetRedis() (*redis.Client, error) {
-	res, err := g.Get("redis")
-	if err != nil {
-		return nil, err
-	}
-	return res.(*redis.Client), nil
 }
 
 //GetEtcd instance to performing etcd operations

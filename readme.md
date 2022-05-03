@@ -44,8 +44,6 @@ github地址：https://github.com/panco95/go-garden
 
 - **服务监控与警报**
 
-- **可选组件：数据库、缓存**
-
 - **统一日志存储**
 
 - **脚手架工具**
@@ -74,14 +72,11 @@ go run my-service/main.go -configs=my-gateway/configs -runtime=my-gateway/runtim
 ## 教程：基于Go Garden快速构建微服务
 访问 [基于Go Garden快速构建微服务](docs/tutorial.md) 跟着一步一步学习如何使用go-garden
 
-## 教程：代码示例
-访问 [examples](examples) 查看完整示例项目
-
-## 脚手架：快速创建按项目
+## 脚手架：快速创建项目
 访问 [tools](tools/garden) 查看脚手架使用说明
 
 ## Docker部署：
-参考deply目录下的Dockerfile以及docker-compose.yml，也可参考[示例网关项目](https://github.com/panco95/garden-example-gateway)
+参考deply目录下的Dockerfile以及docker-compose.yml文件
 ## 交流
 QQ群：967256601
 

@@ -1,9 +1,7 @@
 package core
 
 import (
-	"github.com/panco95/go-garden/drives/db"
-	"github.com/panco95/go-garden/drives/etcd"
-	"github.com/panco95/go-garden/drives/redis"
+	"github.com/panco95/go-garden/core/drives/etcd"
 )
 
 func (g *Garden) bootstrap(configPath, runtimePath string) {
@@ -16,8 +14,7 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 	g.bootEtcd()
 	g.bootService()
 	g.bootOpenTracing()
-	g.bootDb()
-	g.bootRedis()
+	g.Log(1, "a", "a")
 }
 
 func (g *Garden) bootEtcd() {
@@ -30,32 +27,6 @@ func (g *Garden) bootEtcd() {
 		g.Log(FatalLevel, "etcd", err)
 	}
 	g.setSafe("etcd", etcdC)
-}
-
-func (g *Garden) bootDb() {
-	dbConf := g.GetConfigValueMap("db")
-	if dbConf != nil {
-		dbC, err := db.Connect(dbConf)
-		if err != nil {
-			g.Log(FatalLevel, "db", err)
-		}
-		g.Log(InfoLevel, "db", "Connect success")
-		g.setSafe("db", dbC)
-	}
-}
-
-func (g *Garden) bootRedis() {
-	redisConf := g.GetConfigValueMap("redis")
-	if redisConf != nil {
-		redisC, err := redis.Connect(redisConf, func(err interface{}) {
-			g.Log(FatalLevel, "redis", err)
-		})
-		if err != nil {
-			g.Log(FatalLevel, "database", err)
-		}
-		g.Log(InfoLevel, "redis", "Connect success")
-		g.setSafe("redis", redisC)
-	}
 }
 
 func (g *Garden) checkConfig() {
