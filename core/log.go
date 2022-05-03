@@ -17,7 +17,7 @@ func (g *Garden) bootLog() {
 	var cores []zapcore.Core
 
 	writeSyncer := getLogWriter(g.cfg.RuntimePath)
-	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.DebugLevel)
+	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.InfoLevel)
 	cores = append(cores, fileCore)
 
 	if g.cfg.Service.Debug {
