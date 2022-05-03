@@ -12,9 +12,8 @@ github地址：https://github.com/panco95/go-garden
 
 * 为分布式系统架构的开发提供了核心需求，包括微服务的一些基础架构支持，减少开发者对微服务的基础开发，更着力于业务开发；
 * 支持Http/Rpc协议，http使用gin，rpc使用rpcx；
-* rpc无需protobuf，只需要定义结构体即可；
-* 可选组件：数据库、缓存、消息队列等；
-* 可选脚手架工具规范服务结构。
+* RPC无需定义Proto文件，只需要定义结构体即可；
+* 使用脚手架快速创建项目。
 
 ## 特性
 
@@ -53,8 +52,8 @@ github地址：https://github.com/panco95/go-garden
 
 ```
 // 安装项目脚手架
-go get -u github.com/panco95/go-garden@v1.3.7
-go install github.com/panco95/go-garden/tools/garden@v1.3.7
+go get -u github.com/panco95/go-garden@v1.4.0
+go install github.com/panco95/go-garden/tools/garden@v1.4.0
 
 // 创建项目
 garden new my-gateway gateway
