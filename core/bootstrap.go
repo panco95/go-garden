@@ -14,7 +14,6 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 	g.bootEtcd()
 	g.bootService()
 	g.bootOpenTracing()
-	g.Log(1, "a", "a")
 }
 
 func (g *Garden) bootEtcd() {

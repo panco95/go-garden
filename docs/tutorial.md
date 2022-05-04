@@ -433,30 +433,31 @@ span.SetTag("key", err)
 
 ### 十. 自定义配置
 
-我们在业务中会自定义一些配置，例如您需要在业务中连接mysql、redis等，可在此处自行添加配置项然后通过框架提供的函数获取配置值，`configs/config.yml`：
+我们在业务中会自定义一些配置，例如您需要在业务中连接mysql、redis等，可在此处自行添加配置项然后通过viper的函数获取配置值，`configs/config.yml`：
 
 ```yml
 service:
+  #service是框架定义的配置项，请不要再后面覆盖service配置项
+  #...
 
-config:
-  a: 1.13
-  b: 1
-  c: "hello"
-  d: true
-  e:
-    e1: "aa"
-    e2: 1
+mysql:
+  enable: true
+  addr: 127.0.0.1:3306
+  user: root
+  pass: abcdefg
+  pool: 10
+  advanced:
+    timeout: 10s
+number: 1.111
 ```
 
-业务中使用下面方法获取服务自定义配置项：
+框架已经把配置文件注入到viper，业务中使用viper提供的方法即可快捷获取配置，更多方法请参考viper文档或源码：
 
-* 获取map类型配置：GetConfigValueMap("e")
-* 获取int类型配置：GetConfigValueInt("b")
-* 获取float32类型配置：GetConfigValueFloat32("a")
-* 获取float64类型配置：GetConfigValueFloat64("a")
-* 获取string类型配置：GetConfigValueString("c")
-* 获取bool类型配置：GetConfigValueString("d")
-* 获取interface类型配置：GetConfigValueInterface("a").(float64)
+* viper.GetString("mysql.addr")
+* viper.GetInt("mysql.pool")
+* viper.GetBool("mysql.enable")
+* viper.GetDuration("mysql.advanced.timeout")
+* viper.GetFloat64("number)
 
 ### 小插曲：容器全局变量
 框架提供了一个全局容器提供给大家使用，如果你觉得全局变量的方式不够优雅，可以用框架提供的容器存储依赖，使用Get()和Set()方法存储/取出依赖：
