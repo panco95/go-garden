@@ -1,8 +1,7 @@
-package core
+package log
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -11,60 +10,27 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func (g *Garden) bootLog() {
+var logger *zap.SugaredLogger
+
+func Setup(path string, debug bool) {
 	encoder := getEncoder()
 
 	var cores []zapcore.Core
 
-	writeSyncer := getLogWriter(g.cfg.RuntimePath)
+	writeSyncer := getLogWriter(path)
 	fileCore := zapcore.NewCore(encoder, writeSyncer, zapcore.InfoLevel)
 	cores = append(cores, fileCore)
 
-	if g.cfg.Service.Debug {
+	if debug {
 		consoleDebug := zapcore.Lock(os.Stdout)
 		consoleCore := zapcore.NewCore(encoder, consoleDebug, zapcore.InfoLevel)
 		cores = append(cores, consoleCore)
 	}
 
 	core := zapcore.NewTee(cores...)
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-
-	l := logger.Sugar()
-	g.setSafe("log", l)
-}
-
-// Log format to write log file and print to shell if debug set true
-func (g *Garden) Log(level logLevel, label string, data interface{}) {
-	format := logFormat(label, data)
-	l, err := g.GetLog()
-	if err != nil {
-		switch level {
-		case PanicLevel:
-			log.Panic(format)
-		case FatalLevel:
-			log.Fatal(format)
-		default:
-			log.Print(format)
-		}
-		return
-	}
-
-	switch level {
-	case DebugLevel:
-		l.Debug(format)
-	case InfoLevel:
-		l.Info(format)
-	case WarnLevel:
-		l.Warn(format)
-	case ErrorLevel:
-		l.Errorf(format)
-	case DPanicLevel:
-		l.DPanic(format)
-	case PanicLevel:
-		l.Panic(format)
-	case FatalLevel:
-		l.Fatal(format)
-	}
+	logger = zap.
+		New(core, zap.AddCaller(), zap.AddCallerSkip(1)).
+		Sugar()
 }
 
 func getEncoder() zapcore.Encoder {
@@ -94,7 +60,11 @@ func getLogWriter(runtimePath string) zapcore.WriteSyncer {
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-func logFormat(label string, log interface{}) string {
+func format(label string, log interface{}) string {
 	e := fmt.Sprintf("[%s] %s", label, log)
 	return e
+}
+
+func GetLogger() *zap.SugaredLogger {
+	return logger
 }

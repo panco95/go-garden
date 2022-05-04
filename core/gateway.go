@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden/core/log"
 )
 
 func (g *Garden) gateway(c *gin.Context) {
@@ -19,14 +20,14 @@ func (g *Garden) gateway(c *gin.Context) {
 	code, data, header, err := g.callService(span, service, action, request, nil, nil)
 	if err != nil {
 		c.JSON(code, gatewayFail(data))
-		g.Log(ErrorLevel, "callService", err)
+		log.Error("callService", err)
 		span.SetTag("CallService", err)
 		return
 	}
 	var result MapData
 	if err := json.Unmarshal([]byte(data), &result); err != nil {
 		c.JSON(httpFail, gatewayFail(infoServerError))
-		g.Log(ErrorLevel, "returnInvalidFormat", err)
+		log.Error("returnInvalidFormat", err)
 		span.SetTag("ReturnInvalidFormat", err)
 		return
 	}

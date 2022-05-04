@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/panco95/go-garden/core/log"
 	"github.com/spf13/viper"
 )
 
@@ -52,12 +53,12 @@ func (g *Garden) bootConfig(fileType string) {
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		g.Log(FatalLevel, "config", err)
+		log.Fatal("config", err)
 	}
 
 	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
-		g.Log(FatalLevel, "config", err)
+		log.Fatal("config", err)
 	}
 
 	g.unmarshalConfig()
@@ -75,6 +76,6 @@ func (g *Garden) bootConfig(fileType string) {
 
 func (g *Garden) unmarshalConfig() {
 	if err := viper.Unmarshal(&g.cfg); err != nil {
-		g.Log(ErrorLevel, "config", err)
+		log.Error("config", err)
 	}
 }

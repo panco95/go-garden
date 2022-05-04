@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/core/log"
 	"github.com/smallnest/rpcx/client"
-	"github.com/smallnest/rpcx/log"
+	rpcx_logger "github.com/smallnest/rpcx/log"
 	"github.com/smallnest/rpcx/server"
 	"github.com/smallnest/rpcx/share"
 )
@@ -14,16 +15,12 @@ import (
 func (g *Garden) rpcListen(name, network, address string, obj interface{}, metadata string) error {
 	s := server.NewServer()
 
-	l, err := g.GetLog()
-	if err != nil {
-		return err
-	}
-	log.SetLogger(l)
+	rpcx_logger.SetLogger(log.GetLogger())
 
 	if err := s.RegisterName(name, obj, metadata); err != nil {
 		return err
 	}
-	g.Log(InfoLevel, "rpc", "listen on: "+address)
+	log.Infof("rpc", "listen on: %s", address)
 	if err := s.Serve(network, address); err != nil {
 		return err
 	}

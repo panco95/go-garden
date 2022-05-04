@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/core/log"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -58,7 +59,7 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	notFound(engine)
 	route(engine)
 
-	g.Log(InfoLevel, "http", fmt.Sprintf("listen on: %s", listenAddress))
+	log.Infof("http", "listen on: %s", listenAddress)
 	return engine.Run(listenAddress)
 }
 

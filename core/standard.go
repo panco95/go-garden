@@ -27,16 +27,6 @@ type (
 )
 
 const (
-	DebugLevel logLevel = iota - 1
-	InfoLevel
-	WarnLevel
-	ErrorLevel
-	DPanicLevel
-	PanicLevel
-	FatalLevel
-)
-
-const (
 	httpOk       = http.StatusOK
 	httpFail     = http.StatusInternalServerError
 	httpNotFound = http.StatusNotFound

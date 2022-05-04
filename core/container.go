@@ -5,12 +5,10 @@ import (
 	"fmt"
 
 	clientV3 "go.etcd.io/etcd/client/v3"
-	"go.uber.org/zap"
 )
 
 // unSafeList is used keys
 var unSafeList = map[string]interface{}{
-	"log":  nil,
 	"etcd": nil,
 }
 
@@ -27,22 +25,13 @@ func (g *Garden) Get(name string) (interface{}, error) {
 	return nil, errors.New(fmt.Sprintf("Not found %s from container! ", name))
 }
 
-//Set instance by name, not support default name like 'log','db','redis','etcd'
+//Set instance by name, not support default name like 'etcd'
 func (g *Garden) Set(name string, val interface{}) error {
 	if _, ok := unSafeList[name]; ok {
 		return errors.New("Cant's set unsafe name! ")
 	}
 	g.container.Store(name, val)
 	return nil
-}
-
-//GetLog instance to write custom Logs
-func (g *Garden) GetLog() (*zap.SugaredLogger, error) {
-	res, err := g.Get("log")
-	if err != nil {
-		return nil, err
-	}
-	return res.(*zap.SugaredLogger), nil
 }
 
 //GetEtcd instance to performing etcd operations

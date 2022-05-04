@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/panco95/go-garden/core/drives/etcd"
+	"github.com/panco95/go-garden/core/log"
 )
 
 func (g *Garden) bootstrap(configPath, runtimePath string) {
@@ -9,51 +10,47 @@ func (g *Garden) bootstrap(configPath, runtimePath string) {
 	g.cfg.RuntimePath = runtimePath
 	g.bootConfig("yml")
 	g.checkConfig()
-	g.bootLog()
-	g.Log(InfoLevel, "bootstrap", g.cfg.Service.ServiceName+" running")
+	log.Setup(g.cfg.RuntimePath, g.cfg.Service.Debug)
+	log.Info("bootstrap", g.cfg.Service.ServiceName+" running")
 	g.bootEtcd()
 	g.bootService()
 	g.bootOpenTracing()
 }
 
 func (g *Garden) bootEtcd() {
-	l, err := g.GetLog()
+	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress, log.GetLogger().Desugar())
 	if err != nil {
-		g.Log(FatalLevel, "etcd GetLog", err)
-	}
-	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress, l.Desugar())
-	if err != nil {
-		g.Log(FatalLevel, "etcd", err)
+		log.Fatal("etcd", err)
 	}
 	g.setSafe("etcd", etcdC)
 }
 
 func (g *Garden) checkConfig() {
 	if g.cfg.Service.ServiceName == "" {
-		g.Log(FatalLevel, "config", "empty option serviceName")
+		log.Fatal("config", "empty option serviceName")
 	}
 	if g.cfg.Service.HttpPort == "" {
-		g.Log(FatalLevel, "config", "empty option httpPort")
+		log.Fatal("config", "empty option httpPort")
 	}
 	if g.cfg.Service.RpcPort == "" {
-		g.Log(FatalLevel, "config", "empty option httpPort")
+		log.Fatal("config", "empty option httpPort")
 	}
 	if g.cfg.Service.CallKey == "" {
-		g.Log(FatalLevel, "config", "empty option callKey")
+		log.Fatal("config", "empty option callKey")
 	}
 	if g.cfg.Service.CallRetry == "" {
-		g.Log(FatalLevel, "config", "empty option callRetry")
+		log.Fatal("config", "empty option callRetry")
 	}
 	if g.cfg.Service.EtcdKey == "" {
-		g.Log(FatalLevel, "config", "empty option etcdKey")
+		log.Fatal("config", "empty option etcdKey")
 	}
 	if len(g.cfg.Service.EtcdAddress) == 0 {
-		g.Log(FatalLevel, "config", "empty option etcdAddress")
+		log.Fatal("config", "empty option etcdAddress")
 	}
 	if g.cfg.Service.TracerDrive == "zipkin" && g.cfg.Service.ZipkinAddress == "" {
-		g.Log(FatalLevel, "config", "empty option zipkinAddress")
+		log.Fatal("config", "empty option zipkinAddress")
 	}
 	if g.cfg.Service.TracerDrive == "jaeger" && g.cfg.Service.JaegerAddress == "" {
-		g.Log(FatalLevel, "config", "empty option jaegerAddress")
+		log.Fatal("config", "empty option jaegerAddress")
 	}
 }

@@ -1,6 +1,9 @@
 package core
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/panco95/go-garden/core/log"
+)
 
 // Run service start
 func (g *Garden) Run(route func(r *gin.Engine), rpc interface{}, auth func() gin.HandlerFunc) {
@@ -17,7 +20,7 @@ func (g *Garden) runHttpServer(route func(r *gin.Engine), auth func() gin.Handle
 	}
 	listenAddress := address + ":" + g.cfg.Service.HttpPort
 	if err := g.ginListen(listenAddress, route, auth); err != nil {
-		g.Log(FatalLevel, "ginRun", err)
+		log.Fatal("gin", err)
 	}
 }
 
@@ -28,17 +31,6 @@ func (g *Garden) runRpcServer(rpc interface{}) {
 	}
 	rpcAddress := address + ":" + g.cfg.Service.RpcPort
 	if err := g.rpcListen(g.cfg.Service.ServiceName, "tcp", rpcAddress, rpc, ""); err != nil {
-		g.Log(FatalLevel, "rpcRun", err)
+		log.Fatal("rpcRun", err)
 	}
-}
-
-// RebootFunc auto reboot when panic
-func (g *Garden) RebootFunc(label string, f func()) {
-	defer func() {
-		if err := recover(); err != nil {
-			g.Log(ErrorLevel, label, err)
-			f()
-		}
-	}()
-	f()
 }

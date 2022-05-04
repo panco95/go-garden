@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"strings"
+
+	"github.com/panco95/go-garden/core/log"
 )
 
 type Rpc int
@@ -28,7 +30,7 @@ func (r *Rpc) SyncRoutes(ctx context.Context, args *SyncRoutesArgs, reply *SyncR
 func (g *Garden) sendRoutes() {
 	fileData, err := readFile("configs/routes.yml")
 	if err != nil {
-		g.Log(ErrorLevel, "syncRoutes", err)
+		log.Error("syncRoutes", err)
 		return
 	}
 
@@ -53,17 +55,17 @@ func (g *Garden) sendRoutes() {
 			}
 			addr, err := g.getServiceRpcAddr(k1, k2)
 			if err != nil {
-				g.Log(ErrorLevel, "getServiceRpcAddr", err)
+				log.Error("getServiceRpcAddr", err)
 				continue
 			}
 			if err := rpcCall(nil, addr, k1, "SyncRoutes", &args, &reply, 10000); err != nil {
-				g.Log(ErrorLevel, "syncRoutes", err)
+				log.Error("syncRoutes", err)
 				return
 			}
 			if !reply.Result {
-				g.Log(ErrorLevel, "syncRoutes", "fail")
+				log.Error("syncRoutes", "fail")
 			}
-			g.Log(InfoLevel, "syncRoutes", "success")
+			log.Info("syncRoutes", "success")
 		}
 	}
 }

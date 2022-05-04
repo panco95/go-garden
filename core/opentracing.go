@@ -10,6 +10,7 @@ import (
 	zkOt "github.com/openzipkin-contrib/zipkin-go-opentracing"
 	"github.com/openzipkin/zipkin-go"
 	zkHttp "github.com/openzipkin/zipkin-go/reporter/http"
+	"github.com/panco95/go-garden/core/log"
 	"github.com/uber/jaeger-client-go"
 	jaegerCfg "github.com/uber/jaeger-client-go/config"
 	"github.com/uber/jaeger-client-go/log/zap"
@@ -28,13 +29,9 @@ func (g *Garden) bootOpenTracing() {
 		break
 	}
 	if err != nil {
-		g.Log(FatalLevel, "openTracing", err)
+		log.Fatal("openTracing", err)
 	}
-	l, err := g.GetLog()
-	if err != nil {
-		g.Log(FatalLevel, "openTracing GetLog", err)
-	}
-	zap.NewLoggingTracer(l.Desugar(), opentracing.GlobalTracer())
+	zap.NewLoggingTracer(log.GetLogger().Desugar(), opentracing.GlobalTracer())
 }
 
 // StartSpanFromHeader Get the opentracing span from the request header

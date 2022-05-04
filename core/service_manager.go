@@ -3,12 +3,12 @@ package core
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/rand"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/panco95/go-garden/core/log"
 	clientV3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -51,16 +51,14 @@ func (g *Garden) bootService() {
 	if g.cfg.Service.ServiceIp == "" {
 		g.cfg.Service.ServiceIp, err = getOutboundIP()
 		if err != nil {
-			g.Log(FatalLevel, "bootService", err)
+			log.Fatal("bootService", err)
 		}
 	}
 	g.serviceManager = make(chan serviceOperate, 0)
-	go g.RebootFunc("serviceManageWatchReboot", func() {
-		g.serviceManageWatch(g.serviceManager)
-	})
+	go g.serviceManageWatch(g.serviceManager)
 
 	if err = g.serviceRegister(true); err != nil {
-		g.Log(FatalLevel, "serviceRegister", err)
+		log.Fatal("serviceRegister", err)
 	}
 }
 
@@ -115,7 +113,7 @@ func (g *Garden) serviceRegister(isReconnect bool) error {
 func (g *Garden) serviceWatcher() {
 	client, err := g.GetEtcd()
 	if err != nil {
-		g.Log(ErrorLevel, "getEtcd", err)
+		log.Error("getEtcd", err)
 		return
 	}
 
@@ -129,10 +127,10 @@ func (g *Garden) serviceWatcher() {
 			switch ev.Type {
 			case 0: //put
 				g.addServiceNode(serviceName, serviceAddr)
-				g.Log(InfoLevel, "service", fmt.Sprintf("%s node %s join", serviceName, serviceAddr))
+				log.Infof("service", "%s node %s join", serviceName, serviceAddr)
 			case 1: //delete
 				g.delServiceNode(serviceName, serviceAddr)
-				g.Log(InfoLevel, "service", fmt.Sprintf("%s node %s leave", serviceName, serviceAddr))
+				log.Infof("service", "%s node %s leave", serviceName, serviceAddr)
 			}
 		}
 	}
@@ -147,7 +145,7 @@ func (g *Garden) getAllServices() ([]string, error) {
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_", clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		g.Log(ErrorLevel, "getAllServices", err)
+		log.Error("getAllServices", err)
 		return []string{}, nil
 	}
 	var services []string
@@ -177,7 +175,7 @@ func (g *Garden) getServicesByName(serviceName string) ([]string, error) {
 	resp, err := client.Get(ctx, g.cfg.Service.EtcdKey+"_"+serviceName, clientV3.WithPrefix())
 	cancel()
 	if err != nil {
-		g.Log(ErrorLevel, "getServicesByName", err)
+		log.Error("getServicesByName", err)
 		return []string{}, nil
 	}
 	var services []string

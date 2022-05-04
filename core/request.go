@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/core/log"
 )
 
 // Request datatype
@@ -43,7 +44,7 @@ func (g *Garden) callService(span opentracing.Span, service, action string, requ
 	if route.Limiter != "" {
 		second, quantity, err := limiterAnalyze(route.Limiter)
 		if err != nil {
-			g.Log(DebugLevel, "limiter", err)
+			log.Error("limiter", err)
 		} else if !g.limiterInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service limiter")
 			return httpNotFound, infoServerLimiter, nil, errors.New("server limiter")
@@ -54,7 +55,7 @@ func (g *Garden) callService(span opentracing.Span, service, action string, requ
 	if route.Fusing != "" {
 		second, quantity, err := g.fusingAnalyze(route.Fusing)
 		if err != nil {
-			g.Log(ErrorLevel, "fusing", err)
+			log.Error("fusingAnalyze", err)
 		} else if !g.fusingInspect(serviceAddr+"/"+service+"/"+action, second, quantity) {
 			span.SetTag("break", "service fusing")
 			return httpNotFound, infoServerFusing, nil, errors.New("server fusing")
@@ -64,7 +65,7 @@ func (g *Garden) callService(span opentracing.Span, service, action string, requ
 	// service call retry
 	retry, err := retryAnalyze(g.cfg.Service.CallRetry)
 	if err != nil {
-		g.Log(DebugLevel, "retry", err)
+		log.Error("retryAnalyze", err)
 		retry = []int{0}
 	}
 

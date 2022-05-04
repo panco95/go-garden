@@ -3,12 +3,14 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/opentracing/opentracing-go"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	"github.com/opentracing/opentracing-go"
+	"github.com/panco95/go-garden/core/log"
 )
 
 func retryAnalyze(retry string) ([]int, error) {
@@ -64,7 +66,7 @@ func (g *Garden) retryGo(service, action string, retry []int, nodeIndex int, spa
 		atomic.AddInt64(&g.services[service].Nodes[nodeIndex].Waiting, -1)
 
 		if err != nil {
-			g.Log(ErrorLevel, "callService", err)
+			log.Error("callService", err)
 			g.addFusingQuantity(g.services[service].Nodes[nodeIndex].Addr + "/" + service + "/" + action)
 
 			// call timeout don't retry
