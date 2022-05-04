@@ -51,11 +51,11 @@ func getEncoder() zapcore.Encoder {
 
 func getLogWriter(runtimePath string) zapcore.WriteSyncer {
 	lumberJackLogger := &lumberjack.Logger{
-		Filename:   runtimePath + "/logs/log.log",
+		Filename:   runtimePath + "/garden.log",
 		MaxSize:    2,
 		MaxBackups: 10000,
-		MaxAge:     180,
-		Compress:   false,
+		MaxAge:     0,
+		Compress:   true,
 	}
 	return zapcore.AddSync(lumberJackLogger)
 }

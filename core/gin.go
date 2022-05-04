@@ -21,8 +21,9 @@ import (
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
-	engine.Use(gin.Logger(), gin.Recovery())
+	engine.Use(gin.Recovery())
 	if g.cfg.Service.Debug {
+		engine.Use(gin.Logger())
 		if err := createDir(g.cfg.RuntimePath); err != nil {
 			return err
 		}

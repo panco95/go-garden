@@ -502,21 +502,31 @@ global.Garden.Log(core.DebugLevel,"container test", res)
 
 提示：配置文件的`Debug`参数为`true`时，代表调试模式开启，任何日志输出都会同时打印在屏幕上和日志文件中，如果改为`false`，不会在屏幕打印，只会存储在日志文件中
 
-日志文件路径：`runtime/logs`
+指定日志存储路径：启动时添加参数，例如 `runtime=test/logs`
 
-go-garden封装了规范的日志函数，用如下代码进行调用：
+* garden.log为日志存储文件，自动分割，最大2m
+* gin.log是gin日志，开启调试模式才会存储
+
+框架的初始化了log包，请引入 `github.com/panco95/go-garden/core/log` 包进行日志输出：
 
 ```go
-global.Garden.Log(core.DebugLevel, "error", err)
-global.Garden.Log(core.InfoLevel, "test", "info")
-global.Garden.Log(core.WarnLevel, "test", "info")
-global.Garden.Log(core.ErrorLevel, "test", "info")
-global.Garden.Log(core.DPanicLevel, "test", "info")
-global.Garden.Log(core.PanicLevel, "test", "info")
-global.Garden.Log(core.FatalLevel, "test", "info")
+import "github.com/panco95/go-garden/core/log"
+
+log.Info("label", "log")
+log.Infof("label", "log %s", "test")
+log.Error(...)
+log.Errorf(...)
+log.Panic(...)
+log.Panicf(...)
+log.Error(...)
+log.Errorf(...)
+log.Warn(...)
+log.Warnf(...)
+log.Fatal(...)
+log.Fatal(...)
 ```
 
-第一个参数为日志级别，在源码`core/standard.go`文件中有定义，第二个参部为日志标识，第三个参数为日志内容，支持`error`或`string`。
+第一个参数为日志标识，第二个参数为日志内容，支持`error`或`string`。
 
 deply目录下有filebeat同步日志到elasticsearch配置，可根据需要自行使用集成到elasticsearch甚至是grafana：
 ```shell
