@@ -29,6 +29,10 @@ func (g *Garden) fusingAnalyze(limiter string) (int64, int64, error) {
 	return int64(second), int64(quantity), nil
 }
 
+func breakerKey(addr, service, action string) string {
+	return addr + "/" + service + "/" + action
+}
+
 func (g *Garden) fusingInspect(path string, second, quantity int64) bool {
 	f, ok := g.fusingMap.Load(path)
 	if !ok {

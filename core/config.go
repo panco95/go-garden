@@ -47,35 +47,39 @@ func (g *Garden) GetCfg() cfg {
 	return g.cfg
 }
 
-func (g *Garden) bootConfig(fileType string) {
+func (g *Garden) bootConfig(fileType string) error {
 	viper.AddConfigPath(g.cfg.ConfigsPath)
 	viper.SetConfigType(fileType)
 
 	viper.SetConfigName("config")
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal("config", err)
+		return err
 	}
 
 	viper.SetConfigName("routes")
 	if err := viper.MergeInConfig(); err != nil {
-		log.Fatal("config", err)
+		return err
 	}
 
-	g.unmarshalConfig()
+	if err := g.unmarshalConfig(); err != nil {
+		return err
+	}
 
 	// watch config file 'routes.yml' change
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		filename := filepath.Base(e.Name)
 		if strings.Compare(filename, "routes.yml") == 0 {
-			g.unmarshalConfig()
+			if err := g.unmarshalConfig(); err != nil {
+				log.Error("config", err)
+				return
+			}
 			g.sendRoutes()
 		}
 	})
+	return nil
 }
 
-func (g *Garden) unmarshalConfig() {
-	if err := viper.Unmarshal(&g.cfg); err != nil {
-		log.Error("config", err)
-	}
+func (g *Garden) unmarshalConfig() error {
+	return viper.Unmarshal(&g.cfg)
 }

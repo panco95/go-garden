@@ -1,17 +1,23 @@
 package core
 
-import "flag"
+import "fmt"
 
-// New create go-garden instance
-func New() *Garden {
-	service := Garden{}
+// New creates a garden instance from the configs and runtime directories.
+// configsPath defaults to "configs" and runtimePath defaults to "runtime".
+func New(configsPath, runtimePath string) (*Garden, error) {
+	if configsPath == "" {
+		configsPath = "configs"
+	}
+	if runtimePath == "" {
+		runtimePath = "runtime"
+	}
+	g := &Garden{}
+	if err := g.bootstrap(configsPath, runtimePath); err != nil {
+		return nil, err
+	}
+	return g, nil
+}
 
-	var configPath string
-	var runtimePath string
-	flag.StringVar(&configPath, "configs", "configs", "config yml files path")
-	flag.StringVar(&runtimePath, "runtime", "runtime", "runtime log files path")
-	flag.Parse()
-
-	service.bootstrap(configPath, runtimePath)
-	return &service
+func emptyOption(name string) error {
+	return fmt.Errorf("empty option %s", name)
 }

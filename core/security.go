@@ -1,15 +1,9 @@
 package core
 
-import (
-	"strings"
-)
+import "crypto/subtle"
 
 func (g *Garden) checkCallSafe(key string) bool {
-	if strings.Compare(key, g.cfg.Service.CallKey) != 0 {
-		return false
-	}
-	return true
+	got := []byte(key)
+	want := []byte(g.cfg.Service.CallKey)
+	return subtle.ConstantTimeCompare(got, want) == 1
 }
-
-
-

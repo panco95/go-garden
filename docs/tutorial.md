@@ -56,10 +56,10 @@ garden new my-gateway gateway
 | service->serviceIp     | 服务器内网IP（如服务调用不正常需配置此项)                                                       |
 | service->httpOut       | http端口是否允许外网访问：true允许，false不允许                     |
 | service->httpPort      | http监听端口                                                     |
-| service->allowCors     | http是否允许跨域                                                    |
+| service->allowCors     | 为 true 时允许跨域，响应 Origin 为 `*`。预检 OPTIONS 返回 204，其他请求继续进入后续处理 |
 | service->rpcOut        | rpc端口是否允许外网访问：true允许，false不允许                     |
 | service->rpcPort       | rpc监听端口                                                     |
-| service->callKey       | 服务之间调用的密钥，请保持每个服务一致                              |
+| service->callKey       | 服务之间调用的密钥。HTTP 和 RPC 都会校验 `Call-Key`，HTTP 校验失败返回 401。同一套服务请保持一致 |
 | service->callRetry     | 服务重试策略，格式`timer1/timer2/timer3/...`（单位毫秒）           |
 | service->etcdKey       | Etcd关联密钥，一套服务使用同一个key才能实现服务注册发现              |
 | service->etcdAddress   | Etcd地址，填写正确的IP加端口，如果是etcd集群的话可以多行填写         |
@@ -80,13 +80,12 @@ go run main.go -configs=configs -runtime=runtime
 成功输出：
 
 ```sh
-{"level":"info","time":"2022-05-03 18:17:10","caller":"core/bootstrap.go:15","msg":"[bootstrap] my-gateway running"}
-{"level":"info","time":"2022-05-03 18:17:10","caller":"core/opentracing.go:37","msg":"loggingTracer created","sampler":"ConstSampler(decision=true)","tags":[{"Key":"jaeger.version","Value":"Go-2.30.0"},{"Key":"hostname","Value":"localhost.localdomain"},{"Key":"ip","Value":"192.168.129.151"}]}
-{"level":"info","time":"2022-05-03 18:17:10","caller":"core/rpc.go:26","msg":"[rpc] listen on: 192.168.129.151:9000"}
-{"level":"info","time":"2022-05-03 18:17:10","caller":"core/gin.go:61","msg":"[http] listen on: 0.0.0.0:8080"}
-{"level":"info","time":"2022-05-03 18:17:10","caller":"server/server.go:198","msg":"server pid:44373"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/bootstrap.go:19","msg":"[bootstrap] my-gateway running"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/run.go:71","msg":"[http] listen on: 0.0.0.0:8080"}
+{"level":"info","time":"2022-05-03 18:17:10","caller":"core/run.go:99","msg":"[rpc] listen on: 192.168.129.151:9000"}
 ```
 
+配置缺失或 etcd 连不上时，进程会打印错误并退出。收到 SIGINT 或 SIGTERM（例如 Ctrl+C）后，进程停止服务发现、注销 etcd 租约，关闭 HTTP、RPC 和链路追踪，然后退出。
 
 注意：如果出现错误请查看go.mod中go-garden包版本号是否为最新版！
 
@@ -104,7 +103,7 @@ garden new my-user service
 go run main.go -configs=configs -runtime=runtime
 ```
 
-这时gateway会发现user服务节点加入且输出信息节点信息。
+这时 gateway 会发现 user 服务节点加入，并输出节点信息。节点离开时会从本地列表删除，并输出离开信息。
 
 ### 四. 定义user路由
 
@@ -142,7 +141,7 @@ routes:
 | my-user->exists->fusing | 服务熔断器，5/100表示exists方法5秒内最多允许100次错误，超出后熔断 |
 | my-user->exists->timeout | 服务超时控制，单位ms，2000表示请求exists方法超出2秒后不等待结果 |
 
-修改好路由配置后保存，框架会热更新路由配置且同步到其他的服务，无需重启服务；可以观察`my-gateway`的路由配置文件已经同步为`my-user`的路由配置文件了。
+修改好路由配置后保存，框架会热更新路由，并同步给同一个 `etcdKey` 下的其他服务，写入对方的 `configs/routes.yml`，无需重启服务。可以观察 `my-gateway` 的路由配置文件已经与 `my-user` 一致。
 
 ### 五. 编写user服务api接口
 
@@ -225,7 +224,7 @@ func Routes(r *gin.Engine) {
 }
 ```
 
-gateway服务会通过请求路径，把对应的请求转发给my-user服务，然后my-user返回响应给gateway，gateway接收到my-user的响应内容，返回给客户端；
+gateway服务会通过请求路径，把对应的请求转发给my-user服务，然后my-user返回响应给gateway，gateway接收到my-user的响应内容，返回给客户端。转发时保留原始请求体和查询参数，并把调用方地址追加到 `X-Forwarded-For`。
 
 gateway会把收到的请求结果增加一个status字段，如果请求my-user服务失败会返回false，成功既true。
 
@@ -431,6 +430,8 @@ span.SetTag("key", "val")
 span.SetTag("key", err)
 ```
 
+框架自动记录的 HTTP span 会去掉请求体和 `Call-Key`。RPC span 会记录方法参数 `Args`。
+
 ### 十. 自定义配置
 
 我们在业务中会自定义一些配置，例如您需要在业务中连接mysql、redis等，可在此处自行添加配置项然后通过viper的函数获取配置值，`configs/config.yml`：
@@ -479,20 +480,20 @@ global.Garden.Log(core.DebugLevel,"container test", res)
 
 上面的每一个服务都只启动了一个节点，同一份代码我们可以在多台服务器上启动，serviceName就是每个服务的标识，同名服务我们就称为服务集群； 复制一份user服务代码修改监听端口，启动；
 
-现在user服务就是两个节点在运行，这时候我们调用user服务接口或者rpc方法的时候，go-garden内部会通过最小连接数以及轮询策略来选择服务器节点进行请求，开发者无需关心内部逻辑。
+现在 user 服务就是两个节点在运行。调用 user 的接口或 RPC 时，go-garden 会选择当前等待请求最少的节点；多个节点等待数相同时，在这些节点里随机选一个。节点下线后不会再被选中。
 
 ### 十二. 服务限流
 
-在`config.yml`中我们可以给每个服务的每个接口配置单独的限流规则`limiter`参数，`5/1000`表示每5秒钟之内最多处理1000个请求，超出数量不会请求下游服务。
+在 `routes.yml` 中我们可以给每个服务的每个接口配置单独的限流规则 `limiter` 参数，`5/1000` 表示每 5 秒钟之内最多处理 1000 个请求。超出后不再请求下游；经网关访问时，客户端收到 429。
 
 ### 十三. 服务熔断
 
-在`config.yml`中我们可以给每个服务的每个接口配置单独的熔断规则`fusing`参数，`5/100`表示接口每5秒钟之内下游服务器返回了100次错误响应后，直接会对下游服务熔断，在当前5秒内不请求下游服务，直接会返回错误响应。
+在 `routes.yml` 中我们可以给每个服务的每个接口配置单独的熔断规则 `fusing` 参数，`5/100` 表示该节点上的这个接口每 5 秒钟之内出现 100 次错误后，当前窗口内不再请求它，并直接返回错误。熔断按节点、服务名和接口名分别计数。
 
 ### 十四. 服务重试
 
 在调用下游服务时，下游服务可能会返回错误，go-garden支持重试机制，在config.yml中配置`callRetry`参数，格式 `timer1/timer2/timer3/...`，可不限制调整，重试次数使用`/`
-分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。大家可根据项目自行调整重试策略配置。
+分隔，例如`100/200/200/200/500`表示重试5次，第一次100毫秒，第二次200毫秒，第三次200毫秒，第四次200毫秒，第五次500毫秒，如果重试第五次依然失败，会放弃重试返回错误。每次重试会换一个还没试过的节点；没有其他节点时，会再试当前节点。超时和下游返回 404 时不再重试。大家可根据项目自行调整重试策略配置。
 
 ### 十五. 超时控制
 
@@ -534,7 +535,7 @@ filebeat -e -c ./deply/filebeat.yml
 ```
 ### 十七. 服务监控与警报
 
-1、集成pprof性能监控，路由：/debug/pprof（需要开启debug调试模式，因为安全问题不建议生产环境开启）
+1、调试模式开启后提供 pprof，路径为 `/debug/pprof`。它位于鉴权中间件之后：业务服务默认会校验 `Call-Key`，密钥错误返回 401。生产环境请关闭 debug。
 
 2、支持[Prometheus](https://prometheus.io)：
 
@@ -565,9 +566,18 @@ scrape_configs:
       - targets: ["192.168.125.193:8083"]
 ```
 
-指标默认为golang_client组件提供，可前往grafana官网搜索metrics模板；
+`/metrics` 同时提供 Go 进程指标和框架指标，可前往 grafana 官网搜索 metrics 模板。框架指标：
 
-同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报：
+* `garden_requests_in_flight`：当前正在处理的请求数
+* `garden_requests_finished_total`：本进程已完成的请求数
+
+也可以用 `SetMetric` 写入自定义数值。名称需要是合法的 Prometheus 指标名，数值会以 gauge 出现在 `/metrics`：
+
+```golang
+global.Garden.SetMetric("orders_total", 7)
+```
+
+同时支持指标主动上报[PushGateway](https://github.com/prometheus/pushgateway) ，在configs.yml配置好pushGateway地址后可在代码中调用上报。上报的 instance 使用本进程的服务 ID，同一 job 下多个副本各自保留一条时间序列：
 ```golang
 data := core.MapData{
 	"metric-1": 100,
@@ -578,14 +588,13 @@ global.Garden.PushGateway("jobname", data)
 
 按照服务目标和指标名称通过Prometheus查询表达式进行查询：
 ```shell
-RequestProcess{instance="192.168.125.193:8080",job="gateway"}
-RequestFinish{instance="192.168.125.193:8080",job="gateway"}
-RequestFinish{job="gateway"}
-RequestFinish{job="user-1"}
-RequestFinish
+garden_requests_in_flight{job="gateway"}
+garden_requests_finished_total{instance="192.168.125.193:8080",job="gateway"}
+garden_requests_finished_total{job="user-1"}
+orders_total{job="gateway"}
 ```
 
-* 推荐搭配[grafana]一起使用(https://grafana.com/)
+* 推荐搭配 [grafana](https://grafana.com/) 一起使用
 
 
 ### 十八. Docker部署

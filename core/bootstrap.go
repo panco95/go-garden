@@ -5,52 +5,63 @@ import (
 	"github.com/panco95/go-garden/core/log"
 )
 
-func (g *Garden) bootstrap(configPath, runtimePath string) {
+func (g *Garden) bootstrap(configPath, runtimePath string) error {
 	g.cfg.ConfigsPath = configPath
 	g.cfg.RuntimePath = runtimePath
-	g.bootConfig("yml")
-	g.checkConfig()
+	if err := g.bootConfig("yml"); err != nil {
+		return err
+	}
+	if err := g.checkConfig(); err != nil {
+		return err
+	}
 	log.Setup(g.cfg.RuntimePath, g.cfg.Service.Debug)
+	g.bindRouteSync()
 	log.Info("bootstrap", g.cfg.Service.ServiceName+" running")
-	g.bootEtcd()
-	g.bootService()
-	g.bootOpenTracing()
+	if err := g.bootEtcd(); err != nil {
+		return err
+	}
+	if err := g.bootService(); err != nil {
+		return err
+	}
+	return g.bootOpenTracing()
 }
 
-func (g *Garden) bootEtcd() {
+func (g *Garden) bootEtcd() error {
 	etcdC, err := etcd.Connect(g.cfg.Service.EtcdAddress, log.GetLogger().Desugar())
 	if err != nil {
-		log.Fatal("etcd", err)
+		return err
 	}
 	g.setSafe("etcd", etcdC)
+	return nil
 }
 
-func (g *Garden) checkConfig() {
+func (g *Garden) checkConfig() error {
 	if g.cfg.Service.ServiceName == "" {
-		log.Fatal("config", "empty option serviceName")
+		return emptyOption("serviceName")
 	}
 	if g.cfg.Service.HttpPort == "" {
-		log.Fatal("config", "empty option httpPort")
+		return emptyOption("httpPort")
 	}
 	if g.cfg.Service.RpcPort == "" {
-		log.Fatal("config", "empty option httpPort")
+		return emptyOption("rpcPort")
 	}
 	if g.cfg.Service.CallKey == "" {
-		log.Fatal("config", "empty option callKey")
+		return emptyOption("callKey")
 	}
 	if g.cfg.Service.CallRetry == "" {
-		log.Fatal("config", "empty option callRetry")
+		return emptyOption("callRetry")
 	}
 	if g.cfg.Service.EtcdKey == "" {
-		log.Fatal("config", "empty option etcdKey")
+		return emptyOption("etcdKey")
 	}
 	if len(g.cfg.Service.EtcdAddress) == 0 {
-		log.Fatal("config", "empty option etcdAddress")
+		return emptyOption("etcdAddress")
 	}
 	if g.cfg.Service.TracerDrive == "zipkin" && g.cfg.Service.ZipkinAddress == "" {
-		log.Fatal("config", "empty option zipkinAddress")
+		return emptyOption("zipkinAddress")
 	}
 	if g.cfg.Service.TracerDrive == "jaeger" && g.cfg.Service.JaegerAddress == "" {
-		log.Fatal("config", "empty option jaegerAddress")
+		return emptyOption("jaegerAddress")
 	}
+	return nil
 }

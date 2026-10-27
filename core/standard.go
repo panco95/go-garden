@@ -11,14 +11,16 @@ type (
 	MapData map[string]interface{}
 	// Garden go garden framework class
 	Garden struct {
-		container      sync.Map
-		cfg            cfg
-		serviceType    uint //0:service 1:gateway
-		services       map[string]*service
-		serviceManager chan serviceOperate
-		syncCache      []byte
-		fusingMap      sync.Map
-		limiterMap     sync.Map
+		container   sync.Map
+		cfg         cfg
+		serviceType uint //0:service 1:gateway
+		services    map[string]*service
+		servicesMu  sync.RWMutex
+		syncCache   []byte
+		fusingMap   sync.Map
+		limiterMap  sync.Map
+		rpcPool     rpcPool
+		life        lifecycle
 
 		metrics        sync.Map
 		requestProcess int64
@@ -27,9 +29,11 @@ type (
 )
 
 const (
-	httpOk       = http.StatusOK
-	httpFail     = http.StatusInternalServerError
-	httpNotFound = http.StatusNotFound
+	httpOk              = http.StatusOK
+	httpFail            = http.StatusInternalServerError
+	httpNotFound        = http.StatusNotFound
+	httpUnauthorized    = http.StatusUnauthorized
+	httpTooManyRequests = http.StatusTooManyRequests
 
 	infoSuccess       = "Success"
 	infoServerError   = "Server Error"

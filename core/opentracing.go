@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
@@ -16,22 +17,27 @@ import (
 	"github.com/uber/jaeger-client-go/log/zap"
 )
 
-func (g *Garden) bootOpenTracing() {
-	var err error
+func (g *Garden) bootOpenTracing() error {
+	var (
+		closer io.Closer
+		err    error
+	)
 	switch g.cfg.Service.TracerDrive {
 	case "jaeger":
-		err = connJaeger(g.cfg.Service.ServiceName, g.cfg.Service.JaegerAddress)
-		break
+		closer, err = connJaeger(g.cfg.Service.ServiceName, g.cfg.Service.JaegerAddress)
 	case "zipkin":
-		err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.GetServiceIp())
-		break
-	default:
-		break
+		closer, err = connZipkin(g.cfg.Service.ServiceName, g.cfg.Service.ZipkinAddress, g.GetServiceIp())
 	}
 	if err != nil {
-		log.Fatal("openTracing", err)
+		return err
+	}
+	if closer != nil {
+		g.life.mu.Lock()
+		g.life.tracerCloser = closer
+		g.life.mu.Unlock()
 	}
 	zap.NewLoggingTracer(log.GetLogger().Desugar(), opentracing.GlobalTracer())
+	return nil
 }
 
 // StartSpanFromHeader Get the opentracing span from the request header
@@ -81,21 +87,23 @@ func (g *Garden) FinishRpcTrace(span opentracing.Span) {
 	span.Finish()
 }
 
-func connZipkin(service, addr, serviceIp string) error {
+func connZipkin(service, addr, serviceIp string) (io.Closer, error) {
 	reporter := zkHttp.NewReporter(addr)
 	endpoint, err := zipkin.NewEndpoint(service, serviceIp)
 	if err != nil {
-		return err
+		reporter.Close()
+		return nil, err
 	}
 	trace, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint))
 	if err != nil {
-		return err
+		reporter.Close()
+		return nil, err
 	}
 	opentracing.SetGlobalTracer(zkOt.Wrap(trace))
-	return nil
+	return reporter, nil
 }
 
-func connJaeger(service, addr string) error {
+func connJaeger(service, addr string) (io.Closer, error) {
 	cfg := jaegerCfg.Configuration{
 		ServiceName: service,
 		Sampler: &jaegerCfg.SamplerConfig{
@@ -110,14 +118,18 @@ func connJaeger(service, addr string) error {
 
 	sender, err := jaeger.NewUDPTransport(addr, 0)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	reporter := jaeger.NewRemoteReporter(sender)
-	tracer, _, err := cfg.NewTracer(
+	tracer, closer, err := cfg.NewTracer(
 		jaegerCfg.Reporter(reporter),
 	)
+	if err != nil {
+		reporter.Close()
+		return nil, err
+	}
 
 	opentracing.SetGlobalTracer(tracer)
-	return nil
+	return closer, nil
 }

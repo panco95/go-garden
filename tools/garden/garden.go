@@ -125,7 +125,7 @@ func sysCmd(name string, command string, param ...string) {
 }
 
 func gatewayMain(serviceName string) string {
-	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/auth\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Garden = core.New()\n\tglobal.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth)\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package main\n\nimport (\n\t\"flag\"\n\t\"log\"\n\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/auth\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tconfigs := flag.String(\"configs\", \"configs\", \"configs path\")\n\truntime := flag.String(\"runtime\", \"runtime\", \"runtime path\")\n\tflag.Parse()\n\n\tvar err error\n\tglobal.Garden, err = core.New(*configs, *runtime)\n\tif err != nil {\n\t\tlog.Fatal(err)\n\t}\n\tif err = global.Garden.Run(global.Garden.GatewayRoute, new(rpc.Rpc), auth.Auth); err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n", "<>", serviceName, 999)
 }
 
 func gatewayAuth() string {
@@ -153,7 +153,7 @@ func gatewayRpcBase() string {
 }
 
 func serviceMain(serviceName string) string {
-	return strings.Replace("package main\n\nimport (\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/api\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tglobal.Garden = core.New()\n\tglobal.Garden.Run(api.Routes, new(rpc.Rpc), global.Garden.CheckCallSafeMiddleware)\n}\n", "<>", serviceName, 999)
+	return strings.Replace("package main\n\nimport (\n\t\"flag\"\n\t\"log\"\n\n\t\"github.com/panco95/go-garden/core\"\n\t\"<>/api\"\n\t\"<>/global\"\n\t\"<>/rpc\"\n)\n\nfunc main() {\n\tconfigs := flag.String(\"configs\", \"configs\", \"configs path\")\n\truntime := flag.String(\"runtime\", \"runtime\", \"runtime path\")\n\tflag.Parse()\n\n\tvar err error\n\tglobal.Garden, err = core.New(*configs, *runtime)\n\tif err != nil {\n\t\tlog.Fatal(err)\n\t}\n\tif err = global.Garden.Run(api.Routes, new(rpc.Rpc), global.Garden.CheckCallSafeMiddleware); err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n", "<>", serviceName, 999)
 }
 
 func rpcDefineTest() string {

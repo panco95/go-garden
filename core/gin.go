@@ -1,9 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -15,21 +17,29 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/opentracing/opentracing-go"
 	"github.com/panco95/go-garden/core/log"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth func() gin.HandlerFunc) error {
+	engine, err := g.httpEngine(route, auth)
+	if err != nil {
+		return err
+	}
+	log.Infof("http", "listen on: %s", listenAddress)
+	return engine.Run(listenAddress)
+}
+
+func (g *Garden) httpEngine(route func(r *gin.Engine), auth func() gin.HandlerFunc) (*gin.Engine, error) {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	engine.Use(gin.Recovery())
 	if g.cfg.Service.Debug {
 		engine.Use(gin.Logger())
 		if err := createDir(g.cfg.RuntimePath); err != nil {
-			return err
+			return nil, err
 		}
 		file, err := os.Create(fmt.Sprintf("%s/gin.log", g.cfg.RuntimePath))
 		if err != nil {
-			return err
+			return nil, err
 		}
 		gin.DefaultWriter = file
 		engine.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
@@ -44,7 +54,6 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 				param.Request.UserAgent(),
 				param.ErrorMessage)
 		}))
-		pprof.Register(engine)
 	} else {
 		gin.DefaultWriter = ioutil.Discard
 	}
@@ -57,11 +66,12 @@ func (g *Garden) ginListen(listenAddress string, route func(r *gin.Engine), auth
 	if auth != nil {
 		engine.Use(auth())
 	}
+	if g.cfg.Service.Debug {
+		pprof.Register(engine)
+	}
 	notFound(engine)
 	route(engine)
-
-	log.Infof("http", "listen on: %s", listenAddress)
-	return engine.Run(listenAddress)
+	return engine, nil
 }
 
 // GatewayRoute create gateway service type to use this
@@ -81,23 +91,16 @@ func notFound(r *gin.Engine) {
 	})
 }
 
-func (g *Garden) prometheus() gin.HandlerFunc {
-	h := promhttp.Handler()
-	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
 func cors(ctx *gin.Context) {
-	method := ctx.Request.Method
 	ctx.Header("Access-Control-Allow-Origin", "*")
 	ctx.Header("Access-Control-Allow-Headers", "*")
 	ctx.Header("Access-Control-Allow-Methods", "*")
 	ctx.Header("Access-Control-Expose-Headers", "*")
-	ctx.Header("Access-Control-Allow-Credentials", "true")
-	if method == "OPTIONS" {
+	if ctx.Request.Method == http.MethodOptions {
 		ctx.AbortWithStatus(http.StatusNoContent)
+		return
 	}
+	ctx.Next()
 }
 
 func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
@@ -111,13 +114,17 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 		span.SetTag("Status", "unfinished")
 
 		request := req{
-			getMethod(c),
-			getUrl(c),
-			getUrlParam(c),
-			getClientIp(c),
-			getHeaders(c),
-			getBody(c)}
-		s, _ := json.Marshal(&request)
+			Method:   getMethod(c),
+			Url:      getUrl(c),
+			UrlParam: getUrlParam(c),
+			ClientIp: getClientIp(c),
+			RemoteIp: c.RemoteIP(),
+			Headers:  getHeaders(c),
+			RawBody:  readRawBody(c),
+			Body:     getBody(c),
+		}
+		traced := spanRequest(request)
+		s, _ := json.Marshal(&traced)
 		span.SetTag("Request", string(s))
 
 		c.Set("span", span)
@@ -137,18 +144,20 @@ func (g *Garden) openTracingMiddleware() gin.HandlerFunc {
 func (g *Garden) CheckCallSafeMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !g.checkCallSafe(c.GetHeader("Call-Key")) {
-			c.JSON(httpNotFound, gatewayFail(infoNoAuth))
+			c.JSON(httpUnauthorized, gatewayFail(infoNoAuth))
 			c.Abort()
+			return
 		}
+		c.Next()
 	}
 }
 
-//SetContext set custom context
+// SetContext set custom context
 func SetContext(c *gin.Context, name string, val interface{}) {
 	c.Set(name, val)
 }
 
-//GetContext get custom context
+// GetContext get custom context
 func GetContext(c *gin.Context, name string) (interface{}, error) {
 	t, success := c.Get(name)
 	if !success {
@@ -157,7 +166,7 @@ func GetContext(c *gin.Context, name string) (interface{}, error) {
 	return t, nil
 }
 
-//GetRequest get request datatype from context
+// GetRequest get request datatype from context
 func GetRequest(c *gin.Context) *req {
 	t, _ := GetContext(c, "request")
 	r := t.(*req)
@@ -177,6 +186,37 @@ func getMethod(c *gin.Context) string {
 
 func getClientIp(c *gin.Context) string {
 	return c.ClientIP()
+}
+
+func spanRequest(r req) req {
+	traced := r
+	traced.Body = nil
+	traced.RawBody = nil
+	if len(r.Headers) == 0 {
+		return traced
+	}
+	headers := make(MapData, len(r.Headers))
+	for k, v := range r.Headers {
+		if strings.EqualFold(k, "Call-Key") {
+			continue
+		}
+		headers[k] = v
+	}
+	traced.Headers = headers
+	return traced
+}
+
+func readRawBody(c *gin.Context) []byte {
+	if c.Request == nil || c.Request.Body == nil {
+		return nil
+	}
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.Request.Body = io.NopCloser(bytes.NewReader(nil))
+		return nil
+	}
+	c.Request.Body = io.NopCloser(bytes.NewReader(body))
+	return body
 }
 
 func getBody(c *gin.Context) MapData {

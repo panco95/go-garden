@@ -44,11 +44,8 @@ func readFile(filepath string) ([]byte, error) {
 	return b, nil
 }
 
-func writeFile(filepath string, data []byte) error {
-	if err := ioutil.WriteFile(filepath, data, 0777); err != nil {
-		return nil
-	}
-	return nil
+func writeFile(path string, data []byte) error {
+	return ioutil.WriteFile(path, data, 0644)
 }
 
 func getOutboundIP() (string, error) {
